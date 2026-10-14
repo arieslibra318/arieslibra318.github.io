@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>張翔鈞 (Xiang-Jun Zhang) | 財金量化科技 ✕ 業餘圍棋六段 ✕ 投信經理人專業履歷作品集</title>
+  <meta name="description" content="張翔鈞個人個人網站與專業作品集。國立臺中科技大學財金所碩士生，結合生技科學邏輯、消防局EMS極限抗壓、業餘圍棋六段戰略博弈、Python/XScript程式量化回測與證券高級業務員證照。">
+  <meta name="keywords" content="張翔鈞, Xiang-Jun Zhang, arieslibra318, 臺中科技大學, 財金所, 證券高級業務員, 圍棋六段, 量化交易, Python, XScript, 投信經理人, 履歷, Portfolio">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="張翔鈞 Xiang-Jun Zhang | FinTech Quantitative Portfolio">
+  <meta property="og:description" content="財金量化科技 ✕ 業餘圍棋六段 ✕ 500+救護極限抗壓 ✕ 投信經理人願景">
+  <meta property="og:type" content="website">
+  
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Print Watermark for CV export -->
+  <div class="print-header">
+    <div class="print-name">張翔鈞 Hsiang-Chun (Xiang-Jun) Zhang</div>
+    <div class="print-contact">arieslibra318@gmail.com | github.com/arieslibra318 | 國立臺中科技大學 財務金融研究所</div>
+  </div>
+
+  <!-- Navigation -->
+  <header class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand">
+        <span class="brand-badge"><i class="fa-solid fa-chart-line"></i></span>
+        <div class="brand-text">
+          <span class="name">張翔鈞</span>
+          <span class="title">FinTech Quant & 6-Dan</span>
+        </div>
+      </a>
+
+      <nav class="nav-menu" id="navMenu">
+        <a href="#about" class="nav-link" data-i18n="nav.about">關於我</a>
+        <a href="#journey" class="nav-link" data-i18n="nav.journey">轉折歷程</a>
+        <a href="#skills" class="nav-link" data-i18n="nav.skills">核心能力</a>
+        <a href="#projects" class="nav-link" data-i18n="nav.projects">量化研究</a>
+        <a href="#go-strategy" class="nav-link" data-i18n="nav.go">圍棋✕投資風控</a>
+        <a href="#resume-audit" class="nav-link" data-i18n="nav.audit">履歷體檢</a>
+        <a href="#contact" class="nav-link" data-i18n="nav.contact">聯絡交流</a>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- Language Switcher -->
+        <button id="langToggle" class="btn-icon" title="切換語言 / Toggle Language" aria-label="Toggle Language">
+          <span class="lang-text" id="langLabel">EN</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="btn-icon" title="切換深淺模式" aria-label="Toggle Theme">
+          <i class="fa-regular fa-moon" id="themeIcon"></i>
+        </button>
+
+        <!-- Print Resume Button -->
+        <button onclick="window.print()" class="btn-outline-sm btn-print" title="列印或匯出 PDF 履歷">
+          <i class="fa-solid fa-file-pdf"></i>
+          <span class="hide-mobile" data-i18n="btn.exportPdf">匯出履歷</span>
+        </button>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Open Navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="hero-bg-glow"></div>
+      <div class="hero-grid-pattern"></div>
+
+      <div class="hero-container">
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="status-dot"></span>
+            <span data-i18n="hero.badge">國立臺中科技大學 財金所 ✕ 量化分析與資產配置</span>
+          </div>
+
+          <h1 class="hero-title">
+            <span class="greeting" data-i18n="hero.greeting">你好，我是</span>
+            <span class="highlight-name">張翔鈞</span>
+            <span class="english-name">Xiang-Jun Zhang</span>
+          </h1>
+
+          <p class="hero-subtitle" data-i18n="hero.subtitle">
+            融合生技實證邏輯、澎湖消防局 500+ 件前線極限抗壓、業餘圍棋六段大局算度，立志成為實力、風控與誠信責任兼備的<strong>專業投信基金經理人</strong>。
+          </p>
+
+          <div class="hero-tags">
+            <span class="tag"><i class="fa-brands fa-python"></i> Python & XScript 量化</span>
+            <span class="tag"><i class="fa-solid fa-certificate"></i> 證券商高級業務員</span>
+            <span class="tag"><i class="fa-solid fa-chess-board"></i> 業餘圍棋 6 段</span>
+            <span class="tag"><i class="fa-solid fa-heart-pulse"></i> 澎湖消防救護 / CPR 復甦</span>
+            <span class="tag"><i class="fa-solid fa-arrow-trend-up"></i> 逆勢價值投資實盤 100%+</span>
+          </div>
+
+          <div class="hero-cta-group">
+            <a href="#projects" class="btn btn-primary">
+              <i class="fa-solid fa-chart-line"></i>
+              <span data-i18n="hero.ctaProjects">查看量化作品</span>
+            </a>
+            <a href="#journey" class="btn btn-secondary">
+              <i class="fa-solid fa-compass"></i>
+              <span data-i18n="hero.ctaJourney">跨領域轉折故事</span>
+            </a>
+            <a href="https://github.com/arieslibra318" target="_blank" rel="noopener noreferrer" class="btn btn-ghost">
+              <i class="fa-brands fa-github"></i>
+              <span>GitHub</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Hero Card / Profile Highlights -->
+        <div class="hero-visual">
+          <div class="profile-card">
+            <div class="card-glow"></div>
+            <div class="card-header">
+              <div class="avatar-ring">
+                <div class="avatar-inner">
+                  <i class="fa-solid fa-user-tie"></i>
+                </div>
+              </div>
+              <div class="card-meta">
+                <span class="card-badge">FinTech & Quant Focus</span>
+                <h3>張翔鈞 (Hsiang-Chun)</h3>
+                <p>NTCUST Finance Master's Candidate</p>
+              </div>
+            </div>
+
+            <div class="quick-terminal">
+              <div class="terminal-bar">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+                <span class="terminal-title">quant_mindset.py</span>
+              </div>
+              <pre class="terminal-code"><code><span class="c-comment"># 核心決策與風控模型</span>
+<span class="c-keyword">class</span> <span class="c-class">InvestorProfile</span>:
+    <span class="c-var">mindset</span> = <span class="c-str">"Go_6Dan_Global_Strategy"</span>
+    <span class="c-var">stress_resilience</span> = <span class="c-str">"Penghu_EMS_CPR_Survivor"</span>
+    <span class="c-var">licenses</span> = [<span class="c-str">"Senior_Securities_Specialist"</span>]
+    <span class="c-var">strategy</span> = <span class="c-str">"Contrarian_Value_Investing"</span>
+    <span class="c-var">tools</span> = [<span class="c-str">"Python"</span>, <span class="c-str">"XScript"</span>, <span class="c-str">"DNN"</span>]
+    
+    <span class="c-keyword">def</span> <span class="c-func">execute</span>(self):
+        <span class="c-keyword">return</span> <span class="c-str">"High_Alpha_With_Strict_Drawdown_Control"</span></code></pre>
+            </div>
+
+            <div class="card-footer-stats">
+              <div class="f-stat">
+                <span class="num">6 段</span>
+                <span class="lbl">圍棋實力</span>
+              </div>
+              <div class="f-divider"></div>
+              <div class="f-stat">
+                <span class="num">500+</span>
+                <span class="lbl">救護任務</span>
+              </div>
+              <div class="f-divider"></div>
+              <div class="f-stat">
+                <span class="num">100%+</span>
+                <span class="lbl">實盤獲利</span>
+              </div>
+              <div class="f-divider"></div>
+              <div class="f-stat">
+                <span class="num">3 個月</span>
+                <span class="lbl">高業證照速通</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Ribbon -->
+      <div class="metrics-ribbon">
+        <div class="metric-item">
+          <div class="metric-icon"><i class="fa-solid fa-chess-queen"></i></div>
+          <div class="metric-data">
+            <span class="metric-value" data-target="6">6</span><span class="metric-unit">段</span>
+            <span class="metric-label" data-i18n="stat.go">業餘圍棋六段 (頂尖大局博弈)</span>
+          </div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-icon"><i class="fa-solid fa-truck-medical"></i></div>
+          <div class="metric-data">
+            <span class="metric-value" data-target="500">500</span><span class="metric-unit">+</span>
+            <span class="metric-label" data-i18n="stat.ems">澎湖消防救護任務 ✕ 1起OHCA成功救援</span>
+          </div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+          <div class="metric-data">
+            <span class="metric-value" data-target="100">100</span><span class="metric-unit">%+</span>
+            <span class="metric-label" data-i18n="stat.roi">逆向價值投資自選策略實盤翻倍</span>
+          </div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+          <div class="metric-data">
+            <span class="metric-value" data-target="3">3</span><span class="metric-unit">個月</span>
+            <span class="metric-label" data-i18n="stat.license">自修跨考證券商高級業務員證照</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="section about-section" id="about">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="about.kicker">WHO I AM</span>
+          <h2 class="section-title" data-i18n="about.title">跨越生技、前線救護與圍棋大局觀的財金量化開拓者</h2>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="about-grid">
+          <div class="about-card highlight">
+            <div class="card-icon"><i class="fa-solid fa-dna"></i></div>
+            <h3 data-i18n="about.card1Title">生技科學實證基底</h3>
+            <p data-i18n="about.card1Desc">
+              大學畢業於<strong>國立中興大學生物科技學系</strong>，專攻醫學與生物催化專題研究。實驗室培養的嚴密對照組思維、統計假設檢驗與數據敏感度，成為日後建構量化策略、排除過度擬合 (Overfitting) 的科學基石。
+            </p>
+          </div>
+
+          <div class="about-card highlight">
+            <div class="card-icon"><i class="fa-solid fa-kit-medical"></i></div>
+            <h3 data-i18n="about.card2Title">澎湖消防極限抗壓與志向啟蒙</h3>
+            <p data-i18n="about.card2Desc">
+              服役於澎湖縣消防局，親身參與近 500 件緊急救護，成功以 CPR 將命危公務司機從鬼門關拉回；並深入了解詐騙受害者的無助，領悟到<strong>守護他人不僅止於生理生命，更在於建立正確投資與資產保護體系</strong>。
+            </p>
+          </div>
+
+          <div class="about-card highlight">
+            <div class="card-icon"><i class="fa-solid fa-chess-board"></i></div>
+            <h3 data-i18n="about.card3Title">圍棋 6 段之大局觀與風控哲學</h3>
+            <p data-i18n="about.card3Desc">
+              自幼習弈榮獲<strong>業餘圍棋六段</strong>。圍棋「捨小就大、勝率動態推演、嚴格止損、精準官子」的底層思維，與金融市場中面對黑天鵝事件的冷靜定力、下單決策果斷性及資產配置策略完全同構。
+            </p>
+          </div>
+
+          <div class="about-card highlight">
+            <div class="card-icon"><i class="fa-solid fa-microchip"></i></div>
+            <h3 data-i18n="about.card4Title">全方位量化程式與 AI 理財架構</h3>
+            <p data-i18n="about.card4Desc">
+              現就讀<strong>國立臺中科技大學 財金所碩二</strong>，自學精通 Python、XScript，每週風雨無阻赴雲林虎尾科大向許江河副教授深造交易回測技術；已完成 DNN 神經網路模型與 AI 理財機器人 Canvas 架構規劃。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Career Journey Interactive Timeline -->
+    <section class="section journey-section" id="journey">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="journey.kicker">MY CAREER TRANSFORMATION</span>
+          <h2 class="section-title" data-i18n="journey.title">人生轉捩與心態演進歷程</h2>
+          <p class="section-desc" data-i18n="journey.desc">每一次關鍵抉擇，都是為日後在資本市場乘風破浪積累深度與韌性。</p>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="timeline">
+          <!-- Timeline Item 1 -->
+          <div class="timeline-item left">
+            <div class="timeline-dot"><i class="fa-solid fa-flask"></i></div>
+            <div class="timeline-content">
+              <span class="timeline-date">階段一 ｜ 國立中興大學 生物科技學系</span>
+              <h3 class="timeline-heading">生醫科研探索與十字路口的反思</h3>
+              <p>
+                在深入生物催化與生醫醫學研究過程中，體會到實驗室研究的瓶頸與迷茫。面对人生抉擇，毅然決定先入伍服役盡國民義務，在磨練心性的同時，重新沉澱探索人生的長遠志向。
+              </p>
+              <div class="timeline-pill"><i class="fa-solid fa-seedling"></i> 科學實證思維建立</div>
+            </div>
+          </div>
+
+          <!-- Timeline Item 2 -->
+          <div class="timeline-item right">
+            <div class="timeline-dot highlight"><i class="fa-solid fa-truck-medical"></i></div>
+            <div class="timeline-content">
+              <span class="timeline-date">階段二 ｜ 澎湖縣消防局 替代役緊急救護</span>
+              <h3 class="timeline-heading">500 件救護、CPR 復甦命危司機與金融保護啟蒙</h3>
+              <p>
+                在高壓的救護現場處理近 500 次任務。最後一件任務中，一位司機執行公務時倒地失去呼吸心跳 (OHCA)，我與同袍第一時間進行 CPR 急救，成功從鬼門關救回寶貴生命。同時，在救護中接觸到多位因投資詐騙傾家蕩產的悲劇，促使我深刻反思：拯救生命的意義不僅在生理層面，更應協助大眾以科學投資守護辛勤成果，堅定跨向金融領域！
+              </p>
+              <div class="timeline-pill highlight"><i class="fa-solid fa-shield-heart"></i> 極致抗壓能力 ✕ 人文責任使命</div>
+            </div>
+          </div>
+
+          <!-- Timeline Item 3 -->
+          <div class="timeline-item left">
+            <div class="timeline-dot"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div class="timeline-content">
+              <span class="timeline-date">階段三 ｜ 復學跨修 ＆ 3 個月速通證券高業</span>
+              <h3 class="timeline-heading">嚴苛自律承諾：零基礎自學與專業證照突圍</h3>
+              <p>
+                退伍復學後給自己立下兩年學習承諾。以強大專注力在短短 3 個月內完全掌握財務會計、證券法規與投資學，一次考取「<strong>證券商高級業務員</strong>」專業證照，展現超凡的自學能力與執行強度。
+              </p>
+              <div class="timeline-pill"><i class="fa-solid fa-award"></i> 證券商高級業務員資格取得</div>
+            </div>
+          </div>
+
+          <!-- Timeline Item 4 -->
+          <div class="timeline-item right">
+            <div class="timeline-dot highlight"><i class="fa-solid fa-laptop-code"></i></div>
+            <div class="timeline-content">
+              <span class="timeline-date">階段四 ｜ 虎尾科大拜師量化 ＆ 實盤 100%+ 戰績</span>
+              <h3 class="timeline-heading">跨縣市通車求學、自研回測指標與價值投資翻倍</h3>
+              <p>
+                自學 Python 與 XScript，並每週長途通車至雲林虎尾科技大學向量化交易名師許江河副教授求教策略回測與統計驗證。結合巴菲特經典理念「<strong>好公司遇到倒楣事</strong>」逆向價值投資策略，自訂技術量化指標精準布局，實盤斬獲人生第一次 100%+（翻倍）亮眼投資報酬！
+              </p>
+              <div class="timeline-pill highlight"><i class="fa-solid fa-chart-line"></i> 量化策略自研 ✕ 實盤驗證翻倍獲利</div>
+            </div>
+          </div>
+
+          <!-- Timeline Item 5 -->
+          <div class="timeline-item left">
+            <div class="timeline-dot"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="timeline-content">
+              <span class="timeline-date">階段五 ｜ 國立臺中科技大學 財金所碩士班（現階段）</span>
+              <h3 class="timeline-heading">深化 AI 理財機器人架構、DNN 神經網路與投信志業</h3>
+              <p>
+                進入國立臺中科技大學財務金融研究所，專注於資訊科技與量化金融跨域整合。主導 DNN 神經網路模型設計與 AI 理財機器人 Canvas 架構規劃，兼具獨立開發資訊系統與資產管理宏觀能力，朝外資投信基金經理人目標全速邁進。
+              </p>
+              <div class="timeline-pill"><i class="fa-solid fa-flag-checkered"></i> 獨立系統開發 ✕ 投信專業經理人</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills & Certifications Section -->
+    <section class="section skills-section" id="skills">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="skills.kicker">COMPETENCY MATRIX</span>
+          <h2 class="section-title" data-i18n="skills.title">核心競爭力矩陣與專業證照</h2>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="skills-grid">
+          <!-- Column 1: Quant & Code -->
+          <div class="skill-category">
+            <div class="cat-header">
+              <i class="fa-solid fa-terminal"></i>
+              <h3>程式量化與數據回測</h3>
+            </div>
+            <div class="skill-list">
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>Python (Pandas, NumPy, Backtesting)</span>
+                  <span class="skill-lvl">進階實戰</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 88%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>XScript (XS / 嘉實量化腳本)</span>
+                  <span class="skill-lvl">熟練回測</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 85%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>量化指標研發與特徵工程</span>
+                  <span class="skill-lvl">自研實盤</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 82%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>深度學習 (DNN 神經網路架構)</span>
+                  <span class="skill-lvl">專題應用</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 78%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Finance & Investment -->
+          <div class="skill-category">
+            <div class="cat-header">
+              <i class="fa-solid fa-coins"></i>
+              <h3>財務金融與資產管理</h3>
+            </div>
+            <div class="skill-list">
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>逆向價值投資策略 (Contrarian Value)</span>
+                  <span class="skill-lvl">100%+ 獲利</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 90%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>證券商高級業務員專業資格</span>
+                  <span class="skill-lvl">3個月考取</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 95%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>基本面財報分析與產業調研</span>
+                  <span class="skill-lvl">碩士專業</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 85%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>AI 理財顧問機器人架構規劃</span>
+                  <span class="skill-lvl">Canvas 規劃</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 86%;"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Mindset & Resilience -->
+          <div class="skill-category">
+            <div class="cat-header">
+              <i class="fa-solid fa-brain"></i>
+              <h3>心理素質與戰略決策</h3>
+            </div>
+            <div class="skill-list">
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>業餘圍棋六段 (宏觀大局算度)</span>
+                  <span class="skill-lvl">全國前 1%</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 96%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>極限高壓冷靜決策 (澎湖消防 EMS)</span>
+                  <span class="skill-lvl">500+ 件前線</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 95%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>動態風險對沖與紀律止損</span>
+                  <span class="skill-lvl">棋盤心法</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 92%;"></div></div>
+              </div>
+
+              <div class="skill-item">
+                <div class="skill-info">
+                  <span>跨域敏捷學習與恆毅力 (Grit)</span>
+                  <span class="skill-lvl">自學實證</span>
+                </div>
+                <div class="skill-bar"><div class="fill" style="width: 94%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Official Certifications Showcase -->
+        <div class="certs-showcase">
+          <h3 class="certs-title"><i class="fa-solid fa-stamp"></i> 官方認證與關鍵資質</h3>
+          <div class="certs-cards">
+            <div class="cert-card">
+              <div class="cert-badge-icon"><i class="fa-solid fa-award"></i></div>
+              <div class="cert-details">
+                <h4>證券商高級業務員證照</h4>
+                <p>中華民國證券商業同業公會 ｜ 具備經紀、承銷、自營及投信相關法定任用資格</p>
+                <span class="cert-tag">3 個月超速自修通過</span>
+              </div>
+            </div>
+
+            <div class="cert-card">
+              <div class="cert-badge-icon"><i class="fa-solid fa-chess-board"></i></div>
+              <div class="cert-details">
+                <h4>中華民國圍棋協會 業餘六段證書</h4>
+                <p>全國業餘高段位棋士 ｜ 專注力、形勢判斷、算路深度與勝率權衡之最高心智認證</p>
+                <span class="cert-tag">業餘頂尖段位</span>
+              </div>
+            </div>
+
+            <div class="cert-card">
+              <div class="cert-badge-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+              <div class="cert-details">
+                <h4>初級救護技術員 (EMT-1) ＆ 成功 CPR 救護榮譽</h4>
+                <p>內政部消防署 澎湖縣消防局 ｜ 500+ 件出勤紀錄、成功挽救心肺功能停止 (OHCA) 病患</p>
+                <span class="cert-tag">生命復甦實證</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quantitative & FinTech Projects -->
+    <section class="section projects-section" id="projects">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="projects.kicker">PORTFOLIO & RESEARCH</span>
+          <h2 class="section-title" data-i18n="projects.title">量化專案與財金科技研究</h2>
+          <p class="section-desc" data-i18n="projects.desc">結合理論模型、量化回測程式與實戰投資驗證的成果。</p>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="project-filters">
+          <button class="filter-btn active" data-filter="all">全部專案 (All)</button>
+          <button class="filter-btn" data-filter="quant">量化策略 (Quant)</button>
+          <button class="filter-btn" data-filter="ai">AI 架構 (AI & FinTech)</button>
+          <button class="filter-btn" data-filter="academic">學術與回測 (Research)</button>
+        </div>
+
+        <div class="projects-grid">
+          <!-- Project 1 -->
+          <div class="project-card" data-category="quant">
+            <div class="project-tag-bar">
+              <span class="ptag quant"><i class="fa-solid fa-chart-line"></i> 量化實盤</span>
+              <span class="pstatus success">實盤 100%+ 獲利</span>
+            </div>
+            <h3 class="project-title">「好公司遇到倒楣事」逆向價值投資量化篩選與回測模型</h3>
+            <p class="project-desc">
+              運用 Python 與 XScript 建構基本面體質評分系統與自訂動能偏離指標，鎖定具備高 ROE、穩定現金流且遭逢短期非基本面利空重挫的績優股。透過回測驗證極端回撤下的超額報酬 (Alpha)，並成功於個人實盤中實現翻倍回報。
+            </p>
+            <div class="project-features">
+              <span><i class="fa-solid fa-check"></i> 自訂量化技術動態偏離率指標</span>
+              <span><i class="fa-solid fa-check"></i> Python / XScript 歷史多空循環回測</span>
+              <span><i class="fa-solid fa-check"></i> 嚴格波動率過濾與最大回撤 (MDD) 控制</span>
+            </div>
+            <div class="tech-stack">
+              <span>Python</span>
+              <span>XScript (XS)</span>
+              <span>Pandas</span>
+              <span>Backtesting</span>
+            </div>
+          </div>
+
+          <!-- Project 2 -->
+          <div class="project-card" data-category="ai">
+            <div class="project-tag-bar">
+              <span class="ptag ai"><i class="fa-solid fa-robot"></i> AI FinTech</span>
+              <span class="pstatus info">碩士研究架構</span>
+            </div>
+            <h3 class="project-title">AI 理財顧問機器人 (Robo-Advisor) Canvas 系統規劃</h3>
+            <p class="project-desc">
+              國立臺中科技大學財金所核心成果。針對一般投資人資產配置盲點與詐騙防禦需求，規劃端到端的智能理財機器人架構，整合客戶風險屬性評估 (KYC)、現代投資組合理論 (MPT)、情境模擬引擎與自然語言人機互動介面。
+            </p>
+            <div class="project-features">
+              <span><i class="fa-solid fa-check"></i> 商業營運與技術落地 Canvas 完整圖譜</span>
+              <span><i class="fa-solid fa-check"></i> 動態資產配置與防詐警示防護機制</span>
+              <span><i class="fa-solid fa-check"></i> 符合金管會投信投顧法規之架構設計</span>
+            </div>
+            <div class="tech-stack">
+              <span>System Design</span>
+              <span>Robo-Advisory</span>
+              <span>Canvas Architecture</span>
+              <span>KYC/AML</span>
+            </div>
+          </div>
+
+          <!-- Project 3 -->
+          <div class="project-card" data-category="ai">
+            <div class="project-tag-bar">
+              <span class="ptag ai"><i class="fa-solid fa-network-wired"></i> 深度學習</span>
+              <span class="pstatus warning">神經網路專題</span>
+            </div>
+            <h3 class="project-title">DNN 深度神經網路於金融資產趨勢預測之設計與優化</h3>
+            <p class="project-desc">
+              設計多層密集神經網路 (Deep Neural Network, DNN) 架構，輸入宏觀總體經濟指標、量價時序因子與情緒指數。導入 Dropout 與 Batch Normalization 防止過度擬合，提升時序非線性走勢預測之泛化能力。
+            </p>
+            <div class="project-features">
+              <span><i class="fa-solid fa-check"></i> 多層全連接特徵提取層與超參數調校</span>
+              <span><i class="fa-solid fa-check"></i> 交叉驗證 (K-Fold) 嚴防過擬合</span>
+              <span><i class="fa-solid fa-check"></i> 結合技術指標與財務因子的多模態輸入</span>
+            </div>
+            <div class="tech-stack">
+              <span>Python</span>
+              <span>TensorFlow / Keras</span>
+              <span>Deep Neural Networks</span>
+              <span>Feature Engineering</span>
+            </div>
+          </div>
+
+          <!-- Project 4 -->
+          <div class="project-card" data-category="academic">
+            <div class="project-tag-bar">
+              <span class="ptag academic"><i class="fa-solid fa-graduation-cap"></i> 產學研習</span>
+              <span class="pstatus primary">師承名家</span>
+            </div>
+            <h3 class="project-title">雲林虎尾科大 許江河副教授 量化交易回測技術專項研究</h3>
+            <p class="project-desc">
+              每週跨縣市通車至雲林，跟隨在程式交易與量化回測領域享有盛譽的許江河老師深度研習。系統化解析高頻/波段量化腳本撰寫、交易滑價與手續費敏感度分析，以及跨市場配對交易 (Pairs Trading) 邏輯。
+            </p>
+            <div class="project-features">
+              <span><i class="fa-solid fa-check"></i> 實務級交易成本模型（手續費、證券交易稅、滑價）</span>
+              <span><i class="fa-solid fa-check"></i> 夏普比率 (Sharpe Ratio) 與卡瑪比率 (Calmar) 策略優化</span>
+              <span><i class="fa-solid fa-check"></i> 嚴謹 Out-of-Sample 樣本外前向滾動測試</span>
+            </div>
+            <div class="tech-stack">
+              <span>XScript</span>
+              <span>Quantitative Backtest</span>
+              <span>Risk Metrics</span>
+              <span>Statistical Finance</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Go Strategy & Trading Risk Philosophy Interactive Sandbox -->
+    <section class="section go-section" id="go-strategy">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="go.kicker">THE MINDSET MAPPING</span>
+          <h2 class="section-title" data-i18n="go.title">圍棋六段戰略 ✕ 金融交易風控思維模型</h2>
+          <p class="section-desc" data-i18n="go.desc">點擊下方棋盤交互區域，探索圍棋最高境界如何轉化為金融市場中的頂級決策力。</p>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="go-interactive-wrapper">
+          <!-- Interactive Board Sandbox -->
+          <div class="go-board-card">
+            <div class="board-header">
+              <span class="board-title"><i class="fa-solid fa-chess-board"></i> 互動棋盤思維演練 (點擊棋盤落子)</span>
+              <button id="resetBoardBtn" class="btn-sm"><i class="fa-solid fa-rotate-right"></i> 重置棋盤</button>
+            </div>
+            
+            <div class="go-board-canvas-container">
+              <canvas id="goCanvas" width="340" height="340"></canvas>
+            </div>
+
+            <div class="board-status">
+              <span id="boardMoveInfo">已落子: 0 手 ｜ 目前輪到: <strong id="currentTurnText">黑棋 (先行)</strong></span>
+            </div>
+          </div>
+
+          <!-- Mindset Correspondence Cards -->
+          <div class="go-philosophy-cards">
+            <div class="phi-card" data-step="1">
+              <div class="phi-badge">圍棋十訣 ✕ 投信哲學 ①</div>
+              <h4>「不得貪勝」 ➔ 克服貪婪與嚴格止損</h4>
+              <p>
+                棋理云「不得貪勝」。在金融交易中，過度追求單次暴力獲利往往招致毀滅性黑天鵝。圍棋六段教會我建立嚴格的<strong>盈虧比思維與機械式停損原則</strong>，留得青山，方能長久致勝。
+              </p>
+            </div>
+
+            <div class="phi-card" data-step="2">
+              <div class="phi-badge">圍棋十訣 ✕ 投信哲學 ②</div>
+              <h4>「棄子爭先」 ➔ 機會成本與資本動態重配</h4>
+              <p>
+                棋局中斷然捨棄死子搶得大場「先手」。在資產管理上，當持倉基本面惡化或出現更優質 Alpha 標的，具備<strong>果斷認賠並釋放流動性搶佔先機</strong>的魄力，絕不死扛無效資產。
+              </p>
+            </div>
+
+            <div class="phi-card" data-step="3">
+              <div class="phi-badge">圍棋十訣 ✕ 投信哲學 ③</div>
+              <h4>「勢地權衡」 ➔ 成長股 vs 價值防守平衡</h4>
+              <p>
+                圍棋精髓在於「厚勢（外勢潛力）」與「實地（安全現金邊界）」的轉換。恰如投資組合中在<strong>高爆發力科技成長股與防禦型高股息價值股</strong>之間的動態權重再平衡。
+              </p>
+            </div>
+
+            <div class="phi-card" data-step="4">
+              <div class="phi-badge">圍棋十訣 ✕ 投信哲學 ④</div>
+              <h4>「深遠算度」 ➔ 量化回測與情境壓力測試</h4>
+              <p>
+                六段棋手能於瞬息間推演數十步變化與勝率分佈。這與量化投資中運用 <strong>Monte Carlo 蒙地卡羅模擬、歷史回測與黑天鵝壓力測試</strong>有著本質相同的邏輯思維。
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resume Diagnosis & Audit Report Section -->
+    <section class="section audit-section" id="resume-audit">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="audit.kicker">EXECUTIVE AUDIT</span>
+          <h2 class="section-title" data-i18n="audit.title">履歷專業診斷與升級進化報告</h2>
+          <p class="section-desc" data-i18n="audit.desc">對比原始敘事型自傳與本網站現代化投信專業履歷之優化亮點。</p>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="audit-comparison-grid">
+          <!-- Before Card -->
+          <div class="audit-card before">
+            <div class="audit-card-header">
+              <span class="audit-tag warning"><i class="fa-solid fa-file-lines"></i> 原始自傳稿件痛點</span>
+              <h3>傳統篇章敘事體 (Raw Essay)</h3>
+            </div>
+            <ul class="audit-points">
+              <li><i class="fa-solid fa-xmark text-danger"></i> <strong>篇幅密集缺乏視覺錨點：</strong>純文字敘述，外商投信與券商主管平均僅瀏覽 15 秒，難以一眼抓取核心強項。</li>
+              <li><i class="fa-solid fa-xmark text-danger"></i> <strong>量化亮點散落段落中：</strong>如「500次救護」、「CPR救回命危司機」、「圍棋六段」、「3個月考取高業」被埋沒在抒情語句裡。</li>
+              <li><i class="fa-solid fa-xmark text-danger"></i> <strong>轉職痛點口語化：</strong>生技轉財金之迷茫描寫略顯被動，未完全轉化為「跨領域數據實驗精神」之主動優勢。</li>
+              <li><i class="fa-solid fa-xmark text-danger"></i> <strong>缺乏即時驗證作品：</strong>無法直接點閱量化程式碼、架構規劃書或實證指標。</li>
+            </ul>
+          </div>
+
+          <!-- After Card -->
+          <div class="audit-card after">
+            <div class="audit-card-header">
+              <span class="audit-tag success"><i class="fa-solid fa-wand-magic-sparkles"></i> 本專業網站升級成效</span>
+              <h3>機構級數位作品集 (Institutional Portfolio)</h3>
+            </div>
+            <ul class="audit-points">
+              <li><i class="fa-solid fa-check text-success"></i> <strong>四大數據徽章吸睛定錨：</strong>圍棋 6 段、500+救護、100%+實盤獲利、3個月高業，首屏立即震撼鎖定！</li>
+              <li><i class="fa-solid fa-check text-success"></i> <strong>跨域優勢結構化敘事：</strong>生技嚴謹性 ✕ 救護極限抗壓 ✕ 圍棋博弈決策 ✕ 財金量化，形成無可替代的個人護城河。</li>
+              <li><i class="fa-solid fa-check text-success"></i> <strong>互動式圍棋✕風控沙盒：</strong>創新研發互動棋盤，將心智能力可視化，直觀向面試官展示高段位決策層次。</li>
+              <li><i class="fa-solid fa-check text-success"></i> <strong>雙語一鍵切換與 PDF 匯出：</strong>支援外資投信所需的英文展示，並支援一鍵以標準 A4 Executive CV 列印。</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Career Goal Vision Box -->
+        <div class="vision-box">
+          <div class="vision-icon"><i class="fa-solid fa-compass"></i></div>
+          <div class="vision-content">
+            <h3>未來 3-5 年職涯願景 ｜ 投信基金經理人 (Portfolio Manager)</h3>
+            <p>
+              深信「<strong>守護資產的責任感，源自對生命價值的敬畏</strong>」。在完成國立臺中科技大學財金所碩士學業後，將持續精進全球總體經濟研究、因子投資與多空配對策略；期許自研究員 (Analyst) 穩健歷練，晉升為兼具敏銳市場嗅覺、嚴謹風控紀律與社會責任感的優秀投信基金經理人，為投資人創造長期卓越的超額價值。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact & Connect Section -->
+    <section class="section contact-section" id="contact">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-kicker" data-i18n="contact.kicker">GET IN TOUCH</span>
+          <h2 class="section-title" data-i18n="contact.title">聯絡交流與合作機會</h2>
+          <p class="section-desc" data-i18n="contact.desc">歡迎金融機構主管、量化研究團隊、學術師長及業界夥伴隨時聯繫交流！</p>
+          <div class="section-divider"></div>
+        </div>
+
+        <div class="contact-grid">
+          <div class="contact-card">
+            <div class="c-icon"><i class="fa-solid fa-envelope"></i></div>
+            <h4>電子郵件</h4>
+            <a href="mailto:arieslibra318@gmail.com" class="c-link">arieslibra318@gmail.com</a>
+            <p>日常迅速回覆</p>
+          </div>
+
+          <div class="contact-card">
+            <div class="c-icon"><i class="fa-brands fa-github"></i></div>
+            <h4>GitHub 開源代碼庫</h4>
+            <a href="https://github.com/arieslibra318" target="_blank" rel="noopener noreferrer" class="c-link">github.com/arieslibra318</a>
+            <p>量化程式與 AI 專案集</p>
+          </div>
+
+          <div class="contact-card">
+            <div class="c-icon"><i class="fa-solid fa-location-dot"></i></div>
+            <h4>學術研究據點</h4>
+            <span class="c-link">國立臺中科技大學</span>
+            <p>財務金融系碩士班（臺中市北區三民路三段129號）</p>
+          </div>
+        </div>
+
+        <!-- Interactive Quick Contact Modal / Form -->
+        <div class="quick-contact-box">
+          <h3><i class="fa-regular fa-paper-plane"></i> 寄送即時訊息</h3>
+          <form id="contactForm" class="contact-form" onsubmit="event.preventDefault(); alert('感謝您的來信！已收到您的訊息，張翔鈞將會盡速與您聯絡。'); this.reset();">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cName">您的姓名 / 服務機構</label>
+                <input type="text" id="cName" required placeholder="例：王經理 / 某某投信">
+              </div>
+              <div class="form-group">
+                <label for="cEmail">您的 Email 信箱</label>
+                <input type="email" id="cEmail" required placeholder="例：investor@fund.com">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="cSubject">交流主題</label>
+              <input type="text" id="cSubject" required placeholder="例：投信實習面談 / 量化交易回測交流">
+            </div>
+            <div class="form-group">
+              <label for="cMsg">訊息內容</label>
+              <textarea id="cMsg" rows="4" required placeholder="請在此輸入您的交流內容..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-paper-plane"></i> 發送訊息
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <span class="f-logo">張翔鈞 ✕ FinTech Portfolio</span>
+        <p>© 2026 張翔鈞 Xiang-Jun Zhang. All Rights Reserved. Hosted via GitHub Pages.</p>
+      </div>
+      <div class="footer-right">
+        <a href="#hero" class="back-to-top" title="回到頂部"><i class="fa-solid fa-arrow-up"></i></a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
