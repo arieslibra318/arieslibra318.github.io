@@ -1660,7 +1660,7 @@ function help(){openModal(`<div class="bh"><h3>怎麼玩</h3><button class="x" t
   <p><b>市政府委託</b>：隨時有兩個公開任務（集滿某區、蓋商業大樓、擁有捷運站……），誰先達成誰領獎金。</p>
   <p><b>商機卡</b>：合夥開 KTV、地下錢莊、預售屋紅單、參選議員，選了之後幾回合會分紅、轉手或討債。</p>
   <p><b>缺錢時</b>：拆賣房子（半價）、抵押土地，或把地賣回銀行、公開拍賣。湊不出錢就破產，地產進法拍中心。</p>
-  <p><b>代碼連線 PK</b>：在 claude.ai 上開啟這個頁面，一人建立房間，把五碼代碼給朋友輸入，各自用自己的裝置玩。朋友需要被分享這個頁面並有「可以互動」以上的權限；只有檢視權限的人可以觀戰。</p>
+  <p><b>代碼連線 PK</b>：一人建立房間，把五碼代碼給朋友輸入，各自用自己的裝置玩。在 claude.ai 上開啟時用 claude.ai 的即時連線（朋友需要被分享這個頁面並有「可以互動」以上的權限）；在其他網址（例如 GitHub Pages）開啟時改用點對點連線（PeerJS），不用註冊，少數 4G 或公司網路可能連不上。</p>
   <p><b>操作</b>：拖曳轉動視角、滾輪或雙指縮放，點格子看權狀。空白鍵可以擲骰子、結束回合、跳過對話。</p></div>`);$('#mx').onclick=closeModal;}
 function marketModal(){if(!G)return;openModal(`<div class="bh"><h3>房市行情</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb">${marketHTML()}</div>`);$('#mx').onclick=closeModal;}
 $('#bNew').onclick=()=>{snd('card');setupScreen();};
@@ -1680,7 +1680,56 @@ const NET={api:undefined,role:null,room:null,code:'',myPeer:'',seat:-1,seq:0,epo
 const CODE_CH='abcdefghjkmnpqrstuvwxyz23456789';
 const cleanNick=s=>String(s==null?'':s).replace(/[<>&"'`\\\s]/g,'').slice(0,6)||'玩家';
 const byteLen=s=>new TextEncoder().encode(s).length;
-async function roomApi(){if(NET.api!==undefined)return NET.api;try{NET.api=(window.claude&&typeof window.claude.use==='function')?await window.claude.use('room'):null;}catch(e){NET.api=null;}return NET.api;}
+/* 不在 claude.ai 上時（例如 GitHub Pages），改用 PeerJS 點對點連線：房主當中心，其他人連到房主 */
+const PEER_JS='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+const PEER_OPTS={debug:0};
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s);});}
+async function peerApi(){try{if(!window.Peer)await loadScript(PEER_JS);}catch(e){return null;}
+  return window.Peer?{kind:'peer',join:(name,isHost)=>peerJoin('tpe-'+name,!!isHost)}:null;}
+function peerJoin(id,isHost){return new Promise((resolve,reject)=>{
+  const ls={},pc=[],conns=new Map(),seen=new Map();let me='',hostConn=null,done=false,open=false,peer=null,hb=0,hostSeen=0,hostGone=false;
+  const P=x=>({peer:x,sameTab:x===me,isMe:x===me,by:null,kind:'viewer',guest:false,presence:{},updatedAt:0});
+  const list=()=>[me,...(isHost?[...conns.keys()]:(hostConn&&hostConn.open?[hostConn.peer]:[]))].filter(Boolean).map(P);
+  const firePeers=(j,l)=>{const ch={peers:list(),joined:j?[P(j)]:[],left:l?[P(l)]:[],updated:[]};pc.forEach(h=>{try{h(ch);}catch(e){console.error(e);}});};
+  const deliver=(from,m)=>{seen.set(from,Date.now());if(from!==me&&hostConn&&from===hostConn.peer){hostSeen=Date.now();if(hostGone){hostGone=false;open=true;firePeers(from,null);}}
+    if(!m||typeof m!=='object'||typeof m.t!=='string'||m.t==='__p')return;(ls[m.t]||[]).forEach(h=>{try{h({topic:m.t,data:m.d,peer:from,by:null,isMe:from===me,sameTab:from===me,kind:'viewer',guest:false});}catch(e){console.error(e);}});};
+  const fail=code=>{if(done)return;done=true;clearTimeout(tm);clearInterval(hb);try{peer&&peer.destroy();}catch(e){}reject({code,message:code});};
+  const room={name:id,
+    emit:async(topic,data)=>{const m={t:topic,d:data};
+      if(isHost){for(const c of conns.values())if(c.open)try{c.send(m);}catch(e){}}
+      else if(hostConn&&hostConn.open){try{hostConn.send(m);}catch(e){}}else return;
+      setTimeout(()=>deliver(me,m),0);},
+    on:(t,h)=>{(ls[t]=ls[t]||[]).push(h);return()=>{ls[t]=(ls[t]||[]).filter(x=>x!==h);};},
+    onPeers:h=>{pc.push(h);setTimeout(()=>h({peers:list(),joined:list(),left:[],updated:[]}),0);return()=>{const k=pc.indexOf(h);if(k>=0)pc.splice(k,1);};},
+    peers:list,presence:async()=>{},connected:()=>open,onConnection:()=>()=>{},
+    leave:async()=>{open=false;clearInterval(hb);removeEventListener('pagehide',bye);try{peer.destroy();}catch(e){}}};
+  // 心跳：每 2 秒互相確認，超過 10 秒沒消息就當作斷線
+  const bye=()=>{try{peer&&peer.destroy();}catch(e){}};addEventListener('pagehide',bye);
+  hb=setInterval(()=>{const now=Date.now();
+    if(isHost){for(const [k,c] of [...conns]){if(c.open)try{c.send({t:'__p'});}catch(e){}if(now-(seen.get(k)||now)>10000){conns.delete(k);try{c.close();}catch(e){}firePeers(null,k);}}}
+    else if(hostConn&&open){try{hostConn.send({t:'__p'});}catch(e){}if(hostSeen&&now-hostSeen>10000&&!hostGone){hostGone=true;open=false;firePeers(null,hostConn.peer);}}},2000);
+  const tm=setTimeout(()=>fail(isHost?'upstream_error':'not_found'),15000);
+  try{peer=isHost?new window.Peer(id,PEER_OPTS):new window.Peer(PEER_OPTS);}catch(e){fail('upstream_error');return;}
+  peer.on('open',pid=>{me=pid;
+    if(isHost){open=true;done=true;clearTimeout(tm);resolve(room);return;}
+    const c=peer.connect(id,{reliable:true,serialization:'json'});hostConn=c;
+    c.on('open',()=>{open=true;hostSeen=Date.now();if(!done){done=true;clearTimeout(tm);resolve(room);}firePeers(c.peer,null);});
+    c.on('data',m=>deliver(c.peer,m));
+    c.on('close',()=>{open=false;firePeers(null,c.peer);});
+    c.on('error',()=>{});});
+  if(isHost)peer.on('connection',c=>{
+    c.on('open',()=>{if(conns.size>=12){try{c.close();}catch(e){}return;}conns.set(c.peer,c);seen.set(c.peer,Date.now());firePeers(c.peer,null);});
+    c.on('data',m=>deliver(c.peer,m));
+    const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);firePeers(null,c.peer);}};c.on('close',gone);c.on('error',gone);});
+  peer.on('error',e=>{const t=e&&e.type;if(!done)fail(t==='unavailable-id'?'id_taken':t==='peer-unavailable'?'not_found':'upstream_error');});
+  peer.on('disconnected',()=>{try{if(!peer.destroyed)peer.reconnect();}catch(e){}});
+});}
+async function roomApi(){if(NET.api!==undefined)return NET.api;let api=null;
+  if(window.claude&&typeof window.claude.use==='function'){try{api=await window.claude.use('room');}catch(e){api=null;}NET.api=api;}
+  else{api=await peerApi();if(api)NET.api=api;}
+  return api;}
+const joinRoom=(api,name,isHost)=>api.kind==='peer'?api.join(name,isHost):api.join(name);
+
 function bcast(d){if(NET.role!=='host'||!NET.room)return;NET.room.emit('lt',d).catch(()=>{});}
 function sendIntent(d){if(NET.role!=='guest'||!NET.room)return;NET.room.emit('lt',Object.assign({},d,{k:'i'})).catch(e=>{if(e&&e.code==='not_permitted'){NET.spectate=true;toast('你的權限只能觀戰，不能操作',true);}});}
 function pack(){
@@ -1722,12 +1771,13 @@ function unpack(S){
 async function netMenu(){
   openModal(`<div class="bh"><h3>代碼連線 PK</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb" id="netBody"><p class="note">正在連線…</p></div>`,'sm');$('#mx').onclick=closeModal;
   const api=await roomApi();if($('#modal').hidden||!$('#netBody'))return;
+  if(!api&&!(window.claude&&window.claude.use)){$('#netBody').innerHTML=`<p style="margin-top:0">連線元件載入失敗。</p><p class="note">代碼連線需要網路連線，請確認可以上網後再試一次。</p>`;return;}
   if(!api){$('#netBody').innerHTML=`<p style="margin-top:0">這個頁面現在用不了即時連線。</p><p class="note">代碼連線要在 claude.ai 上登入後開啟這個 Artifact。朋友要加入，需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以進房觀戰，但不能操作。</p>`;return;}
   const nick=LS.get('dcdh.nick')||'阿德';
   $('#netBody').innerHTML=`<div class="row2"><b>你的名字</b><input class="nm" id="nNick" maxlength="6" value="${esc(nick)}" aria-label="你的名字"></div>
     <div class="row2"><button class="btn pri" id="nHost" type="button">建立房間</button><span class="note">拿到五碼代碼，傳給朋友</span></div>
     <div class="row2" style="border-top:2px dashed #d8c9a8;padding-top:12px"><input class="codein" id="nCode" maxlength="5" placeholder="代碼" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="房間代碼"><button class="btn pri" id="nJoin" type="button">加入房間</button></div>
-    <p class="note">最多 4 人，可以混電腦玩家。朋友需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以觀戰。房主的頁面負責跑遊戲，遊戲中請不要關掉。</p>`;
+    <p class="note">最多 4 人，可以混電腦玩家。${api.kind==='peer'?'這是點對點連線（PeerJS）：朋友打開同一個網址、輸入代碼就能加入，不用註冊。少數 4G 或公司網路可能連不上。':'朋友需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以觀戰。'}房主的頁面負責跑遊戲，遊戲中請不要關掉。</p>`;
   const nk=()=>{const v=cleanNick($('#nNick').value.trim());LS.set('dcdh.nick',v);return v;};
   $('#nHost').onclick=()=>netHost(nk());
   $('#nJoin').onclick=()=>netJoin($('#nCode').value,nk());
@@ -1753,8 +1803,10 @@ function netInfo(){if(!NET.role)return;
 /* 房主 */
 async function netHost(nick){
   const api=await roomApi();if(!api)return;
-  let code='';for(let k=0;k<5;k++)code+=CODE_CH[rnd()*CODE_CH.length|0];
-  let room;try{room=await api.join('dcdh-'+code);}catch(e){toast('建立房間失敗：'+(e&&e.code||'請稍後再試'),true);return;}
+  let code='',room=null;
+  for(let tries=0;tries<4&&!room;tries++){code='';for(let k=0;k<5;k++)code+=CODE_CH[rnd()*CODE_CH.length|0];
+    try{room=await joinRoom(api,'dcdh-'+code,true);}catch(e){if(e&&e.code==='id_taken')continue;toast('建立房間失敗：'+(e&&e.code||'請稍後再試'),true);return;}}
+  if(!room){toast('建立房間失敗，請稍後再試',true);return;}
   if(G)clearBoard();
   Object.assign(NET,{role:'host',room,code,phase:'lobby',seat:0,nick,epoch:Math.random().toString(36).slice(2,8),seq:0,cands:new Map()});
   NET.lobby={rounds:20,seats:[{t:'h',name:nick,peer:''},{t:'n',name:'',peer:''},{t:'a',name:'',peer:''},{t:'o',name:'',peer:''}]};
@@ -1821,7 +1873,8 @@ async function hostIntent(peer,d){if(!G||G.over)return;const p=G.players.find(q=
 async function netJoin(code,nick){
   code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(code.length!==5){toast('代碼是五個英數字',true);return;}
   const api=await roomApi();if(!api)return;
-  let room;try{room=await api.join('dcdh-'+code);}catch(e){toast('加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
+  toast('正在連線房間…',true);
+  let room;try{room=await joinRoom(api,'dcdh-'+code,false);}catch(e){toast(e&&e.code==='not_found'?'找不到這個房間：請確認代碼，或請房主確認房間頁面還開著':'加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
   if(G)clearBoard();
   Object.assign(NET,{role:'guest',room,code,phase:'lobby',seat:-1,nick,lastSeq:0,lastE:'',lastAt:0,hostPeer:'',lobbyView:null,spectate:false});
   netListen();room.presence({nick}).catch(()=>{});
