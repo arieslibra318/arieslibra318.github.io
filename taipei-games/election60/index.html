@@ -1,0 +1,1894 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>選戰60天</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap">
+<style>
+/* Layout: full-bleed night map of the city; war-room HUD cards float on its edges; dialogs rise over it */
+:root{
+  color-scheme:dark;
+  --night:#0b1320; --panel:#131d2e; --panel2:#1a2740; --line:#2a3b58; --ink:#edf1f7; --mute:#93a2b7;
+  --teal:#38d3b2; --teal-ink:#05261d; --red:#ef4f5d; --amber:#f3b544; --good:#5fd39a;
+  --you:#ff8a3d; --opA:#a184ff; --opB:#5ec4ef;
+  --paper:#f4eee2; --paper-ink:#28241f; --paper-mute:#776c60; --paper-line:#e3d9c7; --paper-ok:#dcefe4; --paper-teal:#1d8a72;
+  --display:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",monospace;
+  --gl:max(16px, env(safe-area-inset-left,0px)); --gr:max(16px, env(safe-area-inset-right,0px));
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--night);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;overflow:hidden}
+button{font:inherit;color:inherit}
+#app{position:relative;height:100%;overflow:hidden}
+.screen{position:absolute;inset:0;overflow:auto;padding-block:40px;padding-left:var(--gl);padding-right:var(--gr)}
+.wrap{max-width:1180px;margin:0 auto}
+.eyebrow{font-size:12px;letter-spacing:.22em;color:var(--teal);font-weight:700}
+h1,h2,h3{margin:0;text-wrap:balance}
+.big{font-family:var(--display);font-weight:900;font-size:clamp(34px,6vw,60px);line-height:1.15;letter-spacing:.02em}
+.mute{color:var(--mute)}
+.btn{border:0;border-radius:10px;padding:11px 18px;cursor:pointer;background:var(--teal);color:var(--teal-ink);font-weight:700;line-height:1.3}
+.btn:hover{filter:brightness(1.08)}
+.btn:focus-visible,.opt:focus-visible,.vcard:focus-visible,.look:focus-visible,.pol:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.red{background:var(--red);color:#fff}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.kbd{display:inline-block;font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:0 7px;background:var(--panel2);color:var(--ink);min-width:22px;text-align:center}
+.fig svg{display:block;width:100%;height:100%}
+
+/* title */
+#scrTitle{background:radial-gradient(1100px 600px at 20% 0%,#16243a 0%,var(--night) 60%)}
+.vcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:20px;margin-top:36px}
+.vcard{display:grid;grid-template-columns:140px minmax(0,1fr);gap:8px;background:linear-gradient(160deg,#16223a,#101a2b);border:1px solid var(--line);border-top:2px solid var(--amber);border-radius:4px;text-align:left;cursor:pointer;padding:0;min-height:230px;overflow:hidden}
+.vcard.teal{border-top-color:var(--teal)}
+.vcard.locked{cursor:not-allowed;opacity:.6}
+.vcard .fig{align-self:end;height:210px}
+.vcard .vb{padding:22px 20px 20px 4px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.vcard .tag{align-self:flex-start;font-size:12px;border:1px solid var(--line);padding:2px 10px;color:var(--amber);letter-spacing:.1em}
+.vcard.teal .tag{color:var(--teal)}
+.vcard h3{font-family:var(--display);font-size:26px;font-weight:900}
+.vcard p{margin:0;color:#c8d2df;font-size:14px}
+.vcard .go{margin-top:auto;font-weight:700;color:var(--amber);letter-spacing:.08em}
+.vcard.teal .go{color:var(--teal)}
+.links{margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.disclaim{font-size:13px;color:var(--amber);max-width:62ch}
+
+/* setup */
+.setup{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:10px 16px;align-items:center;margin-top:20px;font-size:14px}
+.keys .k{display:flex;gap:4px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.field label{font-weight:700;font-size:14px}
+input[type=text]{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--ink);font:inherit}
+input[type=text]:focus{outline:2px solid var(--teal);outline-offset:1px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg button{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:left;cursor:pointer}
+.seg button b{display:block;font-size:16px}
+.seg button span{font-size:12px;color:var(--mute)}
+.seg button.on{border-color:var(--teal);background:#163a3c}
+.looks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.look{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 8px 10px;cursor:pointer;text-align:center}
+.look .fig{height:200px}
+.look.on{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
+
+/* overlays */
+.ov{position:absolute;inset:0;z-index:30;background:rgba(5,9,16,.64);display:grid;place-items:center;padding:20px var(--gr) 20px var(--gl);overflow:auto}
+.dlg{width:min(720px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;max-height:100%;overflow:auto}
+.dlg.wide{width:min(1100px,100%)}
+.dlg h2{font-size:24px;margin:6px 0 12px;font-family:var(--display);font-weight:900}
+.dlg p{margin:0 0 10px}
+.drow{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;justify-content:flex-end}
+.note{background:var(--panel2);border-left:3px solid var(--teal);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:14px}
+.note.warn{border-left-color:var(--amber)}
+.note.bad{border-left-color:var(--red)}
+.list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.list .li{display:flex;justify-content:space-between;gap:12px;background:var(--panel2);padding:8px 12px;border-radius:8px;font-size:14px}
+.pollbars{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.pb{display:grid;grid-template-columns:92px 1fr 56px;gap:10px;align-items:center;font-size:14px}
+.pb .tr{height:12px;background:var(--panel2);border-radius:6px;overflow:hidden}
+.pb .tr i{display:block;height:100%;border-radius:6px}
+.pb .n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+
+/* policy */
+.polgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px;margin-top:14px}
+.issue{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.issue h3{font-size:16px}
+.pol{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.pol.on{border-color:var(--you);background:#3a2617}
+.pol .t{display:flex;justify-content:space-between;gap:8px;font-weight:700}
+.pol .lv{font-size:11px;padding:0 6px;border-radius:4px;background:#24324b;color:var(--mute);font-weight:500;white-space:nowrap}
+.pol .lv.l2{background:#4a2026;color:#ffb0b6}
+.pol .fx{font-size:12px;color:var(--mute)}
+.budget{display:flex;gap:16px;align-items:center;flex-wrap:wrap;position:sticky;top:-26px;background:var(--panel);padding:10px 0;z-index:2}
+.budget .meter{flex:1;min-width:160px;height:10px;background:var(--panel2);border-radius:5px;overflow:hidden}
+.budget .meter i{display:block;height:100%;background:var(--you)}
+.budget .meter i.over{background:var(--red)}
+
+/* brief */
+.brief{display:grid;grid-template-columns:260px minmax(0,1fr) 300px;gap:18px;margin-top:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h3{font-size:14px;color:var(--mute);letter-spacing:.12em;margin-bottom:10px}
+.memo{background:var(--paper);color:var(--paper-ink);border-radius:14px;padding:22px 24px;position:relative}
+.memo h3{color:var(--paper-ink);font-size:22px;letter-spacing:0;font-family:var(--display);font-weight:900}
+.memo .row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;padding:11px 0;border-bottom:1px solid var(--paper-line)}
+.memo .row b{color:var(--paper-teal);font-family:var(--display)}
+.memo .row small{display:block;color:var(--paper-mute);font-size:13px}
+.memo .foot{margin-top:14px;background:#ebe1cd;border-radius:8px;padding:8px 12px;font-size:13px;color:var(--paper-mute)}
+.staff{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.staff .fig{width:74px;height:74px;margin:0 auto;border-radius:50%;overflow:hidden;background:#22324c;border:2px solid var(--line)}
+.staff b{display:block;font-size:14px;margin-top:4px}
+.staff small{color:var(--mute);font-size:11px}
+.rules{margin:8px 0 0;padding-left:18px;font-size:13px;display:flex;flex-direction:column;gap:6px}
+.rules li::marker{color:var(--amber)}
+.timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));margin-top:22px;position:relative}
+.timeline::before{content:"";position:absolute;left:7%;right:7%;top:7px;height:2px;background:var(--line)}
+.timeline div{text-align:center;position:relative;font-size:12px}
+.timeline i{display:block;width:14px;height:14px;border-radius:50%;background:var(--panel2);border:2px solid var(--mute);margin:0 auto 6px}
+.timeline div:first-child i{background:var(--teal);border-color:var(--teal)}
+.timeline b{display:block;font-family:var(--mono);font-size:13px}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar{display:grid;grid-template-columns:34px 1fr 40px;gap:8px;align-items:center;font-size:13px}
+.bar .tr{height:8px;background:#22324c;border-radius:4px;overflow:hidden}
+.bar .tr i{display:block;height:100%;background:var(--teal);border-radius:4px;transition:width .3s}
+.bar .tr i.hun{background:var(--amber)}
+.bar .tr i.low{background:var(--red)}
+.bar .v{font-family:var(--mono);font-size:12px;text-align:right;color:var(--mute)}
+
+/* game */
+#scrGame{padding:0;overflow:hidden}
+#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.hud{position:absolute;z-index:5;background:rgba(12,19,32,.88);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(6px)}
+.hclock{top:16px;left:var(--gl);padding:10px 16px}
+.hclock .s{font-size:12px;color:var(--mute)}
+.hclock .t{font-family:var(--mono);font-size:40px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.hclock .d{font-size:13px;color:var(--teal);font-weight:700}
+.hright{top:16px;right:var(--gr);width:min(320px,calc(100% - 32px));display:flex;flex-direction:column;gap:8px;background:none;border:0;backdrop-filter:none}
+.hright>div{background:rgba(12,19,32,.88);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.chips div{background:#1c2a42;border-radius:6px;padding:3px 6px;text-align:center}
+.chips small{display:block;font-size:10px;color:var(--mute);letter-spacing:.08em}
+.chips b{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.hbtns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;padding:0!important;background:none!important;border:0!important}
+.hbtns .btn{background:rgba(12,19,32,.9);color:var(--ink);border:1px solid var(--line);padding:6px 10px;font-size:13px}
+.hbtns .btn .kbd{margin-right:4px;font-size:11px}
+.pend h4{margin:0 0 6px;font-size:13px;display:flex;justify-content:space-between;color:var(--mute)}
+.pend .empty{font-size:13px;color:var(--mute)}
+.pitem{display:block;width:100%;text-align:left;background:#3a1a22;border:0;border-left:3px solid var(--red);border-radius:6px;padding:6px 10px;margin-top:6px;cursor:pointer}
+.pitem.normal{background:#2a2a1c;border-left-color:var(--amber)}
+.pitem b{font-family:var(--mono);font-size:12px;margin-right:6px}
+.pitem small{display:block;color:var(--mute);font-size:11px}
+.hint{position:absolute;z-index:5;left:50%;bottom:16px;transform:translateX(-50%);max-width:calc(100% - 32px);background:rgba(12,19,32,.9);border:1px solid var(--line);border-radius:999px;padding:7px 18px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hint em{font-style:normal;color:var(--amber);font-weight:700}
+.sheet{position:absolute;z-index:8;left:50%;bottom:62px;transform:translateX(-50%);width:min(560px,calc(100% - 32px));background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;max-height:calc(100% - 140px);overflow:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.sheet header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.sheet header b{font-size:18px}
+.sheet header small{display:block;color:var(--mute);font-size:12px}
+.opt{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.opt:hover{border-color:var(--teal)}
+.opt[disabled]{opacity:.5;cursor:not-allowed}
+.opt .n{display:grid;place-items:center;width:26px;height:26px;border-radius:6px;background:#22324c;font-family:var(--mono);font-size:13px}
+.opt small{display:block;color:var(--mute);font-size:12px}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap;font-weight:700}
+.badge.ok{background:#173d34;color:var(--teal)}
+.badge.meh{background:#3b3119;color:var(--amber)}
+.badge.no{background:#3d1d24;color:#ff9aa2}
+.check{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--mute)}
+.eatbar{position:absolute;z-index:8;left:50%;bottom:62px;transform:translateX(-50%);width:min(620px,calc(100% - 32px));background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 18px 14px 120px;min-height:96px}
+.eatbar .fig{position:absolute;left:8px;bottom:0;width:104px;height:120px}
+.eatbar .top{display:flex;justify-content:space-between;font-weight:700}
+.eatbar .top span{color:var(--amber);font-family:var(--mono)}
+.eatbar .tr{height:10px;background:#22324c;border-radius:5px;margin:8px 0;overflow:hidden}
+.eatbar .tr i{display:block;height:100%;width:0;background:var(--amber)}
+.eatbar small{color:var(--mute)}
+.toasts{position:absolute;z-index:40;top:16px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(460px,calc(100% - 32px))}
+.toast{background:rgba(16,26,43,.96);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tin .25s ease-out}
+.toast small{display:block;color:var(--teal);font-size:12px}
+@keyframes tin{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+
+/* call */
+.call{position:relative;display:grid;grid-template-columns:220px minmax(0,1fr);width:min(860px,100%);background:#111a2a;border:1px solid rgba(239,79,93,.55);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.call .fig{height:260px;align-self:end}
+.call .cb{padding:26px 28px 22px 8px}
+.crow{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.ring{color:var(--red);display:flex;align-items:center;gap:6px}
+.ring::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(239,79,93,.25);animation:pulse 1s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(239,79,93,0)}}
+.crow .tm{color:#ff9aa2;font-family:var(--mono)}
+.ctext{font-size:clamp(17px,2.2vw,22px);line-height:1.6;margin:12px 0 18px}
+.cbtns{display:flex;gap:10px;flex-wrap:wrap}
+.cnote{font-size:13px;color:var(--mute);margin:12px 0 0}
+.cme{position:absolute;right:var(--gr);bottom:0;width:min(300px,28vw);height:min(380px,42vh);pointer-events:none}
+
+/* panel */
+.pwrap{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);width:min(1180px,100%);align-items:end;gap:0;max-height:100%}
+.pwrap>.fig{height:min(560px,70vh)}
+.pbox{background:#111a2a;border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 40px);overflow:auto;align-self:center}
+.phead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.phead .tg{display:inline-block;background:var(--red);color:#fff;font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;margin-right:8px;vertical-align:3px}
+.phead .tg.normal{background:#8a6a1f}
+.phead b{font-size:20px}
+.phead .sub{font-size:13px;color:var(--mute)}
+.gauges{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;background:#0a1220;border:1px solid var(--line);border-radius:10px;padding:12px}
+.gauges div small{display:block;font-size:11px;color:var(--mute)}
+.gauges div b{display:block;font-family:var(--mono);font-size:18px}
+.gauges div span{font-size:12px}
+.lv-good{color:var(--good)} .lv-mid{color:var(--amber)} .lv-bad{color:#ff7d88}
+.plog{display:flex;flex-direction:column;gap:8px}
+.line{background:#17233a;border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:8px 12px;font-size:14px}
+.line.staff{border-left-color:var(--red);background:#2a1620}
+.line.me{align-self:flex-end;border-left:0;border-right:3px solid var(--teal);border-radius:8px 0 0 8px;background:#173a3a;max-width:85%}
+.line.res{border-left-color:var(--amber);background:#2b2615}
+.fxchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.fxchips span{font-size:12px;padding:1px 8px;border-radius:999px;background:#22324c}
+.fxchips .up{color:var(--good)} .fxchips .dn{color:#ff8b95}
+.pq{font-weight:700;font-size:16px;border-top:1px solid var(--line);padding-top:12px}
+.hintx{font-size:12px;color:var(--amber);display:block}
+
+/* mini */
+.mini{width:min(640px,100%);background:#1b1220;border:1px solid rgba(239,79,93,.45);border-radius:16px;padding:24px;text-align:center}
+.mini p{margin:0 0 6px;font-size:14px}
+.stage{position:relative;width:200px;height:200px;margin:14px auto}
+.stage .tgt,.stage .shr{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%}
+.stage .tgt{border:6px solid rgba(95,211,154,.55)}
+.stage .shr{border:4px solid var(--red);transform:scale(1.9)}
+.stage .dot{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;background:var(--red);display:grid;place-items:center;font-weight:900;font-family:var(--display);font-size:20px;color:#fff}
+.cnt{font-family:var(--mono);font-size:28px;font-weight:700}
+.fb{height:24px;font-weight:700}
+.fb.good{color:var(--good)} .fb.bad{color:#ff8b95}
+.tbar{height:8px;background:#22324c;border-radius:4px;overflow:hidden;margin:10px 0}
+.tbar i{display:block;height:100%;background:var(--amber);width:100%}
+.qa{display:flex;flex-direction:column;gap:8px;text-align:left;margin-top:12px}
+
+/* result */
+#scrResult{background:radial-gradient(900px 500px at 70% 10%,#1d2a46,var(--night) 70%)}
+.res{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.paper{background:var(--paper);color:var(--paper-ink);display:grid;grid-template-columns:210px minmax(0,1fr)}
+.paper>.fig{background:linear-gradient(180deg,#e9e0cd,#d9cdb5);align-self:stretch;display:flex;align-items:flex-end}
+.paper>.fig svg{height:auto}
+.pc{padding:28px 30px;min-width:0}
+.pc .eb{color:#c4502e;font-size:13px;font-weight:700;letter-spacing:.1em}
+.pc h1{font-family:var(--display);font-weight:900;font-size:clamp(26px,3.4vw,38px);line-height:1.25;margin:8px 0 16px}
+.sgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--paper-line)}
+.sgrid div{padding:10px 4px;border-bottom:1px solid var(--paper-line)}
+.sgrid small{display:block;color:var(--paper-mute);font-size:12px}
+.sgrid b{font-family:var(--mono);font-size:24px;font-variant-numeric:tabular-nums}
+.sgrid b i{font-style:normal;font-family:var(--body);font-size:12px;color:var(--paper-mute);margin-left:2px}
+.dres{display:flex;flex-direction:column;gap:6px;margin:16px 0}
+.dres div{background:#efe7d6;border-radius:6px;padding:8px 12px;font-size:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.dres div.win{background:var(--paper-ok)}
+.dres b{font-family:var(--mono);font-size:12px;margin-right:6px}
+.edu h4{color:var(--paper-teal);margin:16px 0 6px;font-size:15px}
+.edu p{background:#efe7d6;border-radius:6px;padding:8px 12px;margin:0 0 6px;font-size:14px}
+.edu .src{font-size:12px;color:var(--paper-mute);background:none;padding:0}
+.side{background:linear-gradient(180deg,#151f37 0%,#2c2b4c 52%,#b86537 100%);padding:28px;display:flex;flex-direction:column;gap:14px}
+.side .bign{font-family:var(--mono);font-size:64px;font-weight:700;line-height:1}
+.side .pill{align-self:flex-start;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:4px 14px;font-weight:700;font-size:14px}
+.voice{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;margin-top:auto}
+.voice .fig{width:56px;height:56px;border-radius:50%;overflow:hidden;background:#24324e}
+.voice small{color:#c9d3e6;font-size:12px}
+.voice p{margin:2px 0 0;font-size:15px;line-height:1.7}
+.side .btn{width:100%;max-width:260px}
+.side .btn.ghost{border-color:rgba(255,255,255,.4)}
+
+@media (max-width:980px){
+  .brief{grid-template-columns:minmax(0,1fr)}
+  .brief .cand{display:grid;grid-template-columns:120px 1fr;gap:12px}
+  .pwrap{grid-template-columns:minmax(0,1fr)}
+  .pwrap>.fig{display:none}
+  .res{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:760px){
+  .setup{grid-template-columns:minmax(0,1fr);padding:20px;gap:24px}
+  .hclock{top:10px;padding:6px 10px}
+  .hclock .t{font-size:24px}
+  .hclock .s,.hclock .d{font-size:11px}
+  .hright{top:10px;right:var(--gr);width:calc(100% - 152px);max-width:300px;gap:6px}
+  .hright>div{padding:6px 8px}
+  .bar{grid-template-columns:26px minmax(0,1fr) 30px;gap:4px;font-size:11px}
+  .chips{gap:3px;margin-top:6px}
+  .chips b{font-size:11px}
+  .chips small{font-size:9px;letter-spacing:0}
+  .hbtns{gap:4px}
+  .hbtns .btn{padding:4px 7px;font-size:12px}
+  .hbtns .btn .kbd{display:none}
+  .hright .pend{position:fixed;left:var(--gl);right:var(--gr);bottom:12px;max-height:96px;overflow:auto}
+  .pend .empty{display:none}
+  .pend h4{margin:0}
+  .eatbar{padding-left:16px}
+  .eatbar .fig{display:none}
+  .dlg{padding:18px}
+  .pb{grid-template-columns:70px 1fr 50px}
+  .call{grid-template-columns:minmax(0,1fr)}
+  .call .fig{display:none}
+  .call .cb{padding:20px}
+  .cme{display:none}
+  .gauges{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .paper{grid-template-columns:minmax(0,1fr)}
+  .paper>.fig{display:none}
+  .pc{padding:22px 18px}
+  .sgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .vcard{grid-template-columns:100px minmax(0,1fr)}
+  .vcard .fig{height:170px}
+  .timeline{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:12px}
+  .timeline::before{display:none}
+  .sheet,.eatbar{bottom:12px}
+  .hint{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <section class="screen" id="scrTitle">
+    <div class="wrap">
+      <div class="eyebrow">雲澄市長選舉 · 公民教育模擬</div>
+      <h1 class="big" style="margin-top:10px">選戰60天</h1>
+      <p class="mute" style="font-size:17px;margin:8px 0 0">離投票日還有 60 天。三個人搶 60 萬票，整座城市等你去敲門。</p>
+      <div class="vcards" id="vcards"></div>
+      <div class="links" id="titleLinks"></div>
+      <p class="disclaim" style="margin-top:28px">本遊戲為公民教育用途的虛構模擬。城市、政黨與人物皆為虛構，不對應任何真實政黨或政治人物。</p>
+    </div>
+  </section>
+
+  <section class="screen" id="scrSetup" hidden>
+    <div class="wrap">
+      <div class="setup">
+        <div>
+          <div class="eyebrow" id="setupEyebrow">選戰60天 · 一般民眾體驗版</div>
+          <h1 class="big" style="font-size:clamp(30px,4vw,44px);margin:10px 0 14px" id="setupTitle">D-60 · 登記參選</h1>
+          <p style="color:#c8d2df;margin:0" id="setupDesc">你是新城聯盟推出的市長候選人。從今天起到投票日，你要跑遍雲澄市六個區。幕僚的電話隨時會響：有的是小事，有的會翻盤。吃飯、睡覺、回家陪家人，都得自己找空檔。</p>
+          <div class="keys">
+            <div class="k"><span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span></div><div>走路（按住 Shift 用跑的），也可以直接點地圖</div>
+            <div class="k"><span class="kbd">E</span></div><div>在地點旁邊打開行程：掃街、拜會、吃便當、睡覺</div>
+            <div class="k"><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span></div><div>選擇選項（也可以直接點）</div>
+            <div class="k"><span class="kbd">C</span></div><div>掃街握手、造勢喊口號：照節拍按</div>
+            <div class="k"><span class="kbd">M</span></div><div>全市地圖，再按一次回來</div>
+            <div class="k"><span class="kbd">P</span></div><div>暫停</div>
+          </div>
+        </div>
+        <div>
+          <div class="field"><label for="inName">候選人姓名（必填）</label><input type="text" id="inName" maxlength="8" placeholder="例如：陳家和" autocomplete="off"></div>
+          <div class="field"><label>今年的選情</label>
+            <div class="seg" id="segDiff">
+              <button type="button" data-v="normal" class="on"><b>普通選情</b><span>三強鼎立，你從第三名起跑</span></button>
+              <button type="button" data-v="hard"><b>逆風選情</b><span>對手更強、事件更多，體力掉得快</span></button>
+            </div>
+          </div>
+          <div class="field"><label>選戰長度</label>
+            <div class="seg" id="segLen">
+              <button type="button" data-v="60" class="on"><b>60 天標準</b><span>完整選戰，大約 2 小時</span></button>
+              <button type="button" data-v="30"><b>30 天短版</b><span>從 D-31 開始衝刺，大約 1 小時</span></button>
+            </div>
+          </div>
+          <div class="field"><label>選你的樣子</label>
+            <div class="looks" id="looks">
+              <button type="button" class="look on" data-v="m"><div class="fig" data-face="m:worry"></div><b>男候選人</b></button>
+              <button type="button" class="look" data-v="f"><div class="fig" data-face="f:worry"></div><b>女候選人</b></button>
+            </div>
+          </div>
+          <p class="disclaim">內容包含選舉中的爭議、意外事件與違法誘惑的情節。遊戲僅供公民教育，法規內容以中央選舉委員會公告為準。</p>
+          <div class="drow" style="justify-content:space-between;align-items:center">
+            <button class="btn ghost sm" id="btnBackTitle" type="button">← 換一個版本</button>
+            <button class="btn" id="btnSetupNext" type="button">下一步：定政見</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="scrBrief" hidden></section>
+
+  <section class="screen" id="scrGame" hidden>
+    <canvas id="map" aria-label="雲澄市地圖"></canvas>
+    <div class="hud hclock"><div class="s" id="hDay">第 1 天 · 週二</div><div class="t" id="hTime">07:00</div><div class="d" id="hLeft">距離投票 60 天</div></div>
+    <div class="hud hright">
+      <div>
+        <div class="bars" id="hBars"></div>
+        <div class="chips" id="hChips"></div>
+      </div>
+      <div class="hbtns">
+        <button class="btn" type="button" id="bPause"><span class="kbd">P</span>暫停</button>
+        <button class="btn" type="button" id="bMap"><span class="kbd">M</span>全景</button>
+        <button class="btn" type="button" id="bTrend">走勢</button>
+        <button class="btn" type="button" id="bPol">政見</button>
+        <button class="btn" type="button" id="bEnd">結束今天</button>
+      </div>
+      <div class="pend" id="hPend"></div>
+    </div>
+    <div class="hint" id="hint">點地圖或用方向鍵移動，走到地點按 <em>E</em></div>
+    <div class="sheet" id="sheet" hidden></div>
+    <div class="eatbar" id="eatbar" hidden>
+      <div class="fig" data-face="P:eat"></div>
+      <div class="top"><b id="eatTitle">排骨便當 · 還溫的</b><span id="eatPct">0%</span></div>
+      <div class="tr"><i id="eatFill"></i></div>
+      <small>邊吃邊回血，按 <span class="kbd">E</span> 先不吃了。</small>
+    </div>
+  </section>
+
+  <section class="screen" id="scrResult" hidden></section>
+
+  <div class="ov" id="ovCall" hidden>
+    <div class="call">
+      <div class="fig" id="cFig"></div>
+      <div class="cb">
+        <div class="crow"><span class="ring">電話響了</span><span class="tm" id="cTime"></span></div>
+        <p class="ctext" id="cText"></p>
+        <div class="cbtns" id="cBtns"></div>
+        <p class="cnote" id="cNote"></p>
+      </div>
+    </div>
+    <div class="cme fig" id="cMe"></div>
+  </div>
+
+  <div class="ov" id="ovPanel" hidden>
+    <div class="pwrap">
+      <div class="fig" id="pFig"></div>
+      <div class="pbox">
+        <div class="phead">
+          <div><span class="tg" id="pTag"></span><b id="pTitle"></b><div class="sub" id="pSub"></div></div>
+          <button class="btn sm" type="button" id="pAsk">問幕僚 · 20 分</button>
+        </div>
+        <div class="gauges" id="pGauges"></div>
+        <div class="plog" id="pLog"></div>
+        <div class="pq" id="pQ"></div>
+        <div id="pOpts"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov" id="ovMini" hidden><div class="mini" id="miniBox"></div></div>
+  <div class="ov" id="ovPolicy" hidden><div class="dlg wide" id="polBox"></div></div>
+  <div class="ov" id="ovDlg" hidden><div class="dlg" id="dlgBox"></div></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const get=(v,c)=>typeof v==='function'?v(c):v;
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
+const fmt=m=>{m=Math.round(m);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+const WD=['日','一','二','三','四','五','六'];
+const wdOf=d=>(d+1)%7;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const dn=()=>S.day-(S.start||1)+1;
+
+/* ---------- portraits ---------- */
+const LOOKS={
+  m:{skin:'#f0c7a2',hair:'#1c1c22',front:'short',suit:'#2b3653',shirt:'#e9eef5',sash:1,tie:'#c23b45'},
+  f:{skin:'#f6d3b4',hair:'#2a1d1a',front:'fem',back:'long',suit:'#7a3f5f',shirt:'#fbf6f2',sash:1,fem:1,locks:1,clip:1},
+  cheng:{skin:'#e1b189',hair:'#8f8f96',front:'bald',suit:'#3c4a3b',shirt:'#e1e7dc',glasses:1,vest:1},
+  yu:{skin:'#f3d0b0',hair:'#3b2519',front:'fem',back:'pony',fem:1,suit:'#2b405e',shirt:'#eef3f8',badge:1},
+  zhe:{skin:'#e9c19c',hair:'#18191f',front:'messy',suit:'#5a3534',shirt:'#f0e7e2',hood:1},
+  A:{skin:'#e5b991',hair:'#2b2929',front:'slick',suit:'#2d2546',shirt:'#f0edf7',tie:'#a184ff'},
+  B:{skin:'#f5d3b5',hair:'#4b2c22',front:'fem',back:'long',suit:'#1f4256',shirt:'#f2f8fb',fem:1,locks:1}
+};
+function face(kind,expr){
+  const L=LOOKS[kind]||LOOKS.m; const e=expr||'smile';
+  let s='<svg viewBox="0 0 200 230" preserveAspectRatio="xMidYMax meet" aria-hidden="true">';
+  if(L.back==='long') s+=`<path d="M46 96C38 26 162 26 154 96L164 184C152 198 128 194 118 182L82 182C72 194 48 198 36 184Z" fill="${L.hair}"/>`;
+  if(L.back==='bob') s+=`<path d="M52 94C48 42 152 42 148 94L152 146L48 146Z" fill="${L.hair}"/>`;
+  if(L.back==='pony') s+=`<path d="M138 70C178 78 182 140 156 168C166 132 156 104 136 98Z" fill="${L.hair}"/>`;
+  if(L.hood) s+=`<path d="M48 176C52 150 70 140 100 140C130 140 148 150 152 176Z" fill="#6d4442"/>`;
+  s+=`<path d="M18 230C22 184 54 164 100 162C146 164 178 184 182 230Z" fill="${L.suit}"/>`;
+  if(L.fem) s+=`<path d="M82 164Q100 200 118 164Z" fill="${L.shirt}"/><path d="M86 168Q100 188 114 168" stroke="#f1dfa6" stroke-width="2" fill="none"/><circle cx="100" cy="183" r="3" fill="#f1dfa6"/>`;
+  else s+=`<path d="M82 164L100 202L118 164Z" fill="${L.shirt}"/>`;
+  s+=`<rect x="88" y="134" width="24" height="32" rx="8" fill="${L.skin}"/><rect x="88" y="134" width="24" height="16" fill="#000" opacity=".08"/>`;
+  if(L.tie) s+=`<path d="M96 170L104 170L107 206L100 214L93 206Z" fill="${L.tie}"/>`;
+  if(L.vest) s+=`<path d="M40 230C42 196 56 178 80 168L92 230Z" fill="#ff8a3d"/><path d="M160 230C158 196 144 178 120 168L108 230Z" fill="#ff8a3d"/><text x="56" y="214" font-size="11" font-weight="700" fill="#3a1d08" font-family="Noto Sans TC,sans-serif">志工</text>`;
+  if(L.badge) s+=`<path d="M86 166L96 200M114 166L104 200" stroke="#38d3b2" stroke-width="3"/><rect x="90" y="198" width="22" height="28" rx="3" fill="#fff"/><rect x="94" y="204" width="14" height="4" fill="#38d3b2"/>`;
+  if(L.sash) s+=`<path d="M48 176L70 166L156 230L122 230Z" fill="#d42f3d"/><text transform="translate(86 196) rotate(37)" font-size="13" font-weight="900" fill="#fff" font-family="Noto Sans TC,sans-serif" letter-spacing="2">候選人</text>`;
+  s+=`<ellipse cx="56" cy="102" rx="8" ry="11" fill="${L.skin}"/><ellipse cx="144" cy="102" rx="8" ry="11" fill="${L.skin}"/>`;
+  s+=`<ellipse cx="100" cy="98" rx="44" ry="52" fill="${L.skin}"/>`;
+  const fr={short:'M56 92C52 46 82 34 104 36C130 37 150 54 146 92C138 72 120 62 100 64C82 64 66 72 56 92Z',
+    bangs:'M55 98C48 44 152 38 147 98C136 72 116 60 98 62C80 64 64 76 55 98Z',
+    fem:'M51 106C42 38 92 20 114 28C142 34 158 60 149 106C146 86 140 74 133 67C120 80 92 84 68 74C61 84 55 94 51 106Z',
+    messy:'M54 94C48 50 70 30 92 36L98 26L108 36C136 34 154 56 148 94C140 76 128 70 114 66L104 74L94 64C78 66 64 76 54 94Z',
+    slick:'M56 94C52 46 84 36 106 38C134 40 150 58 146 94C140 76 128 64 112 60C96 70 74 74 56 94Z',
+    bald:'M56 104C54 84 58 72 66 64L70 104ZM144 104C146 84 142 72 134 64L130 104ZM78 52C90 46 112 46 124 52C112 50 92 50 78 52Z'}[L.front];
+  s+=`<path d="${fr}" fill="${L.hair}"/>`;
+  if(L.locks) s+=`<path d="M53 92C44 122 46 152 58 180C66 152 63 122 68 98Z" fill="${L.hair}"/><path d="M147 92C156 122 154 152 142 180C134 152 137 122 132 98Z" fill="${L.hair}"/>`;
+  if(L.clip) s+=`<circle cx="128" cy="56" r="5" fill="#ff8fab"/><circle cx="136" cy="61" r="4.2" fill="#ffb3c6"/><circle cx="130" cy="64" r="3.6" fill="#ff8fab"/><circle cx="131" cy="59" r="1.8" fill="#fff3c4"/>`;
+  const ex=82,ey=104,ex2=118;
+  if(e==='happy'||e==='eat'){
+    s+=`<path d="M${ex-7} ${ey+2}Q${ex} ${ey-6} ${ex+7} ${ey+2}M${ex2-7} ${ey+2}Q${ex2} ${ey-6} ${ex2+7} ${ey+2}" stroke="#1d1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  }else if(e==='shock'){
+    s+=`<ellipse cx="${ex}" cy="${ey}" rx="7" ry="8" fill="#fff"/><ellipse cx="${ex2}" cy="${ey}" rx="7" ry="8" fill="#fff"/><circle cx="${ex}" cy="${ey}" r="3.6" fill="#1d1a1a"/><circle cx="${ex2}" cy="${ey}" r="3.6" fill="#1d1a1a"/>`;
+  }else if(e==='tired'){
+    s+=`<path d="M${ex-7} ${ey}H${ex+7}M${ex2-7} ${ey}H${ex2+7}" stroke="#1d1a1a" stroke-width="3" stroke-linecap="round"/><ellipse cx="${ex}" cy="${ey+3}" rx="4" ry="2.4" fill="#1d1a1a"/><ellipse cx="${ex2}" cy="${ey+3}" rx="4" ry="2.4" fill="#1d1a1a"/><path d="M${ex-8} ${ey+10}Q${ex} ${ey+14} ${ex+8} ${ey+10}M${ex2-8} ${ey+10}Q${ex2} ${ey+14} ${ex2+8} ${ey+10}" stroke="#a0715a" stroke-width="2" fill="none" opacity=".7"/>`;
+  }else{
+    s+=`<ellipse cx="${ex}" cy="${ey}" rx="4.6" ry="5.6" fill="#1d1a1a"/><ellipse cx="${ex2}" cy="${ey}" rx="4.6" ry="5.6" fill="#1d1a1a"/><circle cx="${ex+1.6}" cy="${ey-2}" r="1.5" fill="#fff"/><circle cx="${ex2+1.6}" cy="${ey-2}" r="1.5" fill="#fff"/>`;
+  }
+  const br={worry:`M72 92L90 87M110 87L128 92`,shock:`M72 86Q81 79 90 85M110 85Q119 79 128 86`,tired:`M72 92L90 92M110 92L128 92`}[e]||`M72 90Q81 85 90 89M110 89Q119 85 128 90`;
+  s+=`<path d="${br}" stroke="${L.hair==='#8f8f96'?'#6b6b72':L.fem?L.hair:'#1d1a1a'}" stroke-width="${L.fem?2.4:3.4}" fill="none" stroke-linecap="round"/>`;
+  if(L.fem&&e!=='happy'&&e!=='eat'&&e!=='tired') s+=`<path d="M${ex-4} ${ey-4}l-5 -2.5M${ex2+4} ${ey-4}l5 -2.5" stroke="#1d1a1a" stroke-width="1.8" stroke-linecap="round"/>`;
+  if(L.fem&&(e==='happy'||e==='eat')) s+=`<path d="M${ex+7} ${ey+1}l4 -2M${ex2+7} ${ey+1}l4 -2" stroke="#1d1a1a" stroke-width="1.8" stroke-linecap="round"/>`;
+  if(L.glasses) s+=`<rect x="70" y="95" width="24" height="18" rx="6" fill="none" stroke="#2a2a2a" stroke-width="2.4"/><rect x="106" y="95" width="24" height="18" rx="6" fill="none" stroke="#2a2a2a" stroke-width="2.4"/><path d="M94 103H106" stroke="#2a2a2a" stroke-width="2.4"/>`;
+  s+=`<path d="M100 110Q96 118 101 120" stroke="#a46d52" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  const mo={smile:'<path d="M88 130Q100 140 112 130" stroke="#7a2f2f" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    happy:'<path d="M86 127Q100 146 114 127Z" fill="#7a2f2f"/><path d="M89 128H111" stroke="#fff" stroke-width="3"/>',
+    eat:'<ellipse cx="100" cy="132" rx="9" ry="6" fill="#7a2f2f"/><path d="M128 120l26 -18" stroke="#a6712f" stroke-width="3"/><path d="M130 124l26 -14" stroke="#a6712f" stroke-width="3"/><rect x="148" y="98" width="14" height="10" rx="3" fill="#b46a2c"/>',
+    worry:'<path d="M90 134Q100 128 110 134" stroke="#7a2f2f" stroke-width="3" fill="none" stroke-linecap="round"/>',
+    shock:'<ellipse cx="100" cy="134" rx="7" ry="9" fill="#5a2020"/>',
+    tired:'<path d="M90 133Q100 135 110 131" stroke="#7a2f2f" stroke-width="3" fill="none" stroke-linecap="round"/>'}[e]||'';
+  s+=L.fem?mo.replace(/#7a2f2f/g,'#c0485e').replace(/#5a2020/g,'#a8354c'):mo;
+  if(L.fem&&e!=='happy'&&e!=='eat') s+='<ellipse cx="72" cy="121" rx="7" ry="3.5" fill="#ff8a7a" opacity=".22"/><ellipse cx="128" cy="121" rx="7" ry="3.5" fill="#ff8a7a" opacity=".22"/>';
+  if(e==='worry'||e==='shock') s+='<path d="M146 70C150 78 152 82 148 86C143 88 140 82 146 70Z" fill="#9fd3ff"/>';
+  if(e==='happy'||e==='eat') s+='<ellipse cx="72" cy="120" rx="8" ry="4" fill="#ff8a7a" opacity=".35"/><ellipse cx="128" cy="120" rx="8" ry="4" fill="#ff8a7a" opacity=".35"/>';
+  return s+'</svg>';
+}
+function paintFaces(root){(root||document).querySelectorAll('[data-face]').forEach(n=>{const [k,e]=n.dataset.face.split(':');n.innerHTML=face(k==='P'?(S&&S.look||'m'):k,e);});}
+
+/* ---------- world data ---------- */
+const W=1600,H=1040;
+const DIST={
+  uni:{name:'大學城',short:'大學',voters:7,turnout:.55,base:{P:28,A:24,B:44},rect:[0,0,480,486],tint:'#262b4a',acc:'#8f8cff',people:'學生、首投族',issue:'租屋、氣候、文化',media:1.4},
+  tech:{name:'科技園區',short:'科技',voters:11,turnout:.62,base:{P:30,A:30,B:36},rect:[480,0,640,486],tint:'#1e3446',acc:'#5cc7e8',people:'年輕上班族',issue:'通勤、房價',media:1.3},
+  field:{name:'田野漁村區',short:'田野',voters:8,turnout:.74,base:{P:24,A:46,B:18},rect:[1120,0,480,486],tint:'#24342a',acc:'#86d07e',people:'農漁民、宗親',issue:'產銷、交通不便',media:.5},
+  new:{name:'新興重劃區',short:'重劃',voters:12,turnout:.68,base:{P:32,A:34,B:32},rect:[0,514,480,526],tint:'#352f22',acc:'#f1c056',people:'年輕家庭',issue:'托育、學校、公園',media:1},
+  old:{name:'舊城區',short:'舊城',voters:12,turnout:.72,base:{P:28,A:44,B:22},rect:[480,514,640,526],tint:'#382727',acc:'#f07f6c',people:'長輩、商家',issue:'長照、老市區更新',media:.7},
+  port:{name:'港口工業區',short:'港口',voters:10,turnout:.66,base:{P:30,A:40,B:24},rect:[1120,514,480,526],tint:'#22313a',acc:'#7fbccc',people:'勞工、工會',issue:'就業、工安、空汙',media:.8}
+};
+const DK=Object.keys(DIST);
+const CAND={P:{color:'#ff8a3d',party:'新城聯盟'},A:{name:'黃志偉',color:'#a184ff',party:'晨光黨'},B:{name:'林小晴',color:'#5ec4ef',party:'無黨籍網紅'}};
+const STAFF={cheng:{name:'阿誠',role:'總幹事',area:'舊城區、田野漁村區'},yu:{name:'小瑜',role:'發言人',area:'科技園區、新興重劃區'},zhe:{name:'阿哲',role:'網路小編',area:'港口工業區、大學城'}};
+const LOCS=[
+  {id:'gate',name:'校門口',d:'uni',x:330,y:232,acts:['flyer','talk']},
+  {id:'live',name:'Live House',d:'uni',x:330,y:414,acts:['youth']},
+  {id:'mrt',name:'捷運站',d:'tech',x:640,y:232,acts:['mrt']},
+  {id:'plaza',name:'園區廣場',d:'tech',x:960,y:232,acts:['lunch','startup']},
+  {id:'farm',name:'農會',d:'field',x:1250,y:232,acts:['farm']},
+  {id:'fish',name:'漁港',d:'field',x:1462,y:414,acts:['fish']},
+  {id:'park',name:'親子公園',d:'new',x:330,y:770,acts:['family']},
+  {id:'mall',name:'量販店',d:'new',x:330,y:968,acts:['mall']},
+  {id:'market',name:'傳統市場',d:'old',x:640,y:968,acts:['market']},
+  {id:'temple',name:'大廟',d:'old',x:960,y:968,acts:['temple']},
+  {id:'hq',name:'競選總部',d:'old',x:960,y:770,acts:['eat','nap','water','radio','ads','stream','fund','poll','policy','sleep'],hq:1},
+  {id:'home',name:'家',d:'old',x:640,y:770,acts:['dinner','kids','sleep'],home:1},
+  {id:'union',name:'工會會館',d:'port',x:1250,y:770,acts:['union']},
+  {id:'dock',name:'碼頭',d:'port',x:1462,y:968,acts:['factory','shift']}
+];
+const LOC={};LOCS.forEach(l=>LOC[l.id]=l);
+const AOFF=62;
+const ACTS={
+  flyer:{name:'校門口發文宣',kind:'street',t:60,e:8,v:6,g:1.5,best:[[7,9],[12,13],[16,18]]},
+  talk:{name:'校園演講',kind:'speech',t:90,e:10,v:16,g:2.1,best:[[10,16]],weekday:1,heat:4},
+  youth:{name:'青年座談',kind:'speech',t:120,e:10,v:12,g:2.0,best:[[19,22]],buzz:2,heat:3},
+  mrt:{name:'站口拜票',kind:'street',t:60,e:8,v:8,g:1.6,best:[[7,9],[17,19]]},
+  lunch:{name:'午餐時間座談',kind:'speech',t:60,e:6,v:8,g:1.5,best:[[12,13]]},
+  startup:{name:'新創協會拜會',kind:'group',t:60,e:5,v:4,g:1.3,best:[[10,17]],weekday:1},
+  farm:{name:'農會拜會',kind:'group',t:90,e:6,v:6,g:2.0,best:[[8,16]]},
+  fish:{name:'漁港拜票',kind:'street',t:60,e:10,v:8,g:1.8,best:[[7,8],[15,17]]},
+  family:{name:'公園親子活動',kind:'speech',t:90,e:10,v:6,g:1.7,best:[[9,17]],weekend:1,heat:3},
+  mall:{name:'賣場掃街',kind:'street',t:60,e:8,v:8,g:1.5,best:[[18,21]],weekend:1},
+  market:{name:'市場掃街',kind:'street',t:60,e:10,v:10,g:1.9,best:[[7,10]]},
+  temple:{name:'廟口握手',kind:'street',t:60,e:6,v:6,g:1.5,best:[[7,10],[18,21]]},
+  union:{name:'工會拜會',kind:'group',t:90,e:6,v:6,g:2.0,best:[[10,17]]},
+  factory:{name:'工廠參訪',kind:'group',t:90,e:10,v:6,g:1.7,best:[[8,16]],weekday:1},
+  shift:{name:'下班時間站廠門口',kind:'street',t:60,e:8,v:8,g:1.6,best:[[16,18]]},
+  eat:{name:'吃便當',kind:'eat',t:30,desc:'肚子 +55、體力 +6。吃飯時可能有電話進來。'},
+  nap:{name:'在沙發小睡 30 分鐘',kind:'nap',t:30,desc:'體力 +12'},
+  water:{name:'喝溫水、潤喉',kind:'water',t:15,desc:'嗓子 +15'},
+  radio:{name:'電台專訪',kind:'radio',t:60,e:6,v:10,desc:'聲量 +6，全市小幅加分。偶爾會失言。每天一次。'},
+  ads:{name:'投放網路廣告',kind:'ads',t:30,cost:80,desc:'花 80 萬，聲量 +8，年輕族群加分。'},
+  stream:{name:'小額募款直播',kind:'stream',t:60,e:4,v:8,desc:'每天一次，什麼時段都可以。資金 +25～45 萬，聲量越高募越多。'},
+  fund:{name:'募款餐會',kind:'fund',t:120,e:14,v:10,desc:'18:00–21:00 才能開始。資金 +90～140 萬。'},
+  poll:{name:'做內部民調',kind:'poll',t:30,cost:60,desc:'花 60 萬，看到各區真實數字（誤差 ±1%）。'},
+  policy:{name:'開政見會議',kind:'policy',t:60,desc:'調整政見。每 7 天可以改一次，改太多會被說反覆。'},
+  dinner:{name:'回家吃晚餐',kind:'dinner',t:90,desc:'家庭 +20、肚子 +50、體力 +8。17:00–20:00 才能開始。'},
+  kids:{name:'陪小孩寫功課',kind:'kids',t:60,desc:'家庭 +12、體力 +3'},
+  sleep:{name:'結束今天，回家睡覺',kind:'sleep',t:0,desc:'越早睡，明天體力回得越多。'}
+};
+const ISSUES=[
+  {k:'traffic',name:'交通',ops:[
+    {id:'t1',lv:0,name:'公車路網重整',cost:10,fx:{tech:2,old:1,field:2,new:1}},
+    {id:'t2',lv:1,name:'捷運新線動工',cost:25,fx:{tech:5,new:4,uni:2,field:-1}},
+    {id:'t3',lv:2,name:'全市公車捷運免費',cost:45,fx:{tech:6,uni:6,new:4,old:3}}]},
+  {k:'housing',name:'住宅',ops:[
+    {id:'h1',lv:0,name:'青年租屋補貼加碼',cost:10,fx:{uni:3,tech:2}},
+    {id:'h2',lv:1,name:'社會住宅一萬戶',cost:25,fx:{tech:5,uni:4,new:2,old:-1}},
+    {id:'h3',lv:2,name:'房價五年打五折',cost:45,fx:{tech:7,uni:6,new:4,old:-2}}]},
+  {k:'care',name:'長照',ops:[
+    {id:'c1',lv:0,name:'巷弄長照站加倍',cost:10,fx:{old:3,field:2}},
+    {id:'c2',lv:1,name:'長照到宅 24 小時',cost:25,fx:{old:6,field:4,new:1}},
+    {id:'c3',lv:2,name:'65 歲以上每月發五千',cost:45,fx:{old:8,field:6,tech:-2,uni:-2}}]},
+  {k:'kids',name:'育兒',ops:[
+    {id:'k1',lv:0,name:'公幼名額增加三成',cost:10,fx:{new:3,tech:1}},
+    {id:'k2',lv:1,name:'0–6 歲每月育兒津貼',cost:25,fx:{new:6,tech:3,port:1}},
+    {id:'k3',lv:2,name:'生一個送一百萬',cost:45,fx:{new:8,tech:4,old:-1}}]},
+  {k:'jobs',name:'就業',ops:[
+    {id:'j1',lv:0,name:'青年職訓計畫',cost:10,fx:{port:2,uni:2}},
+    {id:'j2',lv:1,name:'港區產業升級園區',cost:25,fx:{port:6,tech:2,uni:-1,field:-1}},
+    {id:'j3',lv:2,name:'保證全市加薪三成',cost:45,fx:{port:7,tech:3,field:2}}]},
+  {k:'env',name:'環境',ops:[
+    {id:'e1',lv:0,name:'全市植樹十萬棵',cost:10,fx:{uni:2,new:2}},
+    {id:'e2',lv:1,name:'工業區空汙總量管制',cost:25,fx:{uni:4,new:3,field:2,port:-3}},
+    {id:'e3',lv:2,name:'五年內全市零碳',cost:45,fx:{uni:6,new:3,port:-5}}]}
+];
+const LV=['穩健','積極','大跳票'];
+const POL={};ISSUES.forEach(i=>i.ops.forEach(o=>{o.issue=i.k;o.iname=i.name;POL[o.id]=o;}));
+const MILE={1:'今天到選委會完成登記參選，選戰正式開跑。',10:'今天上午抽籤決定候選人號次。',31:'今晚 19:00 是第一場公辦政見發表會。',46:'今晚 19:00 電視辯論會，三位候選人同台。',51:'從今天起進入民調封關期，不能再發布或引述民調。',60:'今晚 19:00 是選前之夜造勢大會，最後一搏。'};
+const EVENING={31:'forum',46:'debate',60:'rally'};
+const NEWS=['氣象局：午後雷陣雨機率六成，掃街記得帶傘。','黃志偉陣營宣布再獲三個宗親會支持。','林小晴昨晚直播破十萬人觀看。','捷運新線環評卡關，通勤族抱怨連連。','高麗菜價格持續低迷，農民叫苦。','房價又創新高，首購族嘆氣。','港區工廠夜間排放遭居民檢舉。','長照床位一位難求，家屬排隊半年。','本週末重劃區親子公園有市集活動。','大學城租屋糾紛增加，學生會要求市府出面。'];
+const CARDS={
+  misinfo:{t:'假訊息：你可以記住的四件事',items:['先看來源：是誰發的？有沒有具名、有沒有原始出處。','看日期：舊新聞、舊照片常被拿來重新包裝。','查一下：丟到事實查核平台或搜尋關鍵字，看有沒有人查證過。','情緒越激動，越要慢一點再轉傳。']},
+  vote:{t:'投票：你可以記住的四件事',items:['帶國民身分證和印章（沒有印章可以簽名），出門前先看投票通知單上的投票所位置。','投票時間是早上八點到下午四點，早點去比較不用排隊。','圈好之後不要把選票亮給別人看，也不要拍照，這是法律禁止的。','投票日當天不能再拉票，候選人和支持者都不能做競選活動。']},
+  law:{t:'選舉法規紅線：你可以記住的四件事',items:['買票、賣票都犯法：收錢或收禮答應投給誰，雙方都會被追究。','看到疑似賄選可以向檢調檢舉，查證屬實有檢舉獎金。','投票日前十天起不能發布、報導或引述民調，這叫「民調封關」。','政治獻金要依法開收據，匿名或來路不明的大筆現金不能收。']},
+  policy:{t:'檢驗政見：你可以記住的四件事',items:['錢從哪裡來：有沒有說清楚預算和財源。','什麼時候做完：有沒有時程和可以檢查的目標。','誰受惠、誰負擔：同一個政策，不同的人感受不同。','以前做到了嗎：看候選人過去的承諾有沒有兌現。']}
+};
+
+/* ---------- events ---------- */
+const o=(t,fx,hint,res)=>({t,fx,hint,res});
+const hasLv2=()=>S.policies.some(id=>POL[id].lv===2);
+const EVENTS=[
+{id:'temple',tier:'normal',who:'cheng',d:'old',loc:'temple',w:3,
+ call:'候選人，大廟的主委說進香團剛回來，你在時間內趕到，可以上台跟信眾說幾句話。',title:'大廟進香回鑾',
+ g:{mood:['熱鬧','good'],media:['地方記者在場','mid'],opp:['黃志偉剛離開','bad']},
+ scene:'鞭炮聲剛停，主委拉著你往廟埕走：「來啦，跟大家講兩句。」',q:'主委請你上台，你怎麼做？',
+ opts:[o('上台致詞，感謝信眾，順便講長照政見',{sup:{old:2.5},voice:-8,time:40},'長輩加分，但很吃嗓子','掌聲不少，幾位阿嬤拉著你說會投給你。'),
+   o('不上台，一桌一桌去握手',{sup:{old:2},energy:-8,time:60},'比較累，但很實在','握了兩百多隻手，主委說你很懂禮數。'),
+   o('說行程太滿，送花籃就好',{sup:{old:-1},time:5},'主委會記得','主委笑笑收下花籃，沒多說什麼。')]},
+{id:'karaoke',tier:'normal',who:'cheng',d:'old',loc:'temple',w:2,
+ call:'廟旁活動中心的長青會在唱卡拉 OK，會長說你來的話留一首歌給你。',title:'長青會卡拉 OK',
+ g:{mood:['很嗨','good'],media:['沒有','good'],opp:['黃志偉的人在場','bad']},
+ scene:'麥克風遞到你面前，螢幕上已經跳出〈愛拚才會贏〉的前奏。',q:'會長把麥克風交給你，你怎麼做？',
+ opts:[o('上台唱一首',{sup:{old:2.5},voice:-15,buzz:2,time:45,chain:['karaokeViral',2]},'長輩超愛，但嗓子會啞','唱到副歌全場一起拍手，有人錄影上傳。'),
+   o('坐著聽，跟每一桌敬茶握手',{sup:{old:1.5},energy:-5,time:60},'穩穩的','會長說你很有禮貌，下次再來。'),
+   o('說嗓子要留著演講，先走了',{sup:{old:-.5},time:5},'保住嗓子','會長揮揮手，繼續唱下一首。')]},
+{id:'streetlight',tier:'normal',who:'cheng',d:'old',w:2,
+ call:'有位阿伯打來總部，說老街的路燈壞了三個月，市府都沒人理。',title:'老街路燈壞了',
+ g:{mood:['很不耐煩','bad'],media:['沒有','good'],opp:['沒動作','good']},
+ scene:'阿伯在電話裡越講越大聲：「你們這些候選人，選前才會出現！」',q:'你怎麼回應這位阿伯？',
+ opts:[o('幫忙通報市府，在粉專公開追蹤進度',{sup:{old:1.5},integ:2,time:20},'慢，但說到做到','三天後路燈修好了，阿伯在市場逢人就說你有在做事。'),
+   o('拍照打卡：「當選第一天就修」',{sup:{old:.5},buzz:3,integ:-2,time:15},'有聲量，但會被問「那現在呢」','按讚不少，但留言有人問：那現在呢？'),
+   o('請阿伯自己打 1999',{sup:{old:-1}},'省時間，但阿伯會不爽','阿伯掛電話前丟下一句：「你們都一樣。」')]},
+{id:'vendor',tier:'normal',who:'cheng',d:'old',loc:'market',w:2,
+ call:'市場攤商來抗議，說我們的宣傳車每天早上開過去，吵到客人都跑了。',title:'宣傳車太吵',
+ g:{mood:['生氣','bad'],media:['有人在拍','mid'],opp:['沒動作','good']},
+ scene:'魚販阿姨雙手扠腰：「你們的車一來，我跟客人講話都聽不到！」',q:'攤商圍過來了，你怎麼做？',
+ opts:[o('當場道歉，宣傳車改走外圍路線',{sup:{old:2},integ:2,time:30},'誠意夠','阿姨氣消了，還塞給你一包魚丸。'),
+   o('改成安靜的步行掃街，親自一攤一攤拜託',{sup:{old:2.5},energy:-8,voice:-6,time:60},'很累，但很有誠意','攤商說：「這樣才像話。」'),
+   o('說這是合法的競選活動',{sup:{old:-2},integ:-1,time:10},'合法，但不得人心','阿姨轉頭跟客人說：「這個不要投。」')]},
+{id:'fakenews',tier:'urgent',who:'yu',d:'tech',w:3,minDay:6,attack:1,
+ call:'網路上有張圖卡說你要砍捷運新線的預算去蓋體育館，已經被轉了兩萬次！',title:'假新聞圖卡瘋傳',
+ g:{mood:['被轉了兩萬次','bad'],media:['記者在問','bad'],opp:['對手支持者在分享','bad']},
+ scene:'小瑜把手機遞給你：圖卡用了你的照片，配上一句你從沒說過的話。',q:'圖卡還在擴散，你先做什麼？',
+ opts:[o('馬上開直播，罵這是對手放的',{buzz:8,integ:-5,time:60,chain:['lawsuit',8]},'聲量大，但沒證據就指控對手','直播觀看很多，但對手揚言提告，議題變成口水戰。'),
+   o('放出政見原文和預算表，請查核平台查證',{sup:{tech:3,new:1},integ:5,time:120,card:'misinfo'},'慢一點，但最站得住','兩小時後查核平台判定圖卡為錯誤訊息，不少人回頭刪文。'),
+   o('不理它，過幾天就沒人記得',{sup:{tech:-3,uni:-1},buzz:-2},'省事，但謠言會繼續跑','圖卡在家長群組又轉了一輪，科技園區的支持掉了。')]},
+{id:'volunteer',tier:'urgent',who:'zhe',d:'uni',w:2,minDay:5,
+ call:'糟了，有個志工用粉專帳號回酸民「窮就搬走」，被截圖了！',title:'志工失言被截圖',
+ g:{mood:['學生在罵','bad'],media:['網媒在寫','bad'],opp:['林小晴轉發','bad']},
+ scene:'阿哲臉色發白：「我已經先把留言刪了，可是截圖到處都是。」',q:'你要怎麼處理？',
+ opts:[o('公開道歉，親自打電話給被罵的網友',{sup:{uni:1,tech:.5},integ:3,time:45},'承認錯誤，止血最快','網友收下道歉，還說你是第一個親自打來的候選人。'),
+   o('發聲明說是志工個人行為',{sup:{uni:-1.5},integ:-2,time:15},'切割太快會被說推卸','網友不買帳：「粉專是你的，責任也是你的。」'),
+   o('嗆回去：酸民本來就該罵',{sup:{uni:-3,tech:-1.5},buzz:6,integ:-4},'有聲量，但年輕人會走光','聲量衝高，但大學城的留言幾乎一面倒罵你。')]},
+{id:'union',tier:'normal',who:'zhe',d:'port',loc:'union',w:3,
+ call:'工會理事長請你今天過去一趟，他們準備了一份「港區不裁員」承諾書要你簽。',title:'工會的承諾書',
+ g:{mood:['期待','mid'],media:['工會刊物','mid'],opp:['黃志偉已簽','bad']},
+ scene:'理事長把承諾書推到你面前：「黃志偉上禮拜就簽了，你呢？」',q:'承諾書寫著「保證港區四年不裁員」，你怎麼做？',
+ opts:[o('簽了再說',{sup:{port:4},integ:-3,time:30,chain:['layoff',16]},'工會很開心，但市長管不了民間企業裁員','理事長用力拍你的肩，會館裡響起掌聲。'),
+   o('不簽保證，承諾成立勞資協商平台',{sup:{port:1.5},integ:3,time:60},'比較實在，但現場不會太熱烈','理事長想了想說：「至少你沒有亂開支票。」'),
+   o('婉拒，說要回去研究',{sup:{port:-2},time:20},'工會會覺得你不挺勞工','理事長收回承諾書，臉色有點難看。')]},
+{id:'smog',tier:'normal',who:'zhe',d:'port',w:2,
+ call:'港區居民在臉書社團抗議空汙，有人標記你，問你的立場是什麼。',title:'港區空汙抗議',
+ g:{mood:['兩派吵翻','mid'],media:['地方新聞','mid'],opp:['黃志偉說要顧產業','mid']},
+ scene:'社團裡一邊是氣喘孩子的照片，一邊是「沒有工廠就沒有工作」的留言。',q:'你要怎麼表態？',
+ opts:[o('支持工業區空汙總量管制',{sup:{uni:1.5,new:1,port:-1.5},time:20},'年輕人和家長加分，港區工人會擔心','大學城一片叫好，但工會群組開始討論你。'),
+   o('產業和健康都要顧：先設監測站、公開數據',{sup:{port:1,uni:.5,new:.5},integ:1,time:30},'不會大好，但很少人討厭','兩邊都有人說：「至少有在做功課。」'),
+   o('不表態，等選後再說',{sup:{port:-.5,uni:-1}},'兩邊都不滿意','留言區有人說：「又一個不敢講話的。」')]},
+{id:'blast',tier:'crisis',who:'zhe',d:'port',loc:'dock',w:2,minDay:12,
+ call:'候選人！港區一間工廠氣爆，消防車都到了，記者也在現場，你快來！',title:'港區工廠氣爆',
+ g:{mood:['驚慌','bad'],media:['電視台 SNG 車','bad'],opp:['黃志偉在路上','mid']},
+ scene:'空氣裡都是焦味，消防員在封鎖線內忙進忙出，家屬圍在外面哭。',q:'現場很亂，你先做什麼？',
+ opts:[o('不擋路，協助家屬聯繫醫院、配合消防',{sup:{port:3.5,all:.5},integ:4,energy:-10,time:120},'不上鏡頭，但做的是對的事','你陪家屬等到深夜，隔天報紙角落寫了一小段，工人們都記得。'),
+   o('站在封鎖線前開記者會',{sup:{port:-1.5},buzz:6,integ:-4,time:60},'曝光高，但會被說搭災難的秀','記者會畫面被罵「搶鏡頭」，消防員還得繞過你們。'),
+   o('發文致哀就好，不去現場',{sup:{port:-1.5},time:10},'安全，但港區會覺得你不在乎','貼文按讚不多，有人留言：「人呢？」')]},
+{id:'typhoon',tier:'crisis',who:'zhe',d:'field',loc:'fish',w:2,minDay:14,
+ call:'颱風外圍環流，漁村的堤防在滲水，有幾戶人家還沒撤離！記者已經在現場了！',title:'颱風夜，堤防滲水',
+ g:{mood:['焦急','bad'],media:['記者在現場','bad'],opp:['還沒到場','good']},
+ scene:'雨打在臉上會痛，里長拿著擴音器挨家挨戶喊。',q:'你到了漁港，怎麼做？',
+ opts:[o('協助里長通報撤離，配合公部門指揮',{sup:{field:4,all:.4},integ:4,energy:-12,time:120},'不搭秀，最實在','天亮前所有人都撤到活動中心，里長在臉書謝謝你。'),
+   o('在堤防上對著鏡頭講話',{sup:{field:-2},buzz:5,integ:-5,time:45},'畫面好看，但很危險','畫面很有張力，但消防局長公開說：請政治人物不要靠近危險區。'),
+   o('冷處理，先回總部',{sup:{field:-3},time:10},'保住體力，但漁村會記得','隔天漁村的人說，風雨最大的時候沒看到你。')]},
+{id:'cabbage',tier:'normal',who:'cheng',d:'field',loc:'farm',w:3,
+ call:'高麗菜價格崩盤，農會總幹事找了一群菜農，想聽你怎麼說。',title:'菜價崩盤',
+ g:{mood:['沮喪','bad'],media:['農業記者','mid'],opp:['黃志偉說要收購','mid']},
+ scene:'倉庫裡堆滿賣不掉的高麗菜，一位菜農說：「一顆不到五塊，連工錢都不夠。」',q:'菜農在等你開口，你怎麼做？',
+ opts:[o('留下來聽完，提出產銷平台和學校午餐採購',{sup:{field:3},energy:-8,integ:2,time:90,chain:['youngFarm',10]},'具體，農民聽得進去','總幹事把你的構想抄在白板上，說會轉給青農。'),
+   o('當場買一卡車高麗菜拍照',{sup:{field:1.5},money:-20,buzz:4,integ:-1,time:30},'畫面好，但治標不治本','照片很紅，但有農民私下說：「買一車有什麼用？」'),
+   o('說菜價是中央的事',{sup:{field:-3},time:10},'實話，但農民不愛聽','倉庫裡一片安靜，有人直接走了出去。')]},
+{id:'bribe',tier:'urgent',who:'cheng',d:'field',w:2,minDay:15,once:1,
+ call:'田野那邊有位地方人士說，他可以幫你「處理」兩千票，只要先給一筆茶水費……',title:'有人說能幫你「處理」票',
+ g:{mood:['私下約談','mid'],media:['沒有','good'],opp:['聽說也有人找他','mid']},
+ scene:'阿誠壓低聲音：「他說名單都準備好了，一票五百。」',q:'這是買票。你怎麼做？',
+ opts:[o('拒絕，並提醒對方這是違法的',{integ:3,card:'law',time:15},'守住紅線','對方摸摸鼻子走了。阿誠鬆了一口氣。'),
+   o('拒絕，並向檢調檢舉',{integ:5,buzz:2,sup:{field:-1},card:'law',time:45},'守住紅線，地方人士會不爽','檢調受理了。地方上有人說你不給面子，也有人說你有骨氣。'),
+   o('收下名單，叫阿誠去「處理」',{sup:{field:3},flag:'bribe',card:'law'},'這是犯罪','阿誠沉默很久，最後說：「好，我去。」')]},
+{id:'cash',tier:'normal',who:'cheng',d:'old',w:2,minDay:8,once:1,
+ call:'有位建商老闆拎了一袋現金到總部，說要捐給你，但不要開收據。',title:'一袋不要收據的現金',
+ g:{mood:['老闆在等','mid'],media:['沒有','good'],opp:['聽說他兩邊都捐','mid']},
+ scene:'紙袋放在會議桌上，老闆笑著說：「小意思，不用寫名字啦。」',q:'你怎麼處理這袋錢？',
+ opts:[o('請對方走正式捐款程序、開收據',{money:30,integ:2,card:'law',time:20},'少一點，但乾淨','老闆皺眉，最後開了一張 30 萬的收據。'),
+   o('婉拒，請老闆把錢帶回去',{integ:1,time:10},'什麼都沒有，但睡得著','老闆聳聳肩，把紙袋拎走了。'),
+   o('收下，不開收據',{money:150,flag:'dirtyMoney'},'錢很多，但這是違法的政治獻金','袋子很重。阿誠把它鎖進櫃子，誰都沒再提。')]},
+{id:'dirty',tier:'crisis',who:'yu',d:'old',w:6,minDay:22,once:1,attack:1,cond:()=>S.flags.dirtyMoney,
+ call:'週刊拍到那位建商進出總部，標題寫你收了不明現金！記者擠在門口！',title:'週刊爆料：不明現金',
+ g:{mood:['全市都在看','bad'],media:['每一台都在播','bad'],opp:['兩位對手同時開記者會','bad']},
+ scene:'小瑜把週刊攤在桌上，照片拍得清清楚楚。',q:'記者在門口等你回應。',
+ opts:[o('全數退還，公開道歉說明',{money:-150,integ:-6,sup:{all:-1.2},card:'law',time:60},'痛，但還能止血','記者會很難看，但有評論說至少你沒有繼續說謊。'),
+   o('說是幕僚收的，你不知情',{integ:-10,sup:{all:-2},card:'law',time:30},'推給幕僚，團隊會寒心','阿誠在會議室外站了很久，沒有進來。'),
+   o('否認到底',{integ:-14,sup:{all:-2.5},buzz:4,card:'law'},'最危險','週刊隔天又放出第二波照片。')]},
+{id:'forumuni',tier:'normal',who:'zhe',d:'uni',loc:'gate',w:3,
+ call:'學生會邀你參加氣候論壇，林小晴也會到，你要來嗎？',title:'大學城氣候論壇',
+ g:{mood:['學生很多','good'],media:['校園媒體','mid'],opp:['林小晴在台上','bad']},
+ scene:'台下坐滿學生，有人舉著「不要只會說愛地球」的牌子。',q:'學生問：「港區產業跟減碳，你選哪一個？」',
+ opts:[o('坦白說兩邊都要顧，講清楚你的取捨',{sup:{uni:2.5},voice:-8,integ:2,time:90},'誠實，學生吃這套','有學生舉手說：「第一次聽到候選人講取捨。」'),
+   o('講場面話，兩邊都不得罪',{sup:{uni:.5},voice:-6,time:90},'不會出錯，也不會加分','學生滑手機的比聽你講話的多。'),
+   o('不出席',{sup:{uni:-2},buzz:-1},'林小晴獨撐全場','論壇上放了一張空椅子，寫著你的名字。')]},
+{id:'parents',tier:'normal',who:'yu',d:'new',loc:'park',w:3,
+ call:'重劃區的家長群組約你到親子公園，她們最想問托育名額什麼時候會增加。',title:'家長的托育問題',
+ g:{mood:['焦慮','mid'],media:['家長在直播','mid'],opp:['林小晴上週來過','bad']},
+ scene:'推車排成一圈，一位媽媽說：「公幼抽籤又沒抽到，我只能辭職。」',q:'家長在等你回答，你怎麼做？',
+ opts:[o('坐下來聽完、記下需求，承諾一週內回覆',{sup:{new:2.5},integ:1,time:60,chain:['parentsCheck',7]},'誠意夠，要記得回覆','家長群組裡有人轉貼：「這位有在聽。」'),
+   o('請大家看網站上的政見',{sup:{new:.5},time:20},'省時間，但有點冷淡','家長點點頭，但沒有人加你好友。'),
+   o('先走，下一場要遲到了',{sup:{new:-1.5}},'家長會記得你走得很快','有人在群組說：「來拍個照就走了。」')]},
+{id:'mrtdown',tier:'normal',who:'yu',d:'tech',loc:'mrt',w:2,
+ call:'捷運號誌故障，站外排了好長的隊，大家都在等接駁公車。',title:'捷運故障大排長龍',
+ g:{mood:['很煩躁','bad'],media:['網友在拍','mid'],opp:['沒動作','good']},
+ scene:'上班族邊看錶邊嘆氣，有人在罵：「這個月第三次了！」',q:'你到了現場，怎麼做？',
+ opts:[o('幫忙發水、協助引導，不發文宣',{sup:{tech:2.5},integ:2,energy:-6,time:60},'低調，但大家看在眼裡','有人在 Threads 上說：「那個候選人在發水，沒有發傳單。」'),
+   o('趁人多發文宣、講捷運政見',{sup:{tech:-1.5},buzz:2,time:45},'時機很差','有人把你的傳單丟回來：「現在誰想聽？」'),
+   o('在現場直播批評營運單位',{buzz:3,sup:{tech:.5},time:30},'有聲量，效果普通','直播觀看普通，留言一半說你蹭熱度。')]},
+{id:'rent',tier:'normal',who:'yu',d:'tech',loc:'plaza',w:2,
+ call:'園區廣場有一群工程師在午休，他們想問你房價和租屋的事。',title:'工程師問房價',
+ g:{mood:['半信半疑','mid'],media:['沒有','good'],opp:['林小晴開過講座','bad']},
+ scene:'有人苦笑：「我年薪一百多萬，還是買不起離公司近的房子。」',q:'他們問：「你當選能讓房價降嗎？」',
+ opts:[o('老實說房價市長很難直接壓，但能多蓋社宅、管好租屋',{sup:{tech:2},integ:2,time:45},'不討喜但可信','有人說：「至少你沒騙我們。」'),
+   o('拍胸脯保證：房價一定降',{sup:{tech:1.5},integ:-3,time:30,chain:['housePromise',12]},'現場開心，之後會被追問','大家鼓掌，但有人默默把這句話錄了下來。'),
+   o('說午休時間不打擾了',{sup:{tech:-.5}},'沒有收穫','工程師們聳聳肩，回去繼續吃便當。')]},
+{id:'live',tier:'normal',who:'zhe',d:'uni',w:2,minDay:4,
+ call:'林小晴在直播裡點名你，邀你今晚連線對談，留言已經在刷了。',title:'網紅對手邀直播',
+ g:{mood:['留言刷很快','mid'],media:['網媒在等截圖','mid'],opp:['林小晴主場','bad']},
+ scene:'阿哲把筆電轉向你：「十萬人在看，你上不上？」',q:'要接受連線嗎？',
+ opts:[o('接受連線，好好談政見',{buzz:7,voice:-10,sup:{uni:1.5,tech:1},time:60},'有風險，但年輕人會看見你','你們聊了一小時，留言區有人說：「原來你沒有那麼無聊。」'),
+   o('請阿哲在留言區互動就好',{buzz:2,time:15},'安全','阿哲回了兩百則留言，手都酸了。'),
+   o('拒絕',{buzz:-2,sup:{uni:-1}},'會被說不敢','林小晴在直播上說：「看來有人怕了。」')]},
+{id:'kidshow',tier:'normal',who:'yu',d:'new',w:3,cond:()=>S.family<45,
+ call:'你的家人傳訊息來：小孩今晚七點學校表演，問你會不會到。',title:'小孩的學校表演',
+ g:{mood:['期待','mid'],media:['沒有','good'],opp:['不相關','good']},
+ scene:'訊息最後附了一張小孩穿表演服的照片。',q:'今晚的行程已經排滿了，你怎麼做？',
+ opts:[o('推掉晚上的行程，去看表演',{family:25,sup:{new:.5},time:150},'少跑一場，但家人會記得','小孩在台上看到你，用力揮手。'),
+   o('表演時開視訊看一下',{family:6,time:15},'有比沒有好','訊號斷斷續續，小孩說：「你又在忙。」'),
+   o('請幕僚去錄影',{family:-6},'行程保住了','錄影傳來了，你在宣傳車上看完。')]},
+{id:'famcrisis',tier:'crisis',who:'yu',d:'old',w:8,once:1,cond:()=>S.family<=15,
+ call:'你的家人打來，語氣很平靜：「這樣下去，我們要好好談談了。」',title:'家裡的電話',
+ g:{mood:['很冷靜','bad'],media:['沒有','good'],opp:['不相關','good']},
+ scene:'電話那頭停了很久：「小孩問我，你還記不記得他幾年級。」',q:'你怎麼回答？',
+ opts:[o('明天放一天假，好好陪家人',{family:45,flag:'dayoff'},'少一天行程','電話那頭說：「好，明天見。」'),
+   o('約好選後一定補償',{family:8},'撐過去再說','電話掛了。你知道這不是答案。'),
+   o('退出選舉，回家',{end:'withdraw'},'選戰到此結束','你打給阿誠，說了很久很久。')]},
+{id:'radiogaffe',tier:'urgent',who:'yu',d:'tech',w:0,manual:1,attack:1,
+ call:'剛剛電台專訪，你說「年輕人少喝點手搖飲就買得起房」，被剪成短影音在瘋傳！',title:'電台失言被剪輯',
+ g:{mood:['年輕人很火大','bad'],media:['網媒在寫','bad'],opp:['林小晴已經在嘲諷','bad']},
+ scene:'影片只有 12 秒，字幕還幫你加上了誇張的音效。',q:'你怎麼回應？',
+ opts:[o('公開道歉，說明完整語意',{integ:2,sup:{tech:-.5},time:30},'認錯最快','有網友說：「至少你沒有硬拗。」'),
+   o('拍一支影片自嘲',{buzz:5,sup:{uni:1,tech:-.5},integ:-1,time:60},'搞笑能翻盤，也可能翻車','影片很紅，有人說你很有梗，也有人說你在逃避。'),
+   o('說是被斷章取義',{sup:{tech:-2.5,uni:-1.5},buzz:2},'年輕人更不爽','完整錄音放出來後，大家發現你真的這樣說。')]},
+{id:'attflip',tier:'urgent',who:'yu',d:'old',w:4,once:1,attack:1,cond:()=>S.policyChanges>=2,
+ call:'黃志偉陣營發新聞稿，說你的政見「一週一個樣」，列了一整頁對照表。',title:'被說政見反覆',
+ g:{mood:['懷疑','bad'],media:['政論節目在討論','bad'],opp:['黃志偉陣營主攻','bad']},
+ scene:'對照表上把你改過的政見用紅筆圈起來。',q:'你怎麼回應？',
+ opts:[o('說明調整的原因和數據',{integ:2,sup:{all:.4},time:45},'講得清楚就能扳回','有評論說：「能說明為什麼改，比死不改好。」'),
+   o('反擊對手八年來的政績',{buzz:4,integ:-1,time:30},'轉移焦點','新聞變成兩邊互打，選民看得很累。'),
+   o('不回應',{sup:{all:-.8}},'讓標籤留著','「一週一個樣」變成了你的綽號。')]},
+{id:'attfund',tier:'urgent',who:'yu',d:'tech',w:4,once:1,attack:1,minDay:12,cond:hasLv2,
+ prep:()=>({pid:S.policies.find(id=>POL[id].lv===2)}),
+ call:c=>`黃志偉開記者會，舉牌質疑你的「${POL[c.pid].name}」：「錢從哪裡來？」`,title:'錢從哪裡來？',
+ g:{mood:['懷疑','bad'],media:['財經記者追問','bad'],opp:['黃志偉主攻','bad']},
+ scene:c=>`記者把計算機舉到鏡頭前：「${POL[c.pid].name}，一年要花多少？」`,q:'你怎麼回應？',
+ opts:c=>[o('公布財源試算，請學者檢視',{integ:2,sup:{all:.3},time:90},'要拿得出數字','試算公布了，有學者說數字偏樂觀，但至少可以討論。'),
+   o('改成比較務實的版本',{integ:-2,downgrade:c.pid,time:30},'少一點加分，少很多麻煩',`你把「${POL[c.pid].name}」改成了積極版本，對手說你被戳破了。`),
+   o('「當選就有辦法」',{integ:-5,sup:{all:-.4}},'最常見，也最傷','「當選就有辦法」被做成梗圖。')]},
+{id:'attabsent',tier:'urgent',who:'cheng',d:'old',w:3,minDay:15,attack:1,
+ prep:()=>{const d=DK.slice().sort((a,b)=>S.visitDay[a]-S.visitDay[b])[0];return S.day-S.visitDay[d]>=10?{d}:null;},
+ call:c=>`對手在${DIST[c.d].name}辦說明會，說你「從來沒來過${DIST[c.d].name}」。`,title:'被說從沒來過',
+ g:c=>({mood:['被冷落','bad'],media:['地方新聞','mid'],opp:['在'+DIST[c.d].name+'紮營','bad']}),
+ scene:c=>`阿誠攤開行程表：你上次去${DIST[c.d].name}，已經是 ${S.day-S.visitDay[c.d]} 天前了。`,q:'你怎麼回應？',
+ opts:c=>[o(`發影片回顧在${DIST[c.d].name}的行程，承諾這週再去`,{sup:{[c.d]:.5},buzz:2,time:30},'要真的去，不然更慘','影片點閱不錯，但大家等著看你什麼時候出現。'),
+   o('說對手造謠',{integ:-2,sup:{[c.d]:-1}},'但你確實很久沒去','對手貼出你的行程表，留言一面倒。'),
+   o('不回應',{sup:{[c.d]:-1.5}},'地方會更冷','「被遺忘的區」上了地方新聞。')]},
+{id:'pollleak',tier:'urgent',who:'yu',d:'tech',w:4,minDay:51,once:1,
+ call:'有記者打來，想引述我們的內部民調，說「只要一個數字就好」。',title:'記者要內部民調',
+ g:{mood:['記者很堅持','mid'],media:['想搶獨家','mid'],opp:['不清楚','mid']},
+ scene:'小瑜摀著話筒：「現在是民調封關期耶。」',q:'你怎麼回答記者？',
+ opts:[o('拒絕：現在是民調封關期',{integ:2,card:'law',time:10},'守法','記者說：「好啦，我懂。」'),
+   o('只說「我們很有信心」',{time:5,card:'law'},'不違法，也沒有新聞','記者寫了一篇沒有數字的稿子。'),
+   o('給一個數字',{integ:-6,money:-50,flag:'pollLeak',card:'law'},'違法，會被罰','新聞刊出後，選委會來函要你說明，罰鍰跑不掉。')]},
+{id:'ngbroken',tier:'urgent',who:'yu',d:'old',w:5,ngOnly:1,attack:1,
+ prep:()=>{const id=S.ngBroken.find(x=>!S.flags['ngb'+x]);return id?{pid:id}:null;},
+ call:c=>`對手開記者會，舉牌說你四年前的「${POL[c.pid].name}」跳票了。`,title:'政見跳票被翻出來',
+ g:{mood:['失望','bad'],media:['政論節目大做文章','bad'],opp:['主攻','bad']},
+ scene:c=>`牌子上寫著：「${POL[c.pid].name}：承諾 100%，完成 0%」。`,q:'你怎麼回應？',
+ opts:c=>[o('坦承落後，說明原因和新時程',{integ:4,sup:{all:.3},flag:'ngb'+c.pid,time:45},'誠實是最好的止血','有評論說：「能承認做不到，比硬拗好。」'),
+   o('推給議會杯葛',{integ:-3,buzz:2,sup:{all:-.4},flag:'ngb'+c.pid,time:20},'有人信，有人不信','議會黨團立刻開記者會反擊。'),
+   o('不回應',{sup:{all:-1},flag:'ngb'+c.pid},'讓它燒','「跳票市長」上了熱搜。')]},
+{id:'council',tier:'normal',who:'cheng',d:'port',w:2,ngOnly:1,
+ call:'議會臨時要你去備詢，議員說要問港區空汙改善的進度。',title:'議會臨時質詢',
+ g:{mood:['議員很兇','bad'],media:['議會直播','mid'],opp:['對手的黨團主攻','bad']},
+ scene:'議員把空汙數據投影在大螢幕上：「市長，這四年改善了多少？」',q:'你怎麼回答？',
+ opts:[o('拿出監測數據，承認進度落後的部分',{integ:3,sup:{port:1,uni:1},time:90},'誠實','議員沒再追問，記者寫你「難得正面回答」。'),
+   o('說這是中央的權責',{integ:-2,sup:{port:-1},time:60},'推得乾淨，但不好看','議員冷笑：「那你當市長做什麼？」'),
+   o('請副市長代答',{sup:{all:-.5},time:10},'省時間','新聞標題：「市長缺席質詢」。')]}
+];
+/* 新事件 + 事件鏈（manual:1 的只會由事件鏈觸發） */
+EVENTS.push(
+{id:'layoff',tier:'urgent',who:'zhe',d:'port',w:0,manual:1,attack:1,
+ call:'港區一間工廠宣布裁員兩百人，工會理事長拿著你簽的「不裁員承諾書」在開記者會！',title:'你簽過的承諾書',
+ g:{mood:['被背叛的感覺','bad'],media:['記者在追','bad'],opp:['黃志偉說你亂開支票','bad']},
+ scene:'記者會背板上放大印著你的簽名，旁邊寫著：「說好的不裁員呢？」',q:'理事長在等你的回應。',
+ opts:[o('到現場坦承當初承諾太滿，提出轉職協助和資遣保障方案',{sup:{port:1},integ:3,time:90},'認錯有誠意，但承諾的事情確實做不到','理事長沉默很久，最後說：「至少你敢來。」'),
+   o('說裁員是企業的決定，市長管不了',{sup:{port:-3},integ:-5},'這是事實，但當初是你簽的','工人在臉書貼出承諾書：「那你當初簽什麼？」'),
+   o('不回應',{sup:{port:-2.5},integ:-2},'讓承諾書繼續被轉傳','「簽了就忘」變成港區流傳的笑話。')]},
+{id:'lawsuit',tier:'urgent',who:'yu',d:'tech',w:0,manual:1,attack:1,
+ call:'黃志偉陣營對你提告加重誹謗，說你上次直播指控他們放假新聞，根本沒有證據。',title:'對手提告誹謗',
+ g:{mood:['看熱鬧','mid'],media:['法庭新聞','bad'],opp:['黃志偉陣營主攻','bad']},
+ scene:'小瑜把存證信函放在桌上：「律師說，我們手上確實沒有證據。」',q:'你怎麼處理這場官司？',
+ opts:[o('公開道歉、撤回指控',{integ:2,buzz:-2,sup:{all:-.3},time:30},'丟臉，但最快結束','道歉影片被說「很難得」，對手撤告了。'),
+   o('交給律師處理，不再評論',{integ:-1,money:-40,time:20},'花錢，議題慢慢冷掉','律師費不便宜，但新聞熱度降下來了。'),
+   o('加碼開直播反擊',{buzz:5,integ:-5,sup:{uni:-1,tech:-1}},'聲量更大，風險更大','觀看數衝高，但中間選民開始覺得你很好鬥。')]},
+{id:'parentsCheck',tier:'normal',who:'yu',d:'new',w:0,manual:1,
+ call:'家長群組在問：你上次答應一週內回覆托育的事，進度呢？',title:'答應家長的事',
+ g:{mood:['在等答案','mid'],media:['家長群組','mid'],opp:['林小晴也在群組裡','bad']},
+ scene:'群組裡有人貼出你上週在公園的照片，配字：「說好的回覆呢？」',q:'你怎麼回覆家長？',
+ opts:[o('交出一頁具體方案：名額、時程、經費',{sup:{new:2.5},integ:3,time:60},'說到做到','家長把方案轉貼到其他群組：「這位有在做功課。」'),
+   o('說還在研究，請大家再等等',{sup:{new:-1},integ:-2,time:10},'拖延會被記住','有人回：「選前都說在研究。」'),
+   o('已讀不回',{sup:{new:-2.5},integ:-3},'最傷','群組裡開始有人說要改投別人。')]},
+{id:'youngFarm',tier:'normal',who:'cheng',d:'field',w:0,manual:1,
+ call:'幾位返鄉青農看到你提的產銷平台構想，想找你一起做。',title:'青農找上門',
+ g:{mood:['很有幹勁','good'],media:['農業媒體有興趣','mid'],opp:['黃志偉沒注意到','good']},
+ scene:'青農帶來自己設計的網路賣菜頁面：「我們可以先從學校午餐開始試。」',q:'你怎麼回應他們？',
+ opts:[o('邀他們加入政策小組，一起開直播賣菜',{sup:{field:2,uni:1},buzz:3,time:60},'實際做出成果','直播一小時賣出三百箱菜，青農笑得合不攏嘴。'),
+   o('說選後再一起討論',{sup:{field:.5},time:15},'保留彈性','青農點點頭，但有點失望。'),
+   o('婉拒，怕被說作秀',{sup:{field:-1}},'錯過機會','青農轉頭去找了林小晴。')]},
+{id:'housePromise',tier:'urgent',who:'yu',d:'tech',w:0,manual:1,attack:1,
+ call:'你說「房價一定降」的影片被翻出來了，幾位經濟學者出來打臉。',title:'「房價一定降」被打臉',
+ g:{mood:['半信半疑','bad'],media:['財經節目在討論','bad'],opp:['林小晴在嘲諷','bad']},
+ scene:'影片下面最熱門的留言是：「那你說，要降多少？」',q:'你怎麼回應？',
+ opts:[o('承認說得太滿，改口說明具體做法',{integ:1,sup:{tech:-.5},time:40},'少一點加分，多一點信任','有學者說：「肯修正比堅持錯誤好。」'),
+   o('堅持會降',{integ:-5,sup:{tech:.5},buzz:2},'支持者開心，中間選民皺眉','新聞標題：「候選人堅稱房價必降，專家：做不到」。'),
+   o('不回應',{sup:{tech:-1.5},integ:-2},'讓影片繼續傳','「房價一定降」變成了你的梗圖。')]},
+{id:'karaokeViral',tier:'normal',who:'zhe',d:'old',w:0,manual:1,
+ call:'你在長青會唱歌的影片爆紅了！年輕人在留言區刷「市長好會唱」。',title:'唱歌影片爆紅',
+ g:{mood:['很歡樂','good'],media:['網媒在轉','good'],opp:['林小晴想跟風','mid']},
+ scene:'阿哲興奮地把手機遞給你：「三十萬次觀看，還在漲！」',q:'要怎麼接這波聲量？',
+ opts:[o('順勢拍續集，邀年輕人合唱',{buzz:6,sup:{uni:1,tech:.5},voice:-8,time:60},'把長輩和年輕人連起來','續集也紅了，留言說：「第一次覺得政治人物很可愛。」'),
+   o('轉發就好',{buzz:3,time:5},'穩穩的','影片繼續傳，熱度慢慢降下來。'),
+   o('請阿哲把影片下架，怕不莊重',{buzz:-2},'浪費了好機會','網友截圖：「怎麼刪了？」')]},
+{id:'pothole',tier:'normal',who:'yu',d:'new',w:2,
+ call:'重劃區有段路坑坑洞洞，昨晚一位騎機車的媽媽摔車，家長群組炸鍋了。',title:'馬路坑洞害人摔車',
+ g:{mood:['很生氣','bad'],media:['地方臉書社團','mid'],opp:['林小晴已經發文','bad']},
+ scene:'照片裡機車倒在水坑旁，安全帽滾到了路中間。',q:'你怎麼回應？',
+ opts:[o('先去醫院探視傷者，再通報養工處並追蹤進度',{sup:{new:2.5},integ:2,energy:-6,time:90},'實在，但要花時間','傷者的家人在群組說謝謝，三天後那段路補好了。'),
+   o('發文痛批市府，承諾當選後全面重鋪',{sup:{new:.8},buzz:3,integ:-1,time:20},'有聲量，但沒解決問題','按讚不少，但有人留言：「可是我明天還要騎過去。」'),
+   o('轉發社團貼文就好',{sup:{new:-1.5}},'等於什麼都沒做','有人回：「轉發誰不會？」')]},
+{id:'stray',tier:'normal',who:'zhe',d:'uni',w:2,
+ call:'動保團體問你對流浪動物的立場：要不要撥預算做 TNR（誘捕、結紮、回置）？',title:'流浪動物政策',
+ g:{mood:['很在意','mid'],media:['動保粉專','mid'],opp:['林小晴已表態支持','bad']},
+ scene:'志工帶著剛結紮的小黑狗來，問卷上只有一題：「支持，還是不支持？」',q:'你怎麼回答？',
+ opts:[o('支持 TNR，並說明預算從哪裡來',{sup:{uni:2,new:.5},integ:1,time:30},'具體，年輕人加分','動保粉專轉貼你的回答：「終於有人講到錢。」'),
+   o('說兩邊都要顧，先開公聽會',{sup:{uni:.3},time:20},'不得罪人，也不加分','志工嘆氣：「又是公聽會。」'),
+   o('說市府有更重要的事要做',{sup:{uni:-2},buzz:-1},'得罪愛狗人士','留言區被狗狗照片洗版抗議。')]},
+{id:'nightmarket',tier:'normal',who:'cheng',d:'old',w:2,
+ call:'夜市自治會邀你今晚去逛逛，順便聽攤商抱怨租金和垃圾問題。',title:'夜市攤商的邀請',
+ g:{mood:['熱絡','good'],media:['沒有','good'],opp:['黃志偉上週來過','bad']},
+ scene:'鹹酥雞的油鍋滋滋作響，會長拿了一串香腸給你：「邊吃邊聊啦。」',q:'你怎麼逛這趟夜市？',
+ opts:[o('一攤一攤買一點，認真記下問題',{sup:{old:2.2},money:-5,energy:-6,time:90},'累，但攤商感受得到','會長說：「你是第一個把問題寫在本子上的。」'),
+   o('只走主街拍照打卡',{sup:{old:.8},buzz:2,time:40},'有照片，少了交情','照片很好看，但攤商說你走得很快。'),
+   o('婉拒，今晚排了別的行程',{sup:{old:-1}},'會長會記得','會長說：「沒關係啦，下次。」語氣有點淡。')]},
+{id:'endorse',tier:'urgent',who:'cheng',d:'field',w:2,minDay:10,once:1,
+ call:'退休的老市長說要幫你站台。他在田野很有人望，但以前有工程弊案的傳聞。',title:'老市長要幫你站台',
+ g:{mood:['地方很期待','mid'],media:['記者在問','mid'],opp:['黃志偉很緊張','good']},
+ scene:'老市長在電話裡笑著說：「少年仔，田野那邊我幫你顧。」',q:'要讓他站台嗎？',
+ opts:[o('婉謝站台，但私下向他請教地方事務',{sup:{field:.8},integ:2,time:60},'兩邊都顧到','老市長說：「你有分寸，我欣賞。」'),
+   o('歡迎他站台',{sup:{field:3,old:1.5,uni:-1.5},integ:-4},'田野大加分，年輕人會問弊案','站台很熱鬧，但大學城有人貼出當年的弊案新聞。'),
+   o('公開說不需要舊勢力',{sup:{field:-2.5,uni:1},buzz:2},'年輕人叫好，田野很受傷','老市長在宗親會上說：「這個少年仔不懂事。」')]},
+{id:'heatwave',tier:'urgent',who:'cheng',d:'old',loc:'market',w:2,minDay:5,
+ call:'熱浪來襲，傳統市場有位阿嬤中暑倒下，攤商在問：政府的避暑措施在哪裡？',title:'市場阿嬤中暑',
+ g:{mood:['又熱又急','bad'],media:['地方記者在','mid'],opp:['沒有到場','good']},
+ scene:'市場裡悶熱得像蒸籠，阿嬤坐在攤位旁，臉色發白。',q:'你到了現場，先做什麼？',
+ opts:[o('協助叫救護車，發水和冰毛巾',{sup:{old:2.5},integ:2,energy:-6,time:60},'先救人','救護車到之前阿嬤已經好多了，攤商一直跟你道謝。'),
+   o('現場提出「設置社區避暑中心」政見',{sup:{old:1.2},buzz:2,time:30},'有政策，但先救人比較好','記者寫得不錯，但有攤商說：「阿嬤還坐在那邊耶。」'),
+   o('拍影片呼籲大家多喝水',{sup:{old:-1},buzz:1,time:20},'會被說作秀','影片下面有人留言：「阿嬤需要的是救護車。」')]},
+{id:'school',tier:'normal',who:'yu',d:'new',loc:'park',w:2,
+ call:'新建小學的學區劃分有爭議，兩個社區的家長在公園吵起來了。',title:'學區劃分吵翻天',
+ g:{mood:['火藥味很重','bad'],media:['家長在直播','mid'],opp:['林小晴站在其中一邊','mid']},
+ scene:'兩群家長各站一邊，中間的溜滑梯上還有小孩在玩。',q:'你怎麼處理？',
+ opts:[o('請兩邊坐下來談，提出「先調查學童人數再劃分」',{sup:{new:2},integ:2,time:90},'慢，但公平','吵架變成了討論，有家長說：「這樣比較合理。」'),
+   o('支持人數比較多的那一邊',{sup:{new:1},integ:-1,time:30},'贏一邊，輸一邊','一邊鼓掌，另一邊轉身離開。'),
+   o('說這是教育局的事',{sup:{new:-2}},'推掉了，家長不滿','有家長說：「那你來公園幹嘛？」')]},
+{id:'migrant',tier:'normal',who:'zhe',d:'port',loc:'union',w:2,
+ call:'移工團體邀你到工會會館座談，想談宿舍環境和休假權益。',title:'移工座談',
+ g:{mood:['很認真','mid'],media:['公民記者','mid'],opp:['黃志偉沒回覆邀請','good']},
+ scene:'會館裡坐滿來自不同國家的移工，桌上放著宿舍的照片。',q:'他們問：「市府能為我們做什麼？」',
+ opts:[o('聽完具體訴求，承諾設多語服務窗口和宿舍稽查',{sup:{port:1.5,uni:1},integ:2,time:90},'具體可行','移工團體在臉書用三種語言貼出你的承諾。'),
+   o('出席但只講場面話',{sup:{port:.3},time:60},'不會出錯，也沒誠意','座談結束，大家禮貌地拍手。'),
+   o('不出席，怕本地勞工不高興',{sup:{port:-.5,uni:-1}},'兩邊都不討好','公民記者寫：「候選人缺席移工座談。」')]},
+{id:'deepfake',tier:'urgent',who:'yu',d:'tech',w:3,minDay:20,once:1,attack:1,
+ call:'有人用 AI 做了一支你「承認收賄」的假影片，在 LINE 群組瘋傳！',title:'AI 假影片',
+ g:{mood:['很多人信了','bad'],media:['記者在求證','bad'],opp:['兩邊都說不是他們','mid']},
+ scene:'影片裡的「你」講話嘴型有點怪，但長輩群組已經轉了好幾輪。',q:'你先做什麼？',
+ opts:[o('報案、公開原始影片比對、請查核平台查證',{integ:3,sup:{tech:1,all:.3},card:'misinfo',time:120},'最站得住腳','查核平台判定是 AI 變造，你順便教大家怎麼辨識假影片。'),
+   o('趕快拍一支影片說「這不是我」',{sup:{all:-.3},buzz:2,time:30},'快，但說服力不夠','有人留言：「那哪一支才是真的？」'),
+   o('不理它',{sup:{all:-1.2,old:-1}},'長輩會信','舊城區的長輩群組裡，假影片還在傳。')]},
+{id:'billboard',tier:'normal',who:'cheng',d:'old',w:2,
+ call:'總部附近的競選看板一夜之間被噴漆，志工很氣，想去對手總部前抗議。',title:'看板被噴漆',
+ g:{mood:['志工很憤怒','bad'],media:['地方新聞','mid'],opp:['否認是他們做的','mid']},
+ scene:'看板上你的臉被噴了一個大叉，志工們握著拳頭站在下面。',q:'你怎麼處理？',
+ opts:[o('安撫志工、報案，公開說「選舉不要仇恨」',{integ:3,sup:{all:.3},time:30},'格局比較大','記者把你的話當標題，留言多半支持你。'),
+   o('讓志工去對手總部前抗議',{buzz:4,integ:-3,sup:{old:-1}},'出一口氣，但會變成衝突','兩邊支持者在街上互嗆，新聞畫面很難看。'),
+   o('自己出錢重做一塊更大的看板',{money:-30,buzz:2,time:20},'花錢消災','新看板很顯眼，志工的氣也消了一點。')]},
+{id:'youtuber',tier:'normal',who:'zhe',d:'uni',w:2,
+ call:'一位百萬訂閱的 YouTuber 邀你拍搞笑影片，題目是「市長候選人吃辣挑戰」。',title:'YouTuber 邀拍片',
+ g:{mood:['年輕人很期待','good'],media:['網路圈','mid'],opp:['林小晴拍過一樣的','bad']},
+ scene:'對方傳來腳本，最後一幕是你辣到哭著喝牛奶。',q:'要拍嗎？',
+ opts:[o('拍，但要求最後留一分鐘講政見',{buzz:7,sup:{uni:1.5,tech:.5},energy:-6,time:120},'有梗也有內容','影片兩百萬觀看，留言有人說：「最後一分鐘居然很有料。」'),
+   o('婉拒，改邀對方做政見對談',{buzz:2,sup:{uni:.5},time:30},'安全','對方答應了，但觀看數普通。'),
+   o('拒絕，覺得不莊重',{sup:{uni:-1,old:.5}},'長輩覺得你穩重，年輕人覺得你無聊','YouTuber 在影片裡說：「某候選人不敢來。」')]},
+{id:'windfarm',tier:'normal',who:'cheng',d:'field',loc:'fish',w:2,
+ call:'離岸風電要在漁場附近施工，漁民在漁港拉布條抗議。',title:'風電與漁民',
+ g:{mood:['很不安','bad'],media:['環境記者','mid'],opp:['黃志偉說要顧漁民','mid']},
+ scene:'布條寫著「還我漁場」，老船長說：「魚都跑了，我們吃什麼？」',q:'你站在哪一邊？',
+ opts:[o('提出漁業補償協商和漁民共同監測',{sup:{field:2.5,uni:.5},integ:1,time:90},'兩邊都顧，要花時間說明','老船長說：「至少你有聽我們講完。」'),
+   o('站在漁民這邊，反對風電施工',{sup:{field:3,uni:-2,tech:-.5}},'漁村大加分，年輕人覺得你反環保','大學城的氣候社團發文批評你。'),
+   o('說能源轉型是國家政策',{sup:{field:-2.5,uni:1}},'實話，但漁民聽不進去','漁民把布條轉向你的宣傳車。')]},
+{id:'techLayoff',tier:'normal',who:'yu',d:'tech',loc:'plaza',w:2,
+ call:'園區一家公司宣布裁員，被裁的工程師在廣場排隊領紙箱。',title:'科技公司裁員',
+ g:{mood:['低落','bad'],media:['財經記者','mid'],opp:['林小晴在直播','mid']},
+ scene:'一位工程師抱著紙箱，裡面有一盆小多肉：「房貸還有二十年。」',q:'你怎麼做？',
+ opts:[o('聽他們的處境，提出轉職培訓和租金緩衝補助',{sup:{tech:2.2},integ:1,time:60},'具體，有同理心','有工程師說：「至少有人問我們需要什麼。」'),
+   o('發新聞稿說要大力招商',{sup:{tech:.5},buzz:2,time:20},'方向對，但太遠','新聞稿登了，但被裁的人沒感覺。'),
+   o('不去，怕被說消費別人的不幸',{sup:{tech:-.5}},'安全，但缺席','林小晴的直播畫面裡，沒有你。')]},
+{id:'busFew',tier:'normal',who:'cheng',d:'field',w:2,
+ call:'田野的長輩打來說，公車一天只有四班，去醫院看病要等兩個小時。',title:'一天四班的公車',
+ g:{mood:['無奈','bad'],media:['沒有','good'],opp:['黃志偉的人常去探望','bad']},
+ scene:'阿伯說：「我七十八歲了，走去站牌要二十分鐘。」',q:'你怎麼回應？',
+ opts:[o('承諾開辦預約制小巴，說明經費來源',{sup:{field:2,old:.5},integ:1,time:30},'具體，長輩聽得懂','阿伯說：「如果真的有，我第一個坐。」'),
+   o('說會全面檢討公車路線',{sup:{field:.3},time:15},'聽起來像官話','阿伯說：「檢討很多年了。」'),
+   o('建議請子女載',{sup:{field:-2.5}},'很傷人','阿伯掛電話前說：「我的孩子都在外地。」')]},
+{id:'templeFund',tier:'normal',who:'cheng',d:'old',loc:'temple',w:2,
+ call:'大廟主委說要辦建醮，希望你當選後用市府預算補助一千萬。',title:'建醮補助',
+ g:{mood:['期待','mid'],media:['沒有','good'],opp:['黃志偉已經口頭答應','bad']},
+ scene:'主委泡了一壺茶：「黃志偉說沒問題，你呢？」',q:'你怎麼回答？',
+ opts:[o('說明公款補助要依規定審查，不能私下承諾',{integ:3,sup:{old:-.5},time:40},'守規矩，主委可能不高興','主委想了想：「你很老實。」'),
+   o('口頭答應',{sup:{old:2.5},integ:-4,time:30},'主委開心，但這是開支票','主委笑了，但阿誠在旁邊皺眉。'),
+   o('自掏腰包添香油錢，補助的事依法審查',{money:-20,sup:{old:1},integ:1,time:30},'有誠意也守規矩','主委收下香油錢：「你有心。」')]},
+{id:'firstVote',tier:'normal',who:'zhe',d:'uni',w:2,
+ call:'學生會要辦首投族活動，問你：外地學生要回戶籍地才能投票，你怎麼看？',title:'首投族要回家投票',
+ g:{mood:['很關心','mid'],media:['校園媒體','mid'],opp:['林小晴說要包遊覽車','bad']},
+ scene:'學生會長說：「很多同學回家一趟要三百塊車票。」',q:'你怎麼回應？',
+ opts:[o('支持推動不在籍投票，並贊助返鄉專車',{sup:{uni:2.5},money:-20,card:'vote',time:30},'實際幫忙','學生會在粉專感謝你，報名專車的人很多。'),
+   o('呼籲大家記得回家投票',{sup:{uni:1},card:'vote',time:15},'正確，但沒有行動','學生點點頭，有人說：「車票錢呢？」'),
+   o('說這是中央的事',{sup:{uni:-1}},'推得乾淨，學生失望','學生會長說：「我們以為你會不一樣。」')]},
+{id:'oppScandal',tier:'urgent',who:'yu',d:'old',w:2,minDay:18,once:1,
+ call:'有人匿名寄來黃志偉陣營的「弊案資料」，要你今天就公開。資料真假還不知道。',title:'匿名爆料資料',
+ g:{mood:['誘惑很大','mid'],media:['還不知道','good'],opp:['不知情','mid']},
+ scene:'信封裡有幾張影印的公文，關鍵的地方都模糊不清。',q:'你怎麼處理？',
+ opts:[o('先查證，把資料交給檢調，不公開',{integ:4,card:'misinfo',time:30},'穩，但沒有聲量','一週後檢調說資料有偽造的痕跡，你鬆了一口氣。'),
+   o('先公開再說',{buzz:8,integ:-6,sup:{all:-.4}},'聲量大，賭資料是真的','三天後資料被證實造假，你被罵「散播謠言」。'),
+   o('丟掉不理',{integ:1},'不碰最安全','信封進了碎紙機。')]},
+{id:'volunteerTired',tier:'normal',who:'cheng',d:'old',w:2,minDay:12,
+ call:'志工阿姨連續跑了兩週，今天在總部昏倒了。大家都很累。',title:'志工累倒了',
+ g:{mood:['士氣低落','bad'],media:['沒有','good'],opp:['不相關','good']},
+ scene:'總部的沙發上躺著阿姨，旁邊的志工都在發呆。',q:'你怎麼做？',
+ opts:[o('宣布志工輪休，自己出錢請大家吃飯',{money:-30,integ:2,energy:-3,time:60},'照顧團隊','志工們吃完飯，又有力氣了。'),
+   o('去醫院探視後繼續行程',{sup:{old:.5},time:60},'有心，但團隊還是很累','阿姨說：「你去忙吧。」'),
+   o('請阿誠處理',{integ:-1},'志工會覺得你不在乎','阿誠處理得很好，但志工群組安靜了好幾天。')]},
+{id:'spouseMedia',tier:'normal',who:'yu',d:'new',w:2,cond:()=>S.family<60,
+ call:'記者在你家樓下堵你的家人，問「你真的支持他參選嗎？」家人很不高興。',title:'家人被記者堵',
+ g:{mood:['家人很生氣','bad'],media:['想做獨家','mid'],opp:['不相關','good']},
+ scene:'家人傳來訊息：「我出門買個菜也要被拍？」',q:'你怎麼處理？',
+ opts:[o('公開請媒體不要打擾家人，回家道歉',{family:10,integ:1,time:60},'保護家人','記者們收斂了，家人說：「這還差不多。」'),
+   o('請家人配合受訪一次',{buzz:3,family:-10,time:30},'有新聞，但家人不情願','報導很溫馨，但家人整晚沒跟你說話。'),
+   o('不處理',{family:-6},'家人會更不高興','隔天記者又來了。')]}
+);
+const EV={};EVENTS.forEach(e=>EV[e.id]=e);
+const FORUM={id:'forum',tier:'normal',who:'yu',d:'old',manual:1,title:'公辦政見發表會',
+  g:{mood:['全市在看','mid'],media:['電視轉播','mid'],opp:['兩位對手剛講完','mid']},
+  scene:()=>`攝影機的紅燈亮了。主持人宣布：第 ${S.num||2} 號候選人，${S.name}。`,
+  q:()=>hasLv2()?`記者追問：「${S.policies.filter(id=>POL[id].lv===2).map(id=>POL[id].name).join('、')}，錢從哪裡來？」`:'記者追問：「你的政見第一年要花多少錢？財源在哪？」',
+  opts:()=>[o('逐項說明財源和時程',hasLv2()?{integ:1,sup:{all:.6},card:'policy',time:30}:{integ:4,sup:{all:1.6},card:'policy',time:30},hasLv2()?'大跳票政見很難自圓其說':'你的政見撐得住檢驗',hasLv2()?'你講得很努力，但大跳票的數字怎麼算都不夠，記者會後還在追。':'你把預算表投在螢幕上，評論說這是今晚最紮實的一段。'),
+    o('強調願景，細節當選後再說',{integ:-4,sup:{all:.5},card:'policy',time:30},'聽起來好聽，但會被追打','掌聲不少，但隔天社論說：「願景不能當飯吃。」'),
+    o('反過來質疑對手的政績',{buzz:5,integ:-1,sup:{uni:.6,tech:.6,old:-.6},card:'policy',time:30},'年輕人愛看，長輩不愛','台下一陣騷動，剪輯片段在網路上很紅。')]};
+
+/* ---------- state ---------- */
+const z0=v=>({uni:v,tech:v,field:v,new:v,old:v,port:v});
+function S0(){return{v:1,ng:false,newsLog:[],short:false,start:1,gx:1,ff:0,polls:[],oppNews:[],chains:[],autoTime:true,idle:0,streamDay:0,ngMod:0,hard:false,name:'',look:'m',num:0,day:1,min:420,energy:85,hunger:60,voice:90,family:70,money:300,buzz:20,integ:60,
+  acc:{P:z0(0),A:z0(0),B:z0(0)},heat:z0(10),lastAt:{},visitDay:z0(1),policies:[],polEditDay:1,policyChanges:0,
+  pending:[],calls:[],forced:[],used:{},lastCrisis:-10,flags:{},cards:[],done:{},
+  st:{acts:0,shakes:0,events:0,attacks:0,collapses:0,homes:0,ignored:0},
+  px:960,py:832,tx:null,ty:null,tloc:null,radioDay:0,homeDay:0,todayNews:[],morning:null,money0:300,poll:null,autoShake:false,over:false,ngBroken:[],ngReport:null,basePlus:z0(0),walk:0};}
+let S=S0();
+let scr='title';
+
+/* ---------- model ---------- */
+function polBonus(d){return S.policies.reduce((a,id)=>a+(POL[id].fx[d]||0),0);}
+function cred(){return .4+S.integ/100;}
+function score(X,d){let s=DIST[d].base[X]+S.acc[X][d];if(X==='P'){s+=S.basePlus[d]+polBonus(d)*cred()+(S.buzz-30)*.06*DIST[d].media;}
+  if(X==='A'&&S.hard)s+=5;if(X==='B'&&S.hard)s+=2;if(X==='A'&&S.ng)s+=3;return Math.max(4,s);}
+function shares(){const r={};DK.forEach(d=>{let t=0;const a={};['P','A','B'].forEach(X=>{a[X]=Math.pow(score(X,d),1.6);t+=a[X];});r[d]={P:a.P/t,A:a.A/t,B:a.B/t};});return r;}
+function turnout(d){return clamp(DIST[d].turnout+S.heat[d]*.0015,.4,.92);}
+function city(sh){const v={P:0,A:0,B:0};let t=0;DK.forEach(d=>{const n=DIST[d].voters*turnout(d);t+=n;['P','A','B'].forEach(X=>v[X]+=n*sh[d][X]);});['P','A','B'].forEach(X=>v[X]/=t);return v;}
+const inBest=(a,h)=>(a.best||[]).some(([x,y])=>h>=x&&h<y);
+const isWeekend=()=>{const w=wdOf(S.day);return w===0||w===6;};
+function timing(a,h){let m=a.best?(inBest(a,h)?1.35:.7):1;if(a.weekday&&isWeekend())m*=.6;if(a.weekend&&isWeekend())m*=1.4;return m;}
+function gain(a,loc,mult,startMin){
+  const d=loc.d;const tm=timing(a,startMin/60);const vf=S.voice<30?.55:1;const ef=S.energy<20?.75:1;
+  const rec=(S.lastAt[loc.id]!=null&&S.day-S.lastAt[loc.id]<2)?.6:1;const sh=shares()[d].P;const dim=clamp((1-sh)*1.5-.1,.2,1);
+  const v=a.g*tm*vf*ef*rec*dim*mult*(S.gx||1)*(S.money<0?.85:1);
+  S.acc.P[d]+=v;S.heat[d]=clamp(S.heat[d]+(a.heat||2),0,100);S.buzz=clamp(S.buzz+(a.buzz||.4),0,100);
+  S.lastAt[loc.id]=S.day;S.visitDay[d]=S.day;return{v,tm};
+}
+function advance(m){S.min+=m;S.hunger=clamp(S.hunger-m/11,0,100);S.energy=clamp(S.energy-m/45-(S.hunger<20?m/30:0)-(S.hard?m/120:0),0,100);S.voice=clamp(S.voice+m/40,0,100);}
+function vitals(){S.energy=clamp(S.energy,0,100);S.voice=clamp(S.voice,0,100);S.hunger=clamp(S.hunger,0,100);S.family=clamp(S.family,0,100);S.integ=clamp(S.integ,0,100);S.buzz=clamp(S.buzz,0,100);}
+
+/* ---------- screens ---------- */
+function show(id){['scrTitle','scrSetup','scrBrief','scrGame','scrResult'].forEach(s=>$('#'+s).hidden=s!==id);scr=id;}
+function titleScreen(){
+  const ng=LS.get('xz60.ng');const save=LS.get('xz60.save');
+  const box=$('#vcards');box.innerHTML='';
+  const card=(o)=>{const b=el('button','vcard '+(o.cls||''));b.type='button';b.innerHTML=`<div class="fig" data-face="${o.face}"></div><div class="vb"><span class="tag">${o.tag}</span><h3>${o.title}</h3><p>${o.desc}</p><span class="go">${o.go}</span></div>`;if(o.fn)b.onclick=o.fn;else b.setAttribute('aria-disabled','true');box.appendChild(b);};
+  card({face:'f:tired',tag:'不需要政治背景',title:'一般民眾體驗版',desc:'被幕僚電話追著跑、在六個區之間趕場，用選擇決定怎麼做。玩完你會知道，候選人的 60 天是什麼樣子。',go:'開始體驗 →',fn:()=>setupScreen(false)});
+  card({face:ng?'P:happy':'m:worry',cls:'teal'+(ng?'':' locked'),tag:'二週目',title:'連任之戰',desc:ng?`${ng.name}市長，四年過去了。你當年的政見，現在要被一條一條檢驗。`:'一週目當選之後開啟。當年開的支票，四年後會回來找你。',go:ng?'開始連任之戰 →':'通關一週目後開啟',fn:ng?()=>setupScreen(true):null});
+  const lk=$('#titleLinks');lk.innerHTML='';
+  if(save&&!save.over){const b=el('button','btn','繼續上次的選戰（第 '+save.day+' 天）');b.type='button';b.onclick=()=>{loadSave(save);};lk.appendChild(b);}
+  paintFaces(box);show('scrTitle');
+}
+let setupNG=false;
+function setupScreen(ng){
+  setupNG=ng;const prev=ng?LS.get('xz60.ng'):null;
+  $('#setupEyebrow').textContent=ng?'選戰60天 · 二週目':'選戰60天 · 一般民眾體驗版';
+  $('#setupTitle').textContent=ng?'D-60 · 連任之戰':'D-60 · 登記參選';
+  $('#setupDesc').textContent=ng?'四年前你贏了。現在你是現任市長，白天要開市政會議，晚上才能拜票；當年的政見會被一條一條拿出來檢驗。對手捲土重來，而且準備得更好。':'你是新城聯盟推出的市長候選人。從今天起到投票日，你要跑遍雲澄市六個區。幕僚的電話隨時會響：有的是小事，有的會翻盤。吃飯、睡覺、回家陪家人，都得自己找空檔。';
+  if(prev){$('#inName').value=prev.name;setLook(prev.look);}
+  show('scrSetup');setTimeout(()=>$('#inName').focus(),50);
+}
+let pickDiff='normal',pickLook='m',pickLen='60';
+$('#segLen').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pickLen=b.dataset.v;document.querySelectorAll('#segLen button').forEach(x=>x.classList.toggle('on',x===b));});
+function setLook(v){pickLook=v;document.querySelectorAll('#looks .look').forEach(b=>b.classList.toggle('on',b.dataset.v===v));}
+$('#segDiff').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;pickDiff=b.dataset.v;document.querySelectorAll('#segDiff button').forEach(x=>x.classList.toggle('on',x===b));});
+$('#looks').addEventListener('click',e=>{const b=e.target.closest('.look');if(b)setLook(b.dataset.v);});
+$('#btnBackTitle').onclick=titleScreen;
+$('#btnSetupNext').onclick=()=>{
+  const name=$('#inName').value.trim();
+  if(!name){$('#inName').focus();$('#inName').placeholder='請先輸入候選人姓名';toast('還沒有名字','請先輸入候選人姓名');return;}
+  S=S0();S.name=name;S.look=pickLook;S.hard=pickDiff==='hard';S.ng=setupNG;
+  if(S.hard){S.energy=78;S.money=240;}
+  if(pickLen==='30'){S.short=true;S.start=30;S.day=30;S.gx=1.5;DK.forEach(d=>{S.acc.A[d]+=AD[d]*15;S.acc.B[d]+=BD[d]*15;});S.polEditDay=30;S.visitDay=z0(30);S.num=1+Math.floor(Math.random()*3);S.money-=60;}
+  if(S.ng){ngDecide(()=>ngReview(()=>policyScreen({title:'第二任的政見',sub:'這是你連任的承諾。四年後，選民一樣會拿出來檢驗。',initial:[],onDone:()=>briefScreen()})));}
+  else policyScreen({title:'定政見',sub:'最多 4 項，預算點數不能超過 100。政見決定你在哪些區加分、在哪些區扣分。',initial:[],onDone:()=>briefScreen()});
+};
+
+function ngDecide(next){
+  const Q=[
+   {t:'任內第一年：預算怎麼排？',p:'市府預算有限，你的四年要從哪裡開始？',o:[
+     ['全力推動政見，其他先緩一緩',()=>{S.ngMod+=.15;S.money-=60;},'政見兌現率 +15%，但選舉資金少 60 萬'],
+     ['保守理財，先把市府的債還一些',()=>{S.ngMod-=.1;S.integ+=5;},'兌現率 −10%，誠信 +5'],
+     ['先辦跨年晚會、大型活動拚人氣',()=>{S.ngMod-=.15;S.buzz+=10;DK.forEach(d=>S.basePlus[d]+=1);},'兌現率 −15%，聲量 +10，各區人氣小升']]},
+   {t:'任內第二年：議會卡預算',p:'對手的黨團在議會刪了你一半的政見預算。',o:[
+     ['一位一位拜會議員，協商過關',()=>{S.ngMod+=.1;},'兌現率 +10%'],
+     ['開記者會批評議會杯葛',()=>{S.ngMod-=.05;S.buzz+=6;S.integ-=2;},'兌現率 −5%，聲量 +6，誠信 −2'],
+     ['把預算拆小，先做做得到的部分',()=>{S.ngMod+=.05;S.integ+=2;},'兌現率 +5%，誠信 +2']]},
+   {t:'任內第三年：局處採購弊案',p:'你任命的局長被爆出採購弊案，媒體在等你表態。',o:[
+     ['立刻撤換局長，移送調查',()=>{S.integ+=6;DK.forEach(d=>S.basePlus[d]-=.5);},'誠信 +6，短期支持小跌'],
+     ['等調查結果出來再說',()=>{S.integ-=2;},'誠信 −2'],
+     ['公開力挺局長',()=>{S.integ-=8;},'誠信 −8，對手之後會拿來打']]}];
+  let i=0;S.basePlus=z0(5);
+  const ask=()=>{if(i>=Q.length)return next();const q=Q[i];
+    dlg({eyebrow:`二週目 · 任內決策 ${i+1} / ${Q.length}`,title:q.t,html:`<p>${q.p}</p><div class="list">${q.o.map(x=>`<div class="li"><span>${x[0]}</span><span class="mute">${x[2]}</span></div>`).join('')}</div><p class="mute">這三個決定會影響四年前的政見能兌現多少。</p>`,
+      buttons:shuffle(q.o).map(x=>({t:x[0],cls:'ghost',fn:()=>{x[1]();i++;ask();}}))});};
+  ask();
+}
+function ngReview(next){
+  const prev=LS.get('xz60.ng')||{policies:[]};
+  S.ngBroken=[];const rows=[];
+  (prev.policies||[]).forEach(id=>{const p=POL[id];if(!p)return;const pr=clamp([.9,.6,.2][p.lv]+(S.ngMod||0),.05,.97);const kept=Math.random()<pr;
+    Object.entries(p.fx).forEach(([d,v])=>{if(v>0)S.basePlus[d]+=kept?1.5:-3;});
+    if(!kept){S.ngBroken.push(id);S.integ-=4;}
+    rows.push(`<div class="li"><span>${p.iname} · ${p.name} <small class="mute">（${LV[p.lv]}）</small></span><b style="color:${kept?'var(--good)':'#ff8b95'}">${kept?'兌現':'跳票'}</b></div>`);});
+  dlg({eyebrow:'二週目 · 政績檢驗',title:'四年前的支票，兌現了幾張？',
+    html:`<p>穩健的政見大多做得到，大跳票的政見幾乎都做不到${S.ngMod?`；你的任內決策讓兌現率${S.ngMod>0?'提高':'降低'}了 ${Math.round(Math.abs(S.ngMod)*100)}%`:''}。跳票的會變成對手的攻擊素材，兌現的會變成你的基本盤。</p><div class="list">${rows.join('')||'<div class="li">沒有找到一週目的政見紀錄。</div>'}</div><div class="note warn">現任市長平日上午要在市府開會（08:00–12:00），只能從中午開始拜票。</div>`,
+    buttons:[{t:'接受檢驗，定第二任政見',fn:next}]});
+}
+
+/* ---------- policy screen ---------- */
+function policyScreen(o){
+  let sel=new Set(o.initial||[]);const box=$('#polBox');
+  const render=()=>{
+    const cost=[...sel].reduce((a,id)=>a+POL[id].cost,0);const over=cost>100;
+    let h=`<div class="eyebrow">政見會議</div><h2>${o.title}</h2><p class="mute">${o.sub}</p>
+      <div class="budget"><b>預算點數 ${cost} / 100</b><div class="meter"><i class="${over?'over':''}" style="width:${Math.min(100,cost)}%"></i></div><span>已選 ${sel.size} / 4 項</span></div>
+      <div class="note warn">大跳票政見加分最多，但會被追問「錢從哪裡來」，誠信容易扣分；誠信越低，政見的加分打越多折。</div><div class="polgrid">`;
+    ISSUES.forEach(i=>{h+=`<div class="issue"><h3>${i.name}</h3>`;i.ops.forEach(p=>{
+      const up=Object.entries(p.fx).filter(([d,v])=>v>0).map(([d,v])=>DIST[d].short+' +'+v).join('、');
+      const dn=Object.entries(p.fx).filter(([d,v])=>v<0).map(([d,v])=>DIST[d].short+' '+v).join('、');
+      h+=`<button type="button" class="pol ${sel.has(p.id)?'on':''}" data-id="${p.id}" aria-pressed="${sel.has(p.id)}"><span class="t">${p.name}<span class="lv ${p.lv===2?'l2':''}">${LV[p.lv]} · ${p.cost} 點</span></span><span class="fx">加分：${up}${dn?'　扣分：'+dn:''}</span></button>`;});h+='</div>';});
+    h+=`</div><div class="drow">${o.cancel?'<button type="button" class="btn ghost" id="polCancel">先不改</button>':''}<button type="button" class="btn" id="polOk" ${(!sel.size||over)?'disabled':''}>${over?'超過預算了':'確認政見'}</button></div>`;
+    box.innerHTML=h;
+    box.querySelectorAll('.pol').forEach(b=>b.onclick=()=>{const p=POL[b.dataset.id];
+      if(sel.has(p.id))sel.delete(p.id);else{[...sel].forEach(id=>{if(POL[id].issue===p.issue)sel.delete(id);});if(sel.size>=4){toast('最多 4 項','先取消一項再選');return;}sel.add(p.id);}
+      const st=box.scrollTop;render();box.scrollTop=st;});
+    $('#polOk').onclick=()=>{$('#ovPolicy').hidden=true;o.onDone([...sel]);};
+    if(o.cancel)$('#polCancel').onclick=()=>{$('#ovPolicy').hidden=true;o.cancel();};
+  };
+  render();$('#ovPolicy').hidden=false;box.scrollTop=0;
+  const done=o.onDone;o.onDone=ids=>{const old=S.policies.slice();S.policies=ids;if(o.count){const diff=ids.filter(x=>!old.includes(x)).length+old.filter(x=>!ids.includes(x)).length;if(diff){S.policyChanges+=Math.ceil(diff/2);S.polEditDay=S.day;}}done(ids);};
+}
+
+/* ---------- brief ---------- */
+function briefScreen(){
+  const b=$('#scrBrief');
+  const notes=[['舊城區','長輩、商家','黃志偉的基本盤。早上七點到十點，市場人最多。'],['科技園區','年輕上班族','上下班時間去捷運站。年輕人投票率偏低，要讓他們想出門。'],['港口工業區','勞工、工會','工會理事長說話有份量，工安和空汙是地雷。'],['大學城','學生、首投族','林小晴的主場。要靠政見和誠意說服，不是靠握手。'],['田野漁村區','農漁民、宗親','路很遠，去一趟要排半天。漁港清晨最熱鬧。'],['新興重劃區','年輕家庭','週末公園和賣場人最多，家長最在意托育。']];
+  const tl=[[1,'D-60','登記參選'],[10,'D-51','抽籤'],[31,'D-30','政見發表會'],[46,'D-15','電視辯論'],[51,'D-10','民調封關'],[60,'D-1','選前之夜'],[61,'投票日','開票']].filter(t=>t[0]>=S.day).map(t=>t.slice(1));if(S.short)tl.unshift([`D-${61-S.day}`,'開始衝刺']);
+  b.innerHTML=`<div class="wrap">
+   <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end">
+    <div><div class="eyebrow">交接 · 雲澄市長選舉${S.ng?' · 連任之戰':''}</div><h1 class="big" style="font-size:clamp(30px,4.4vw,48px)">今天起，雲澄市交給你了</h1><p class="mute" style="margin:6px 0 0">選戰時間 ${61-S.day} 天 · 第 1 天 07:00 開始 · 先看完前任總幹事的交接，準備好再出門。</p></div>
+    <div style="text-align:right"><div style="font-family:var(--mono);font-size:44px;font-weight:700;line-height:1">D-${61-S.day}</div><small class="mute">按下開始，時間才會開始走</small></div>
+   </div>
+   <div class="brief">
+    <div class="card cand"><div class="fig" data-face="P:smile" style="height:240px;background:#1d2a42;border-radius:10px"></div><div><b style="font-size:18px;display:block;margin-top:10px">${esc(S.name)}</b><small class="mute">${CAND.P.party} · ${S.ng?'現任市長':'市長候選人'}</small><div class="bars" style="margin-top:10px">${barH('體力',S.energy)}${barH('肚子',S.hunger,'hun')}${barH('嗓子',S.voice)}</div></div></div>
+    <div class="memo"><h3>前任總幹事交接單</h3><div style="display:flex;justify-content:space-between;color:var(--paper-mute);font-size:13px;border-bottom:1px solid var(--paper-line);padding:6px 0 8px"><span>總幹事 阿誠 → ${esc(S.name)}</span><span>六個區，你要注意的：</span></div>
+     ${notes.map(n=>`<div class="row"><b>${n[0]}</b><div>${n[1]}<small>${n[2]}</small></div></div>`).join('')}
+     <div class="foot">三個人搶 60 萬票。地圖上看起來都很平靜，真正的狀況，會從電話裡來。</div></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+     <div class="card"><h3>你的幕僚</h3><div class="staff">${Object.entries(STAFF).map(([k,s])=>`<div><div class="fig" data-face="${k}:smile"></div><b>${s.name}</b><small>${s.role}<br>${s.area}</small></div>`).join('')}</div></div>
+     <div class="card"><h3>選戰守則</h3><ul class="rules">
+      <li><b style="color:var(--amber)">照顧好自己</b>：記得吃飯、睡覺、回家。體力低於 20% 效果變差，歸零會被送醫，當天行程全部取消。</li>
+      <li>電話會響：有的是小事，有的會翻盤。去現場、電話處理、還是先放著，你決定。</li>
+      <li>答應要去就快點到。放太久，事情會自己變糟。</li>
+      <li>每個地點都有最好的時段：清晨的市場、通勤的捷運站、週末的公園。</li>
+      <li>紅線不要碰。有些選項會讓你直接出局。</li></ul></div>
+    </div>
+   </div>
+   <div class="timeline">${tl.map(t=>`<div><i></i><b>${t[0]}</b>${t[1]}</div>`).join('')}</div>
+   <div class="drow" style="margin-top:22px"><button type="button" class="btn" id="btnStart" style="font-size:18px;padding:14px 26px">我準備好了，開始拜票 ▶</button></div>
+  </div>`;
+  paintFaces(b);show('scrBrief');
+  $('#btnStart').onclick=()=>{startGame();};
+  setTimeout(()=>$('#btnStart').focus(),50);
+}
+function barH(l,v,c){return`<div class="bar"><span>${l}</span><div class="tr"><i class="${c||''} ${v<20?'low':''}" style="width:${v}%"></i></div><span class="v">${Math.round(v)}%</span></div>`;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ---------- dialogs / toasts ---------- */
+function dlg(o){
+  const b=$('#dlgBox');b.className='dlg '+(o.cls||'');
+  b.innerHTML=(o.eyebrow?`<div class="eyebrow">${o.eyebrow}</div>`:'')+(o.title?`<h2>${o.title}</h2>`:'')+(o.html||'');
+  const row=el('div','drow');
+  (o.buttons||[{t:'好'}]).forEach((bt,i)=>{const x=el('button','btn '+(bt.cls||''),bt.t);x.type='button';if(bt.dis)x.disabled=true;x.onclick=()=>{$('#ovDlg').hidden=true;if(bt.fn)bt.fn();};row.appendChild(x);if(i===0)setTimeout(()=>x.focus(),40);});
+  b.appendChild(row);paintFaces(b);$('#ovDlg').hidden=false;b.scrollTop=0;
+}
+function toast(a,b){const t=el('div','toast',`${esc(a)}${b?`<small>${esc(b)}</small>`:''}`);$('#toasts').appendChild(t);setTimeout(()=>t.remove(),3200);while($('#toasts').children.length>3)$('#toasts').firstChild.remove();}
+function news(s){S.todayNews.push(s);S.newsLog=(S.newsLog||[]).concat(s).slice(-8);}
+
+/* ---------- game start / day flow ---------- */
+function startGame(){
+  S.px=LOC.hq.x;S.py=LOC.hq.y+AOFF;show('scrGame');resize();startDay();
+}
+function schedule(){const n=2+(Math.random()<.55?1:0)+(S.hard?1:0);const a=[];for(let i=0;i<n;i++)a.push(Math.round(rnd(9*60,21*60)));return a.sort((x,y)=>x-y);}
+function startDay(){
+  S.min=7*60;S.todayNews=[];S.money0=S.money;S.morning=shares();S.calls=schedule();S.tx=null;S.tloc=null;
+  if(S.flags.bribe&&S.day>=56&&!S.flags.busted){S.flags.busted=1;return dlg({eyebrow:`D-${61-S.day} · 第 ${dn()} 天`,title:'檢調搜索競選總部',html:`<div class="fig" data-face="cheng:shock" style="height:180px;max-width:200px;margin:0 auto 10px"></div><p>清晨六點，檢調人員拿著搜索票進了總部。阿誠被帶走前回頭看了你一眼。</p><p>買票名單上的每一個名字都查到了。</p>`,buttons:[{t:'接受結果',cls:'red',fn:()=>finish('void')}]});}
+  saveGame();morning();
+}
+function morning(){
+  const d=S.day,w=wdOf(d);const left=61-d;let html='';
+  if(S.ff){if(d<S.ff&&!MILE[d]&&!EVENING[d]&&!S.flags.dayoff){toast(`快轉中：第 ${dn()} 天`,'有事件才會停下來');if(S.ng&&w>=1&&w<=5)S.min=12*60;return autoDay(true);}S.ff=0;}
+  let head=MILE[d]||pick(NEWS);if(S.short&&d===S.start)head='選戰只剩一個月，今天正式全力衝刺。';
+  if(d===10){S.num=1+Math.floor(Math.random()*3);head=`抽籤結果出爐：你是 ${S.num} 號候選人。`;}
+  html+=`<div class="note">${head}</div>`;
+  if(w===0){
+    if(d<51){const sh=shares();const c=city(sh);const n={P:c.P+rnd(-.03,.03),A:c.A+rnd(-.03,.03),B:c.B+rnd(-.03,.03)};const t=n.P+n.A+n.B;
+      S.polls=(S.polls||[]).filter(p=>!(p.d===d&&p.t==='pub')).concat({d,t:'pub',P:n.P/t,A:n.A/t,B:n.B/t});
+      html+=`<h3 style="font-size:15px;margin-top:14px">週日民調（誤差 ±3%）</h3><div class="pollbars">${['P','A','B'].map(X=>`<div class="pb"><span>${X==='P'?esc(S.name):CAND[X].name}</span><div class="tr"><i style="width:${n[X]/t*100}%;background:${CAND[X].color}"></i></div><span class="n">${(n[X]/t*100).toFixed(1)}%</span></div>`).join('')}</div>`;
+      if(S.polls.length>1)html+=trendSVG();
+    }else html+=`<div class="note warn">民調封關期間不公布民調。只能靠你在街上的感覺判斷。</div>`;
+  }
+  if((S.oppNews||[]).length)html+=`<h3 style="font-size:15px;margin-top:14px">對手昨天的動態</h3><div class="list">${S.oppNews.map(t=>`<div class="li"><span>${esc(t)}</span></div>`).join('')}</div>`;
+  if(S.money<0)html+=`<div class="note bad">阿誠：「帳戶已經透支 ${Math.round(-S.money)} 萬了。志工便當快發不出來，拜票效果會打折，聲量也會一直掉。去總部開募款直播或辦募款餐會吧。」${S.money<-150?'<br>宣傳車已經停開，各區熱度掉得很快。':''}</div>`;
+  const tips=[];
+  if(S.energy<45)tips.push('阿誠：「你昨天太拚了，今天記得找時間回總部小睡一下。」');
+  if(S.family<35)tips.push('小瑜：「你家人昨天問我你幾點回家……今天要不要早點回去？」');
+  if(S.voice<40)tips.push('阿哲：「你聲音都啞了，少排一點演講吧。」');
+  const sh=shares();const low=DK.slice().sort((a,b)=>sh[a].P-sh[b].P)[0];
+  tips.push(`阿誠：「${DIST[low].name}我們最弱，${DIST[low].people}最在意${DIST[low].issue}。」`);
+  html+=`<p class="mute" style="margin-top:12px">${tips.slice(0,2).join('<br>')}</p>`;
+  const ngMeet=S.ng&&w>=1&&w<=5;
+  if(ngMeet)html+=`<div class="note warn">今天是平日，上午在市府開市政會議，12:00 才能出門拜票。</div>`;
+  if(S.flags.dayoff){html+=`<div class="note">你答應家人今天放假。今天不排任何行程。</div>`;}
+  const btns=[];
+  if(S.flags.dayoff){btns.push({t:'陪家人過一天',fn:()=>{S.flags.dayoff=0;S.family=clamp(S.family+20,0,100);S.energy=clamp(S.energy+25,0,100);S.voice=100;S.min=21*60;S.homeDay=S.day;S.st.homes++;news(`${S.name}今天沒有公開行程。`);endDay();}});}
+  else{
+    btns.push({t:'開始今天',fn:()=>{if(ngMeet){S.min=12*60;S.energy-=5;}}});
+    btns.push({t:'例行行程（自動跑完今天）',cls:'ghost',fn:()=>{if(ngMeet){S.min=12*60;S.energy-=5;}autoDay();}});
+    if(w!==0&&d<59){const sun=d+(7-w);btns.push({t:'快轉到週日（有事件才停）',cls:'ghost',fn:()=>{S.ff=Math.min(sun,60);if(ngMeet){S.min=12*60;S.energy-=5;}autoDay(true);}});}
+    if(d-S.polEditDay>=7&&w===0)btns.push({t:'調整政見',cls:'ghost',fn:()=>openPolicy(()=>morning())});
+  }
+  dlg({eyebrow:`D-${left} · 第 ${dn()} 天 · 週${WD[w]}${S.ng?' · 連任之戰':''}`,title:left===1?'明天就是投票日':`早安，${esc(S.name)}。今天是第 ${dn()} 天`,html,buttons:btns});
+}
+function openPolicy(back){
+  if(S.day-S.polEditDay<7&&S.day>1){dlg({title:'政見這週已經改過了',html:`<p>第 ${S.polEditDay+7} 天之後才能再調整。你目前的政見：</p>${polList()}`,buttons:[{t:'好',fn:back}]});return;}
+  policyScreen({title:'調整政見',sub:'每改一項，對手就多一份「政見反覆」的對照表。',initial:S.policies,count:true,cancel:back,onDone:()=>{toast('政見已更新','新的政見明天開始發酵');back();}});
+}
+function polList(){return `<div class="list">${S.policies.map(id=>{const p=POL[id];return`<div class="li"><span>${p.iname} · ${p.name}</span><span class="mute">${LV[p.lv]} · ${p.cost} 點</span></div>`;}).join('')}</div>`;}
+
+function autoDay(ff){
+  const sh=shares();const order=DK.slice().sort((a,b)=>sh[a].P-sh[b].P);const stops=[];
+  const slots=S.min>=12*60?[12,18]:[8,12,18];
+  slots.forEach((h,i)=>{if(i===slots.length-1&&S.money<80){const g=Math.round(rnd(90,140));S.money+=g;S.energy-=14;S.voice-=10;stops.push(`${fmt(h*60)} 競選總部 · 募款餐會（資金 +${g} 萬）`);return;}const d=order[i%order.length];let best=null;
+    LOCS.filter(l=>l.d===d&&!l.hq&&!l.home).forEach(l=>l.acts.forEach(id=>{const a=ACTS[id];if(!a.g)return;const sc=a.g*timing(a,h);if(!best||sc>best.sc)best={l,id,sc};}));
+    if(best){const a=ACTS[best.id];gain(a,best.l,.6,h*60);S.energy-=a.e;S.voice-=a.v;S.st.acts++;S.st.shakes+=Math.round(rnd(60,120));stops.push(`${fmt(h*60)} ${best.l.name} · ${a.name}`);}});
+  S.hunger=55;S.min=21*60;S.energy-=8;S.px=LOC.hq.x;S.py=LOC.hq.y+AOFF;vitals();
+  news(`${S.name}今天跑了${stops.length}個行程。`);
+  const evPhase=()=>{const ev=Math.random()<(ff?.55:.75)?pickEvent(true):null;if(ev){S.afterPanel=()=>endDay();showCall(ev,{});}else endDay();};
+  if(ff)return evPhase();
+  dlg({eyebrow:`第 ${dn()} 天 · 例行行程`,title:'今天的行程跑完了',html:`<p class="mute">幕僚照表操課，效果比親自上陣差不少。只靠例行行程很難贏。</p><div class="list">${stops.map(s=>`<div class="li">${s}</div>`).join('')}</div>`,
+    buttons:[{t:'回總部',fn:evPhase}]});
+}
+
+function endDay(collapsed){
+  closeSheet();stopEat();
+  const ev=EVENING[S.day];
+  if(ev&&!S.done[S.day]&&!collapsed){return runEvening(ev,()=>endDay());}
+  S.pending.slice().forEach(p=>expire(p,true));
+  if(S.ff&&!collapsed)return night(false,false);
+  const now=shares();const rows=DK.map(d=>{const df=(now[d].P-S.morning[d].P)*100;const a=df>.6?'<b style="color:var(--good)">↑↑</b>':df>.15?'<b style="color:var(--good)">↑</b>':df<-.6?'<b style="color:#ff8b95">↓↓</b>':df<-.15?'<b style="color:#ff8b95">↓</b>':'<span class="mute">—</span>';return`<div class="li"><span>${DIST[d].name}</span>${a}</div>`;}).join('');
+  const nl=S.todayNews.length?S.todayNews.slice(-3).map(n=>`<div class="note">${esc(n)}</div>`).join(''):'<p class="mute">今天沒有上新聞。</p>';
+  const spent=S.money-S.money0;
+  dlg({eyebrow:`第 ${dn()} 天結束 · ${fmt(S.min)}`,title:collapsed?'今天的行程全部取消了':'今天辛苦了',
+    html:`<h3 style="font-size:15px">今天的報導</h3>${nl}<h3 style="font-size:15px;margin-top:12px">各區今天的感覺</h3><div class="list">${rows}</div><p class="mute">資金 ${spent>=0?'+':''}${Math.round(spent)} 萬，目前 ${Math.round(S.money)} 萬。</p>`,
+    buttons:[{t:'睡覺',fn:()=>night(false,collapsed)},{t:'熬夜回訊息（聲量 +4，明天體力 −12）',cls:'ghost',dis:collapsed,fn:()=>night(true,collapsed)}]});
+}
+function night(late,collapsed){
+  const h=S.min/60;
+  if(collapsed)S.energy=55;else S.energy=clamp(S.energy+30+(24-Math.max(h,20))*8,0,100);
+  if(late){S.buzz+=4;S.energy-=12;}
+  S.voice=clamp(S.voice+35,0,100);S.hunger=60;S.family-=S.homeDay===S.day?1:4;S.money-=10;S.buzz-=1.2;
+  if(S.money<0){S.buzz-=1.5;DK.forEach(d=>{S.acc.P[d]-=.1;S.heat[d]*=S.money<-150?.93:1;});S.st.broke=(S.st.broke||0)+1;}
+  DK.forEach(d=>S.heat[d]*=.97);opp();vitals();
+  S.day++;
+  if(S.day>60)election();else startDay();
+}
+const AD={old:.6,field:.6,port:.55,tech:.3,uni:.2,new:.45},BD={uni:.6,tech:.55,new:.45,old:.2,field:.1,port:.25};
+const A_ACT=['帶著三位議員掃街','拜會地方宗親會','在廟口辦感恩餐會','到市場發面紙拜票','跟工會幹部吃飯','辦「穩定執政」說明會'],B_ACT=['開直播，五萬人在線','在夜市跟網友合照','拍了一支爆紅短影音','辦青年座談，場場爆滿','在捷運站送早餐','跟知名 YouTuber 合拍影片'];
+function opp(){const k=S.hard?1.3:1;DK.forEach(d=>{S.acc.A[d]+=AD[d]*k;S.acc.B[d]+=BD[d]*k;});
+  const sh=shares();const best=DK.reduce((a,d)=>sh[d].P>sh[a].P?d:a,DK[0]);
+  const fa=Math.random()<.5?best:pick(['old','field','port','new']),fb=Math.random()<.4?best:pick(['uni','tech','new']);
+  S.acc.A[fa]+=.7*k;S.acc.B[fb]+=.45*k;
+  S.oppNews=[`黃志偉在${DIST[fa].name}${pick(A_ACT)}${fa===best?'，直接打進你的優勢區':''}。`,`林小晴在${DIST[fb].name}${pick(B_ACT)}${fb===best?'，搶你的票':''}。`];
+  if(S.day%7===3){const w=Math.random()<.5?'A':'B';const ds=shuffle(DK).slice(0,2);ds.forEach(d=>S.acc[w][d]+=.8*k);S.oppNews.push(`${CAND[w].name}發表新政見，主打${ds.map(d=>DIST[d].name).join('、')}。`);}
+  trucks[0].ds=[fa];trucks[1].ds=[fb];
+  if(S.day>40)DK.forEach(d=>S.acc.A[d]+=.1);}
+function collapse(){
+  if(S.over)return;closeSheet();stopEat();S.st.collapses++;S.buzz-=4;DK.forEach(d=>S.acc.P[d]-=.8);
+  news(`候選人${S.name}體力不支送醫，取消當天行程。`);
+  dlg({eyebrow:fmt(S.min),title:'你在路邊蹲下來，眼前一黑',html:'<div class="fig" data-face="P:tired" style="height:180px;max-width:200px;margin:0 auto 10px"></div><p>醒來的時候在急診室，阿誠坐在旁邊。</p><p class="mute">候選人體力不支送醫，今天的行程全部取消。記得吃飯、睡覺，比多跑一場還重要。</p>',buttons:[{t:'回家休息',fn:()=>endDay(true)}]});
+}
+function forceSleep(){
+  dlg({eyebrow:'23:00',title:'太晚了',html:'<p>阿誠把你的手機收走：「明天七點還要去市場，回家睡覺。」</p>',buttons:[{t:'回家睡覺',fn:()=>endDay()}]});
+}
+
+/* ---------- evening events ---------- */
+function runEvening(kind,cb){
+  S.done[S.day]=1;closeSheet();
+  if(S.min<19*60)S.min=19*60;
+  if(kind==='forum'){S.afterPanel=cb;openPanel({ev:FORUM,ctx:{}});}
+  else if(kind==='debate')debate(cb);
+  else rhythm({title:'選前之夜 · 造勢大會',desc:'台下兩萬人在等你帶口號。照著紅色圈圈的節拍按 C 或下面的按鈕。',beats:16,words:['凍','蒜'],btn:'喊口號'},(m,hits)=>{
+    DK.forEach(d=>{S.acc.P[d]+=1.4*m;S.heat[d]=clamp(S.heat[d]+18,0,100);});S.voice-=25;S.energy-=15;S.min=22*60;vitals();
+    news(`選前之夜，${S.name}的造勢大會${m>1.1?'人山人海，口號喊到最後一刻':'氣氛不錯'}。`);
+    dlg({eyebrow:'選前之夜',title:m>1.1?'全場一起喊到最後一聲':'造勢大會結束了',html:`<p>你帶著全場喊了 ${hits} 次口號。各區的投票熱度都上來了。</p><p class="mute">明天是投票日。投票日當天不能再拉票，接下來只能等。</p>`,buttons:[{t:'下台',fn:cb}]});});
+}
+
+function debate(cb){
+  const lv2=S.policies.filter(id=>POL[id].lv===2);const pol=S.policies.slice(0,2);
+  const R=[
+    {who:'A',q:'黃志偉：「你的政見那麼多，錢從哪裡來？」',a:[
+      ['「每一項都有財源試算，會後公布在網站上。」',lv2.length?{integ:-2,sup:{all:.3}}:{integ:3,sup:{all:1}}],
+      ['「當選之後自然有辦法。」',{integ:-3,sup:{all:-.5}}],
+      ['「你執政八年，市府負債增加多少你知道嗎？」',{buzz:3,sup:{uni:.8,tech:.8,old:-.8}}]]},
+    {who:'B',q:'林小晴：「你是不是只會跑傳統市場，根本不懂年輕人？」',a:[
+      [`「我這段時間跑了 ${S.st.acts} 場行程，校園和捷運站都有，租屋問題也寫進了政見。」`,{sup:{uni:1,tech:1},integ:1}],
+      ['「年輕人投票率那麼低，我為什麼要特別討好？」',{sup:{uni:-3,tech:-2},buzz:3}],
+      ['「那我們辯論完一起開直播聊。」',{buzz:4,sup:{uni:.6}}]]},
+    {who:'host',q:'主持人：「如果只能做一件事，你上任第一年做什麼？」',a:[
+      ...pol.map(id=>[`「${POL[id].name}。」`,{sup:Object.fromEntries(Object.entries(POL[id].fx).map(([d,v])=>[d,v*.25])),integ:POL[id].lv===2?-2:2}]),
+      ['「先把市府財政整頓好，其他的再說。」',{integ:1,sup:{old:.5,field:.5}}]].slice(0,3)}
+  ];
+  let i=0,total=[];const box=$('#miniBox');let timer=null;
+  const round=()=>{
+    if(i>=R.length){$('#ovMini').hidden=true;S.min=21*60;S.voice-=15;S.energy-=10;vitals();news(`電視辯論會上，${S.name}的表現${total.filter(x=>x>0).length>=2?'受到不少好評':'褒貶不一'}。`);
+      dlg({eyebrow:'電視辯論會',title:'辯論結束',html:`<p>三輪問答結束。${total.filter(x=>x>0).length>=2?'政論節目說你今晚表現穩定。':'網路上對你的表現褒貶不一。'}</p>`,buttons:[{t:'回總部',fn:cb}]});return;}
+    const r=R[i];r.a=shuffle(r.a);let left=10;
+    box.innerHTML=`<div class="eyebrow">電視辯論會 · 第 ${i+1} / 3 輪</div><div class="fig" data-face="${r.who==='host'?'cheng':r.who}:${r.who==='host'?'smile':'worry'}" style="height:150px;max-width:170px;margin:8px auto"></div><p style="font-size:18px;font-weight:700">${r.q}</p><div class="tbar"><i id="dbT"></i></div><div class="qa">${r.a.map((x,k)=>`<button type="button" class="opt" data-k="${k}"><span class="n">${k+1}</span><span>${esc(x[0])}</span><span></span></button>`).join('')}</div><p class="mute" style="margin-top:8px">10 秒內回答，不然會被說答不出來。</p>`;
+    paintFaces(box);$('#ovMini').hidden=false;
+    let answered=false;const answer=k=>{if(answered)return;answered=true;clearInterval(timer);S.miniKey=null;let fx;if(k<0){fx={sup:{all:-.8},integ:-1};toast('你愣住了','主持人：「時間到。」');}else fx=r.a[k][1];
+      const ch=applyFx(fx);total.push(k<0?-1:(fx.integ||0)+(fx.sup&&fx.sup.all||0));if(k>=0)toast('你回答了',ch.slice(0,2).join(' · '));i++;setTimeout(round,300);};
+    box.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.k));
+    S.miniKey=k=>{if(k>=1&&k<=r.a.length)answer(k-1);};
+    const t0=performance.now();timer=setInterval(()=>{const p=(performance.now()-t0)/10000;const bar=$('#dbT');if(bar)bar.style.width=Math.max(0,100-p*100)+'%';if(p>=1)answer(-1);},100);
+  };
+  round();
+}
+
+/* ---------- rhythm minigame ---------- */
+function rhythm(o,cb){
+  const box=$('#miniBox');const dur=1000;let i=0,hits=0,state='wait',t0=0,raf=0;
+  box.innerHTML=`<div class="eyebrow" style="color:#ff9aa2">${o.title}</div><p style="margin-top:8px">${o.desc}</p><p class="mute">圈圈縮到綠色環的時候按最準。</p><div class="stage"><div class="tgt"></div><div class="shr" id="shr"></div><div class="dot" id="dot">${o.words?o.words[0]:''}</div></div><div class="cnt" id="cnt">0 / ${o.beats}</div><div class="fb" id="fb">準備好就開始按</div><div class="drow" style="justify-content:center"><button type="button" class="btn red" id="hit" style="min-width:200px">${o.btn||'握手'} <span class="kbd">C</span></button>${o.skip?'<button type="button" class="btn ghost" id="skip">跳過（效果打八折）</button>':''}</div>`;
+  $('#ovMini').hidden=false;
+  const shr=$('#shr'),fb=$('#fb'),cnt=$('#cnt'),dot=$('#dot');
+  const frame=ts=>{if(state==='run'){const p=(ts-t0)/dur;shr.style.transform=`scale(${Math.max(0,1.9-1.9*p)})`;if(p>=1)res(false,'錯過了');}if(state!=='done')raf=requestAnimationFrame(frame);};
+  const beat=()=>{t0=performance.now();state='run';if(o.words)dot.textContent=o.words[i%o.words.length];};
+  const res=(ok,msg)=>{if(ok)hits++;fb.textContent=msg;fb.className='fb '+(ok?'good':'bad');i++;cnt.textContent=`${i} / ${o.beats}`;state='gap';shr.style.transform='scale(0)';setTimeout(()=>{if(state==='done')return;if(i>=o.beats)done();else beat();},280);};
+  const press=()=>{if(state==='wait'){beat();return;}if(state!=='run')return;const r=1.9-1.9*(performance.now()-t0)/dur;if(r>.8&&r<1.25)res(true,o.btn==='喊口號'?'凍蒜！':'握到了！');else res(false,r>=1.25?'太早了':'太晚了');};
+  const done=(skip)=>{if(state==='done')return;state='done';cancelAnimationFrame(raf);S.miniKey=null;$('#ovMini').hidden=true;const m=skip?.8:.6+.8*hits/o.beats;cb(m,hits);};
+  $('#hit').onclick=press;if(o.skip)$('#skip').onclick=()=>done(true);
+  S.miniKey=k=>{if(k==='c')press();};raf=requestAnimationFrame(frame);setTimeout(()=>$('#hit').focus(),30);
+}
+
+/* ---------- activities ---------- */
+function nearLoc(r){let best=null,bd=r||84;LOCS.forEach(l=>{const d=Math.hypot(l.x-S.px,l.y-S.py);if(d<bd){bd=d;best=l;}});return best;}
+function actState(id){
+  const a=ACTS[id],h=S.min/60;
+  if(a.kind==='fund'&&!(h>=18&&h<21))return{ok:0,why:'18:00–21:00 才能開始'};
+  if(a.kind==='dinner'&&!(h>=17&&h<20))return{ok:0,why:'17:00–20:00 才能開始'};
+  if(a.cost&&S.money<a.cost)return{ok:0,why:'資金不夠'};
+  if(a.kind==='radio'&&S.radioDay===S.day)return{ok:0,why:'今天已經上過節目'};
+  if(a.kind==='stream'&&S.streamDay===S.day)return{ok:0,why:'今天已經直播過了'};
+  if(a.kind==='policy'&&S.day-S.polEditDay<7&&S.day>1)return{ok:0,why:`第 ${S.polEditDay+7} 天後才能再改`};
+  if(a.kind==='eat'&&S.hunger>85)return{ok:0,why:'還很飽'};
+  if(a.t&&S.min+a.t>23*60)return{ok:0,why:'太晚了'};
+  if(a.g){const tm=timing(a,h);return{ok:1,badge:tm>=1.3?['ok','好時段']:tm>=.9?['meh','普通']:['no','人不多']};}
+  return{ok:1};
+}
+let sheetLoc=null;
+function openSheet(loc){
+  sheetLoc=loc;const sh=shares();const s=$('#sheet');
+  const sub=loc.hq||loc.home?`${DIST[loc.d].name} · 現在 ${fmt(S.min)}`:`${DIST[loc.d].name} · ${DIST[loc.d].people} · 你在這區大約 ${Math.round(sh[loc.d].P*20)*5}%`;
+  let h=`<header><div><b>${loc.name}</b><small>${sub}</small></div><button type="button" class="btn ghost sm" id="shClose">離開 <span class="kbd">Esc</span></button></header>`;
+  loc.acts.forEach((id,k)=>{const a=ACTS[id];const st=actState(id);
+    const meta=a.g?`${a.t} 分鐘 · 體力 −${a.e} · 嗓子 −${a.v} · 好時段 ${a.best.map(b=>String(b[0]).padStart(2,'0')+'–'+String(b[1]).padStart(2,'0')).join('、')}${a.weekend?' · 週末人多':''}${a.weekday?' · 平日才有':''}`:(a.desc||'');
+    h+=`<button type="button" class="opt" data-id="${id}" ${st.ok?'':'disabled'}><span class="n">${k+1}</span><span><b>${a.name}</b><small>${st.ok?meta:st.why}</small></span>${st.badge?`<span class="badge ${st.badge[0]}">${st.badge[1]}</span>`:'<span></span>'}</button>`;});
+  if(loc.acts.some(id=>ACTS[id].kind==='street'))h+=`<label class="check"><input type="checkbox" id="autoShake" ${S.autoShake?'checked':''}> 自動握手，不玩小遊戲（效果 ×0.85）</label>`;
+  s.innerHTML=h;s.hidden=false;
+  s.querySelectorAll('.opt').forEach(b=>b.onclick=()=>doAct(b.dataset.id,loc));
+  $('#shClose').onclick=closeSheet;const ac=$('#autoShake');if(ac)ac.onchange=()=>{S.autoShake=ac.checked;};
+}
+function closeSheet(){$('#sheet').hidden=true;sheetLoc=null;}
+function doAct(id,loc){
+  const a=ACTS[id];if(!actState(id).ok)return;closeSheet();
+  if(a.g){const start=S.min;
+    const fin=(m,hits)=>{advance(a.t);S.energy-=a.e;S.voice-=a.v;vitals();const r=gain(a,loc,m,start);S.st.acts++;
+      if(a.kind==='street')S.st.shakes+=Math.round((hits!=null?hits:9)*rnd(12,20));else S.st.shakes+=Math.round(rnd(20,50));
+      const w=r.v>2.2?'反應熱烈':r.v>1.4?'反應不錯':r.v>.8?'反應普通':'人很少，效果有限';
+      toast(`${a.name}：${w}`,`${DIST[loc.d].name}支持 ${r.v>1.4?'↑↑':'↑'}${r.tm<1?' · 這個時段人不多':''}`);
+      if(r.v>2.1&&Math.random()<.6)news(`${S.name}到${loc.name}${a.name}，${w}。`);
+      if(S.energy<=0)collapse();};
+    if(a.kind==='street'&&!S.autoShake)rhythm({title:`${loc.name} · ${a.name}`,desc:'照著紅色圈圈的節拍握手，按 C 或下面的按鈕。',beats:10,btn:'握手',skip:1},fin);
+    else fin(a.kind==='street'?.85:1);
+    return;}
+  switch(a.kind){
+    case'eat':startEat();break;
+    case'nap':advance(30);S.energy+=12;vitals();toast('小睡了 30 分鐘','體力 +12');break;
+    case'water':advance(15);S.voice+=15;vitals();toast('喝了溫水','嗓子 +15');break;
+    case'radio':advance(60);S.energy-=6;S.voice-=10;S.buzz+=6;DK.forEach(d=>S.acc.P[d]+=.3);S.radioDay=S.day;vitals();toast('電台專訪結束','聲量 +6 · 全市小幅加分');
+      if(Math.random()<.22&&!S.used.radiogaffe){S.forced.push('radiogaffe');S.calls.unshift(S.min+20);}break;
+    case'ads':advance(30);S.money-=80;S.buzz+=8;S.acc.P.uni+=.8;S.acc.P.tech+=.8;S.acc.P.new+=.4;vitals();toast('廣告上線了','資金 −80 萬 · 聲量 +8');break;
+    case'stream':{advance(60);S.energy-=4;S.voice-=8;const g=Math.round(rnd(25,45)+S.buzz*.3);S.money+=g;S.streamDay=S.day;vitals();toast('募款直播結束',`資金 +${g} 萬`);break;}
+    case'fund':{advance(120);S.energy-=14;S.voice-=10;const g=Math.round(rnd(90,140));S.money+=g;vitals();toast('募款餐會結束',`資金 +${g} 萬`);break;}
+    case'poll':{advance(30);S.money-=60;S.poll={day:S.day,sh:shares()};const c=city(S.poll.sh);S.polls=(S.polls||[]).concat({d:S.day,t:'int',P:c.P,A:c.A,B:c.B});vitals();showPoll();break;}
+    case'policy':advance(60);openPolicy(()=>{});break;
+    case'dinner':advance(90);S.family+=20;S.hunger+=50;S.energy+=8;S.homeDay=S.day;S.st.homes++;vitals();toast('回家吃了晚餐','家庭 +20 · 肚子 +50');break;
+    case'kids':advance(60);S.family+=12;S.energy+=3;S.homeDay=S.day;vitals();toast('陪小孩寫功課','家庭 +12');break;
+    case'sleep':if(loc.home)S.homeDay=S.day;endDay();break;
+  }
+  if(S.energy<=0)collapse();
+}
+function trendSVG(){
+  const pts=(S.polls||[]).slice().sort((a,b)=>a.d-b.d);
+  if(!pts.length)return'<p class="mute">還沒有民調紀錄。每週日會公布民調，在競選總部做內部民調也會記下來。</p>';
+  const x0=S.start||1,x1=61,VW=640,VH=250,L=44,Rr=18,T=14,B=34,top=Math.max(.6,...pts.map(p=>Math.max(p.P,p.A,p.B)+.05));
+  const X=d=>L+(d-x0)/(x1-x0)*(VW-L-Rr),Y=v=>T+(1-v/top)*(VH-T-B);
+  let g=`<svg viewBox="0 0 ${VW} ${VH}" style="width:100%;height:auto;display:block;margin-top:10px" role="img" aria-label="三位候選人的支持度走勢">`;
+  for(let v=0;v<=top+.001;v+=.1)g+=`<line x1="${L}" x2="${VW-Rr}" y1="${Y(v)}" y2="${Y(v)}" stroke="#2a3b58"/><text x="${L-6}" y="${Y(v)+4}" fill="#93a2b7" font-size="11" text-anchor="end">${Math.round(v*100)}%</text>`;
+  [[1,'D-60'],[31,'D-30'],[46,'D-15'],[51,'封關'],[61,'投票']].filter(t=>t[0]>=x0).forEach(([d,l])=>{g+=`<line x1="${X(d)}" x2="${X(d)}" y1="${T}" y2="${VH-B}" stroke="#22324c" stroke-dasharray="3 4"/><text x="${X(d)}" y="${VH-B+16}" fill="#93a2b7" font-size="11" text-anchor="middle">${l}</text>`;});
+  g+=`<line x1="${X(S.day)}" x2="${X(S.day)}" y1="${T}" y2="${VH-B}" stroke="#38d3b2" stroke-width="1.5"/>`;
+  ['B','A','P'].forEach(K=>{const c=CAND[K].color;if(pts.length>1)g+=`<path d="${pts.map((p,i)=>`${i?'L':'M'}${X(p.d).toFixed(1)} ${Y(p[K]).toFixed(1)}`).join('')}" fill="none" stroke="${c}" stroke-width="${K==='P'?3:2}" stroke-linejoin="round"/>`;
+    pts.forEach(p=>{const x=X(p.d),y=Y(p[K]);g+=p.t==='int'?`<rect x="${x-4}" y="${y-4}" width="8" height="8" transform="rotate(45 ${x} ${y})" fill="${c}"/>`:`<circle cx="${x}" cy="${y}" r="3.5" fill="${c}"/>`;});
+  });
+  const lp=pts[pts.length-1],lx=Math.min(X(lp.d)+8,VW-Rr-34);const labs=['P','A','B'].map(K=>({K,y:Y(lp[K])+4})).sort((a,b)=>a.y-b.y);
+  labs.forEach((l,i)=>{if(i&&l.y-labs[i-1].y<14)l.y=labs[i-1].y+14;g+=`<text x="${lx}" y="${l.y}" fill="${CAND[l.K].color}" font-size="12" font-weight="700">${(lp[l.K]*100).toFixed(0)}%</text>`;});
+  g+='</svg>';
+  return g+`<p class="mute" style="font-size:12px;margin-top:6px"><span style="color:${CAND.P.color}">● 你</span>　<span style="color:${CAND.A.color}">● 黃志偉</span>　<span style="color:${CAND.B.color}">● 林小晴</span>　圓點是週日民調（誤差 ±3%），菱形是內部民調，綠線是今天。</p>`;
+}
+function showPoll(){
+  const sh=S.poll.sh;const c=city(sh);
+  const rows=DK.map(d=>{const v=sh[d];const lead=['P','A','B'].reduce((a,X)=>v[X]>v[a]?X:a,'P');return`<div class="li"><span>${DIST[d].name}</span><span style="font-family:var(--mono)"><span style="color:${CAND.P.color}">${(v.P*100).toFixed(0)}</span> · <span style="color:${CAND.A.color}">${(v.A*100).toFixed(0)}</span> · <span style="color:${CAND.B.color}">${(v.B*100).toFixed(0)}</span> ${lead==='P'?'<b style="color:var(--good)">領先</b>':''}</span></div>`;}).join('');
+  dlg({eyebrow:`內部民調 · 第 ${dn()} 天 · ${S.day>=51?'僅供內部參考，封關期不得發布':'誤差 ±1%'}`,title:'各區的真實數字',html:`<div class="pollbars">${['P','A','B'].map(X=>`<div class="pb"><span>${X==='P'?esc(S.name):CAND[X].name}</span><div class="tr"><i style="width:${c[X]*100}%;background:${CAND[X].color}"></i></div><span class="n">${(c[X]*100).toFixed(1)}%</span></div>`).join('')}</div><p class="mute">各區：<span style="color:${CAND.P.color}">你</span> · <span style="color:${CAND.A.color}">黃志偉</span> · <span style="color:${CAND.B.color}">林小晴</span>（%）。全景地圖會顯示這次的結果。</p><div class="list">${rows}</div>`});
+}
+let eat=null;
+function startEat(){eat={p:0,asked:false};$('#eatTitle').textContent=pick(['排骨便當 · 還溫的','雞腿便當 · 有點冷了','志工阿姨包的飯糰','滷肉飯加貢丸湯']);$('#eatbar').hidden=false;}
+function stopEat(full){if(!eat)return;const p=full?1:eat.p;S.hunger+=55*p;S.energy+=6*p;advance(Math.max(5,30*p));vitals();eat=null;$('#eatbar').hidden=true;}
+function tickEat(dt){
+  if(!eat)return;eat.p=Math.min(1,eat.p+dt/180);$('#eatFill').style.width=eat.p*100+'%';$('#eatPct').textContent=Math.round(eat.p*100)+'%';
+  if(!eat.asked&&eat.p>=.5){eat.asked=true;if(Math.random()<.5){const ev=pickEvent();if(ev){showCall(ev,{eating:true});return;}}}
+  if(eat.p>=1){stopEat(true);toast('吃飽了','肚子 +55 · 體力 +6');}
+}
+
+/* ---------- events engine ---------- */
+function pickEvent(phoneOnly){
+  if(S.forced.length){const id=S.forced.shift();return{ev:EV[id],ctx:{}};}
+  const ci=(S.chains||[]).findIndex(c=>c.day<=S.day&&EV[c.id]&&(!phoneOnly||!EV[c.id].loc));
+  if(ci>=0){const c=S.chains.splice(ci,1)[0];return{ev:EV[c.id],ctx:{}};}
+  const c=EVENTS.filter(e=>{if(e.manual)return false;if(phoneOnly&&e.loc)return false;if(e.minDay&&S.day<e.minDay)return false;if(e.ngOnly&&!S.ng)return false;
+    if(e.once&&S.used[e.id])return false;if(S.used[e.id]&&S.day-S.used[e.id]<9)return false;
+    if(e.tier==='crisis'&&e.id!=='famcrisis'&&e.id!=='dirty'&&(S.day-S.lastCrisis<6||S.day<6))return false;
+    if(S.pending.some(p=>p.ev.id===e.id))return false;if(e.cond&&!e.cond())return false;return true;});
+  let tot=c.reduce((a,e)=>a+(e.w||2),0);
+  for(let tries=0;tries<4&&c.length;tries++){let r=Math.random()*tot,ev=c[c.length-1];for(const e of c){r-=(e.w||2);if(r<=0){ev=e;break;}}
+    const ctx=ev.prep?ev.prep():{};if(ctx)return{ev,ctx};}
+  return null;
+}
+function showCall(inst,ctx){
+  const ev=inst.ev;const crisis=ev.tier==='crisis';
+  $('#cFig').innerHTML=face(ev.who,crisis?'shock':ev.tier==='urgent'?'shock':'worry');
+  $('#cMe').innerHTML=face(S.look,ctx.eating?'eat':crisis?'shock':'worry');
+  $('#cTime').textContent=ctx.eating?'你才吃到一半':fmt(S.min);
+  $('#cText').textContent=(ev.who&&STAFF[ev.who]?STAFF[ev.who].name+'：':'')+'「'+get(ev.call,inst.ctx)+'」';
+  const bt=$('#cBtns');bt.innerHTML='';
+  const go=(late)=>{$('#ovCall').hidden=true;if(late){S.hunger+=20;S.energy+=5;inst.late=true;}if(ctx.eating)stopEat(late);vitals();
+    if(ev.loc){addPending(inst);const l=LOC[ev.loc];S.tx=l.x;S.ty=l.y+AOFF;S.tloc=l.id;toast(`前往${l.name}`,'到了按 E 或點地點');}else openPanel(inst);};
+  const b1=el('button','btn red',ev.loc?(ctx.eating?'放下筷子就去':'馬上過去'):(ctx.eating?'放下筷子先處理':'現在處理'));b1.type='button';b1.onclick=()=>go(false);bt.appendChild(b1);
+  if(!crisis){const b2=el('button','btn ghost',ctx.eating?'再扒兩口':'晚點再說');b2.type='button';b2.onclick=()=>{if(ctx.eating)return go(true);$('#ovCall').hidden=true;addPending(inst);toast('放進待處理清單',`${fmt(inst.due)} 前要處理`);if(S.afterPanel){const f=S.afterPanel;S.afterPanel=null;f();}};bt.appendChild(b2);}
+  $('#cNote').textContent=crisis?'這通不能不接。':ctx.eating?'扒兩口可以多回一點體力，但現場會等比較久，效果打折。':'晚點再說會放進待處理清單，超過時間就當作你沒處理。';
+  $('#ovCall').hidden=false;setTimeout(()=>b1.focus(),40);
+}
+function addPending(inst){
+  if(S.pending.includes(inst))return;const t=inst.ev.tier;
+  inst.due=Math.min(S.min+(t==='crisis'?100:t==='urgent'?180:300)-(inst.late?60:0),23*60-5);S.pending.push(inst);
+}
+function expire(p,silent){
+  S.pending=S.pending.filter(x=>x!==p);const opts=get(p.ev.opts,p.ctx);const last=opts[opts.length-1];
+  applyFx(last.fx,1.2);S.used[p.ev.id]=S.day;S.st.ignored++;if(p.ev.attack)S.st.attacks++;
+  news(`${p.ev.title}：${last.res}`);if(!silent)toast(`沒趕上：${p.ev.title}`,last.res);
+  if(last.fx.end)finish(last.fx.end);
+}
+let panelInst=null,asked=false;
+function openPanel(inst){
+  closeSheet();panelInst=inst;asked=false;S.pending=S.pending.filter(x=>x!==inst);
+  const ev=inst.ev,c=inst.ctx,g=get(ev.g,c);const d=ev.d;const sh=shares();
+  $('#pFig').innerHTML=face(ev.who,ev.tier==='normal'?'worry':'shock');
+  $('#pTag').textContent=ev.loc?`${DIST[d].short} · ${LOC[ev.loc].name}`:(ev.manual?'特別行程':`${DIST[d].short} · 電話`);
+  $('#pTag').className='tg '+(ev.tier==='normal'?'normal':'');
+  $('#pTitle').textContent=ev.title;$('#pSub').textContent=`${STAFF[ev.who].role}${STAFF[ev.who].name}在旁邊等你決定`;
+  const gv=(lab,v)=>`<div><small>${lab}</small><span class="lv-${v[1]}">${v[0]}</span></div>`;
+  $('#pGauges').innerHTML=`<div><small>${DIST[d].name}支持</small><b>約 ${Math.round(sh[d].P*20)*5}%</b><span class="mute">${['P','A','B'].reduce((a,X)=>sh[d][X]>sh[d][a]?X:a,'P')==='P'?'你領先':'你落後'}</span></div>`+gv('現場情緒',g.mood)+gv('媒體',g.media)+gv('對手',g.opp);
+  $('#pLog').innerHTML=(ev.call?`<div class="line staff">${STAFF[ev.who].name}：「${esc(get(ev.call,c))}」</div>`:'')+`<div class="line">${esc(get(ev.scene,c))}</div>`+(inst.late?'<div class="line res">你晚到了，現場已經等了一陣子。</div>':'');
+  $('#pQ').textContent=get(ev.q,c);
+  const opts=get(ev.opts,c);const box=$('#pOpts');box.innerHTML='';
+  const order=inst.order||(inst.order=shuffle(opts.map((_,i)=>i)));
+  order.forEach((k,pos)=>{const op=opts[k];const b=el('button','opt',`<span class="n">${pos+1}</span><span>${esc(op.t)}<span class="hintx" hidden>${esc(op.hint)}</span></span><span></span>`);b.type='button';b.onclick=()=>choose(k);box.appendChild(b);});
+  $('#pAsk').disabled=false;$('#pAsk').hidden=false;
+  $('#ovPanel').hidden=false;setTimeout(()=>box.firstChild&&box.firstChild.focus(),40);
+}
+$('#pAsk').onclick=()=>{if(asked)return;asked=true;advance(20);document.querySelectorAll('#pOpts .hintx').forEach(h=>h.hidden=false);$('#pAsk').disabled=true;toast(`${STAFF[panelInst.ev.who].name}小聲提醒你`,'花了 20 分鐘');};
+function choose(k){const inst=panelInst;if(!inst||inst.chosen)return;resolveOpt(inst,get(inst.ev.opts,inst.ctx)[k]);}
+function resolveOpt(inst,op){
+  if(inst.chosen)return;inst.chosen=true;const ev=inst.ev;
+  const chips=applyFx(op.fx,1,inst.late);S.used[ev.id]=S.day;S.st.events++;if(ev.attack)S.st.attacks++;if(ev.tier==='crisis'&&ev.loc)S.lastCrisis=S.day;
+  news(`${ev.title}：${op.res}`);
+  $('#pLog').insertAdjacentHTML('beforeend',`<div class="line me">${esc(op.t)}</div><div class="line res">${esc(op.res)}<div class="fxchips">${chips.map(c=>`<span class="${c.includes('↓')||c.includes('−')?'dn':'up'}">${c}</span>`).join('')}</div></div>`);
+  $('#pQ').textContent='';$('#pAsk').hidden=true;
+  const box=$('#pOpts');box.innerHTML='';const b=el('button','btn',op.fx.end?'……':'回到地圖');b.type='button';box.appendChild(b);setTimeout(()=>b.focus(),40);
+  b.onclick=()=>{$('#ovPanel').hidden=true;panelInst=null;if(op.fx.end)return finish(op.fx.end);if(S.energy<=0)return collapse();if(S.afterPanel){const f=S.afterPanel;S.afterPanel=null;f();}};
+  const pl=$('#pLog');pl.parentElement.scrollTop=pl.parentElement.scrollHeight;
+}
+function applyFx(fx,mult,late){
+  mult=mult||1;const chips=[];if(!fx)return chips;
+  const arrow=v=>v>=2.5?'↑↑':v>0?'↑':v<=-2.5?'↓↓':'↓';
+  if(fx.sup)Object.entries(fx.sup).forEach(([k,v0])=>{let v=v0;if(v>0&&late)v*=.7;if(v<0&&S.integ<30)v*=1.5;v*=mult;(k==='all'?DK:[k]).forEach(d=>S.acc.P[d]+=v);chips.push(`${k==='all'?'全市':DIST[k].name}支持 ${arrow(v)}`);});
+  const num=(key,lab,unit)=>{if(fx[key]){const v=fx[key]*(fx[key]<0?mult:1);S[key]+=v;chips.push(`${lab} ${v>0?'+':'−'}${Math.abs(Math.round(v))}${unit||''}`);}};
+  num('buzz','聲量');num('integ','誠信');num('energy','體力');num('voice','嗓子');num('family','家庭');num('money','資金',' 萬');num('hunger','肚子');
+  if(fx.time)advance(fx.time);
+  if(fx.flag)S.flags[fx.flag]=1;
+  if(fx.chain)S.chains=(S.chains||[]).concat({id:fx.chain[0],day:S.day+fx.chain[1]});
+  if(fx.card&&!S.cards.includes(fx.card))S.cards.push(fx.card);
+  if(fx.downgrade){S.policies=S.policies.map(id=>id===fx.downgrade?id.replace('3','2'):id);S.policyChanges++;chips.push('政見改為積極版');}
+  vitals();return chips;
+}
+
+/* ---------- election ---------- */
+function election(){
+  S.min=7*60;
+  dlg({eyebrow:'投票日',title:'今天不能拜票了',html:`<div class="fig" data-face="P:tired" style="height:170px;max-width:190px;margin:0 auto 10px"></div><p>投票日當天，候選人和支持者都不能再拉票。你跟家人一起去投了票，然後回到總部，和幕僚一起等開票。</p><div class="note">${CARDS.vote.items[0]}</div>`,buttons:[{t:'下午四點，開票',fn:count}]});
+}
+function count(){
+  const sh=shares();const res={};let tot={P:0,A:0,B:0};
+  DK.forEach(d=>{const n=DIST[d].voters*10000*turnout(d);const v={};let t=0;['P','A','B'].forEach(X=>{v[X]=sh[d][X]*(1+rnd(-.03,.03));t+=v[X];});res[d]={};['P','A','B'].forEach(X=>{res[d][X]=v[X]/t;tot[X]+=n*v[X]/t;});res[d].n=n;});
+  const all=tot.P+tot.A+tot.B;const share={P:tot.P/all,A:tot.A/all,B:tot.B/all};
+  const box=$('#dlgBox');box.className='dlg';
+  box.innerHTML=`<div class="eyebrow">開票中 · 雲澄市長選舉</div><h2 id="cntT">各區票匭陸續送到</h2><div id="cntRows" class="list"></div><div class="pollbars" id="cntTot"></div><div class="drow"><button type="button" class="btn" id="cntGo" disabled>看結果</button></div>`;
+  $('#ovDlg').hidden=false;
+  const order=DK.slice().sort(()=>Math.random()-.5);let i=0;const run={P:0,A:0,B:0};
+  const step=()=>{
+    if(i>=order.length){const win=share.P>share.A&&share.P>share.B;$('#cntT').textContent=win?`${S.name}，當選！`:'開票結束';$('#cntGo').disabled=false;$('#cntGo').focus();$('#cntGo').onclick=()=>{$('#ovDlg').hidden=true;finish('vote',{res,share,tot});};return;}
+    const d=order[i++];const r=res[d];['P','A','B'].forEach(X=>run[X]+=r.n*r[X]);
+    const lead=['P','A','B'].reduce((a,X)=>r[X]>r[a]?X:a,'P');
+    $('#cntRows').insertAdjacentHTML('beforeend',`<div class="li"><span>${DIST[d].name}</span><span style="font-family:var(--mono)"><span style="color:${CAND.P.color}">${(r.P*100).toFixed(1)}</span> · <span style="color:${CAND.A.color}">${(r.A*100).toFixed(1)}</span> · <span style="color:${CAND.B.color}">${(r.B*100).toFixed(1)}</span> <b style="color:${CAND[lead].color}">${lead==='P'?'你贏':CAND[lead].name+'贏'}</b></span></div>`);
+    const t=run.P+run.A+run.B;
+    $('#cntTot').innerHTML=['P','A','B'].map(X=>`<div class="pb"><span>${X==='P'?esc(S.name):CAND[X].name}</span><div class="tr"><i style="width:${run[X]/t*100}%;background:${CAND[X].color}"></i></div><span class="n">${Math.round(run[X]).toLocaleString()}</span></div>`).join('');
+    setTimeout(step,900);
+  };
+  setTimeout(step,500);
+}
+function finish(kind,data){
+  S.over=true;LS.del('xz60.save');closeSheet();stopEat();
+  ['ovCall','ovPanel','ovMini','ovDlg','ovPolicy'].forEach(id=>$('#'+id).hidden=true);
+  let win=false,share=null,title='',head='',big='—',bigLab='',voice='',expr='tired';
+  if(kind==='vote'){share=data.share;win=share.P>share.A&&share.P>share.B;const second=Math.max(share.A,share.B);const gap=share.P-second;
+    const sweep=DK.every(d=>data.res[d].P>data.res[d].A&&data.res[d].P>data.res[d].B);
+    big=(share.P*100).toFixed(1)+'%';bigLab='你的得票率';
+    if(win){expr='happy';
+      title=S.ng?(sweep?'六區通吃的連任市長':'連任成功的市長'):sweep||share.P>=.5?'六區通吃的市長':gap<.02?'開票開到最後一張的人':S.st.collapses>=3?'用命換來的當選證書':'雲澄市新任市長';
+      head=`${esc(S.name)}，你當選了。60 天，你撐過來了`;
+      voice='一場選舉，大部分的電話都是小事。可是接起來之前，你沒辦法知道哪一通會翻盤，所以每一通都得接、都得判斷。下次在街上看到候選人一臉沒睡飽，你大概知道為什麼了。';
+      if(!S.ng)LS.set('xz60.ng',{name:S.name,look:S.look,policies:S.policies,date:Date.now()});
+    }else{
+      title=share.P>=second-.03?'只差一個市場的距離':'下次會更好的候選人';
+      head=`${esc(S.name)}，這次差了 ${((second-share.P)*100).toFixed(1)} 個百分點`;
+      voice='輸了不代表白跑。你握過的每一隻手、接過的每一通電話，都讓你更知道這座城市在想什麼。四年後，我們再來一次。';
+    }
+  }else if(kind==='void'){title='被判當選無效的前候選人';head='買票的名單，一個名字都沒漏掉';big='出局';bigLab='觸犯選舉法規';expr='shock';
+    voice='票是買不來的。被查到的那天，60 天的努力和所有支持你的人，一起被拖下水。'; if(!S.cards.includes('law'))S.cards.push('law');}
+  else{title='選擇家人的人';head='你退出了選舉，回家了';big='退選';bigLab=`第 ${S.day} 天`;expr='smile';
+    voice='有人會說你放棄了。可是你家小孩終於等到你一起吃晚餐。選舉每四年一次，有些事情錯過就沒有了。';}
+  const cards=['vote',...S.cards.filter(c=>c!=='vote')].slice(0,3);
+  const dres=kind==='vote'?DK.map(d=>{const r=data.res[d];const w=r.P>r.A&&r.P>r.B;return`<div class="${w?'win':''}"><span><b>${DIST[d].short}</b>${DIST[d].name}</span><span>你 ${(r.P*100).toFixed(1)}% · 黃 ${(r.A*100).toFixed(1)}% · 林 ${(r.B*100).toFixed(1)}%</span></div>`;}).join(''):'';
+  const b=$('#scrResult');
+  b.innerHTML=`<div class="wrap"><div class="res">
+   <div class="paper"><div class="fig">${face(S.look,expr)}</div><div class="pc">
+    <div class="eb">${kind==='vote'?'開票結果 · 雲澄市長選舉':'選戰結束'}${S.ng?' · 連任之戰':''}</div><h1>${head}</h1>
+    <div class="sgrid">
+     <div><small>拜票行程</small><b>${S.st.acts}<i>場</i></b></div><div><small>握過的手</small><b>${S.st.shakes.toLocaleString()}<i>隻</i></b></div><div><small>處理的事件</small><b>${S.st.events}<i>件</i></b></div>
+     <div><small>被攻擊爆料</small><b>${S.st.attacks}<i>次</i></b></div><div><small>放著沒處理</small><b>${S.st.ignored}<i>件</i></b></div><div><small>體力不支送醫</small><b>${S.st.collapses}<i>次</i></b></div>
+    </div>
+    ${dres?`<div class="dres">${dres}</div>`:''}
+    <div class="edu">${cards.map(k=>`<h4>${CARDS[k].t}</h4>${CARDS[k].items.map(t=>`<p>${t}</p>`).join('')}`).join('')}<p class="src">法規內容為簡化說明，實際規定以中央選舉委員會公告為準。</p></div>
+   </div></div>
+   <div class="side"><div class="bign">${big}</div><div style="color:#c9d3e6">${bigLab}</div><span class="pill">稱號：${title}</span>
+    <div class="voice"><div class="fig">${face('cheng',win?'happy':'smile')}</div><div><small>總幹事阿誠的心聲</small><p>${voice}</p></div></div>
+    <button type="button" class="btn" id="rAgain">再選一次</button>
+    ${win&&!S.ng?'<button type="button" class="btn" id="rNG" style="background:var(--you);color:#2a1300">開啟二週目：連任之戰</button>':''}
+    <button type="button" class="btn ghost" id="rCopy">複製戰報</button>
+   </div></div></div>`;
+  show('scrResult');b.scrollTop=0;
+  $('#rAgain').onclick=titleScreen;if($('#rNG'))$('#rNG').onclick=()=>setupScreen(true);
+  $('#rCopy').onclick=()=>{const t=`我在《選戰60天》${kind==='vote'?(win?'當選雲澄市長':'落選'):title}${share?`，得票率 ${(share.P*100).toFixed(1)}%`:''}，稱號「${title}」。跑了 ${S.st.acts} 場行程，握了 ${S.st.shakes} 隻手。`;
+    const ok=()=>toast('戰報已複製','貼給朋友看看');const fail=()=>{dlg({title:'複製戰報',html:`<p>瀏覽器不讓我直接複製，請手動選取：</p><div class="note" style="user-select:all">${esc(t)}</div>`});};
+    try{navigator.clipboard.writeText(t).then(ok,fail);}catch(e){fail();}};
+}
+
+/* ---------- save ---------- */
+function ser(){const c=JSON.parse(JSON.stringify(Object.assign({},S,{pending:[],afterPanel:null,miniKey:null})));c.pending=S.pending.map(p=>({id:p.ev.id,ctx:p.ctx,due:p.due,late:p.late}));return c;}
+function saveGame(){LS.set('xz60.save',ser());}
+function loadSave(sv){S=Object.assign(S0(),sv);S.pending=(sv.pending||[]).filter(p=>EV[p.id]).map(p=>({ev:EV[p.id],ctx:p.ctx||{},due:p.due,late:p.late}));show('scrGame');resize();startDay();}
+
+/* ---------- map ---------- */
+const cv=$('#map'),ctx=cv.getContext('2d');let cw=800,ch=600,dpr=1;
+function resize(){const r=cv.getBoundingClientRect();cw=r.width||innerWidth;ch=r.height||innerHeight;dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);}
+addEventListener('resize',()=>{if(scr==='scrGame')resize();});
+const ROADH=[130,330,660,880],ROADV=[180,480,800,1120,1380],SEA=1530,RW=14;
+const XS=[0,180,480,800,1120,1380,SEA],YS=[0,130,330,486,514,660,880,H];
+const PAL={ground:'#d6d0c2',road:'#5b616f',line:'#f5f1e6',grass:'#b9d79c',tree:'#78b062',tree2:'#5a9149',water:'#7fb8da',deep:'#5c9cc5',sand:'#ecdcb0',shadow:'rgba(52,48,70,.22)'};
+const DPAL={
+  uni:{g:'#e8e2d2',b:['#c67b5f','#b86a50','#d08c6d']},
+  tech:{g:'#e1e6ea',b:['#9fc0d6','#8aaec6','#b4d0e2','#7f9fb8']},
+  field:{g:'#d3e3ab',b:['#b5483c','#c45a3e']},
+  new:{g:'#ece7d8',b:['#efe2c6','#e7d4af','#f4eadb','#dfcca6']},
+  old:{g:'#ece1d1',b:['#c8735a','#b8624a','#d68b63','#a95842']},
+  port:{g:'#dfe0d9',b:['#aab3b9','#9aa5ad','#bac2c7']}
+};
+const PIN={uni:'#6b5fd6',tech:'#2f8fbf',field:'#4f9a45',new:'#c98f16',old:'#d0583f',port:'#4f8a9c'};
+const DLAB={uni:[196,62],tech:[500,62],field:[1140,62],new:[196,592],old:[500,592],port:[1140,592]};
+let bg=null,lights=null,LITES=[];
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{bg=null;});
+function seeded(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function distAt(x,y){return DK.find(k=>{const [a,b,w,h]=DIST[k].rect;return x>=a&&x<a+w&&y>=b&&y<b+h;})||'old';}
+function rrp(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function rr(x,y,w,h,r){rrp(ctx,x,y,w,h,r);}
+function shade(hex,k){const n=parseInt(hex.slice(1),16);let r=n>>16,gg=n>>8&255,b=n&255;const f=k<0?0:255,t=Math.abs(k);r=Math.round(r+(f-r)*t);gg=Math.round(gg+(f-gg)*t);b=Math.round(b+(f-b)*t);return`rgb(${r},${gg},${b})`;}
+function circ(g,x,y,r,c){g.fillStyle=c;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+function bld(g,x,y,w,h,col,o){o=o||{};
+  g.fillStyle=PAL.shadow;rrp(g,x+4,y+5,w,h,2);g.fill();
+  g.fillStyle=shade(col,-.2);rrp(g,x,y,w,h,2);g.fill();
+  g.fillStyle=col;rrp(g,x,y,w,h-3,2);g.fill();
+  g.fillStyle=shade(col,.28);g.fillRect(x+1.5,y+1,w-3,1.6);
+  if(o.ridge){g.strokeStyle=shade(col,-.25);g.lineWidth=1.2;g.beginPath();if(w>h){g.moveTo(x+2,y+(h-3)/2);g.lineTo(x+w-2,y+(h-3)/2);}else{g.moveTo(x+w/2,y+2);g.lineTo(x+w/2,y+h-5);}g.stroke();}
+  if(o.win){g.fillStyle=shade(col,-.14);for(let yy=y+5;yy<y+h-8;yy+=6)for(let xx=x+4;xx<x+w-5;xx+=6)g.fillRect(xx,yy,3,3);}
+  if(o.stripes){g.strokeStyle=shade(col,-.12);g.lineWidth=1;for(let xx=x+4;xx<x+w-2;xx+=5){g.beginPath();g.moveTo(xx,y+2);g.lineTo(xx,y+h-5);g.stroke();}}
+  if(o.garden){g.fillStyle='#9cc77f';g.fillRect(x+w*.22,y+h*.2,w*.56,h*.3);}
+  if(o.ac){g.fillStyle=shade(col,-.32);g.fillRect(x+4,y+4,5,4);g.fillRect(x+12,y+4,5,4);}
+  if(o.lit)for(let k=0;k<o.lit;k++)LITES.push([x+3+Math.random()*(w-6),y+3+Math.random()*(h-9)]);
+}
+function tree(g,x,y,r){circ(g,x+2,y+3,r,'rgba(52,48,70,.18)');circ(g,x,y,r,PAL.tree2);circ(g,x-r*.25,y-r*.28,r*.68,PAL.tree);}
+function roofT(g,x,y,w,h,col){g.fillStyle=PAL.shadow;g.fillRect(x+4,y+5,w,h);g.fillStyle=shade(col,-.22);g.fillRect(x,y+h-4,w,4);
+  g.fillStyle=col;g.beginPath();g.moveTo(x-7,y-5);g.quadraticCurveTo(x+w/2,y+5,x+w+7,y-5);g.lineTo(x+w,y+h-3);g.lineTo(x,y+h-3);g.closePath();g.fill();
+  g.strokeStyle=shade(col,-.14);g.lineWidth=1;for(let xx=x+4;xx<x+w-2;xx+=5){g.beginPath();g.moveTo(xx,y+2);g.lineTo(xx,y+h-4);g.stroke();}
+  g.strokeStyle=shade(col,-.35);g.lineWidth=2;g.beginPath();g.moveTo(x-7,y-5);g.quadraticCurveTo(x+w/2,y+5,x+w+7,y-5);g.stroke();}
+function van(g,x,y,col,flip){g.save();g.translate(x,y);if(flip)g.scale(-1,1);
+  g.fillStyle='rgba(30,30,50,.25)';rrp(g,-14,-5,32,16,4);g.fill();
+  g.fillStyle=col;rrp(g,-16,-8,32,16,4);g.fill();g.fillStyle='#fff';rrp(g,-12,-6,17,12,2);g.fill();
+  g.fillStyle=shade(col,-.35);g.fillRect(8,-6,6,12);g.fillStyle='#e9e9ec';g.beginPath();g.moveTo(-6,0);g.lineTo(2,-4);g.lineTo(2,4);g.closePath();g.fill();g.restore();}
+function blocks(){const out=[];for(let xi=0;xi<6;xi++)for(let yi=0;yi<7;yi++){if(yi===3)continue;
+  const xa=XS[xi],xb=XS[xi+1],ya=YS[yi],yb=YS[yi+1];
+  const pl=ROADV.includes(xa)?RW+7:4,pr=ROADV.includes(xb)?RW+7:(xb===SEA?10:4),pt=ROADH.includes(ya)?RW+7:(ya===514?10:4),pb=ROADH.includes(yb)?RW+7:(yb===486?10:4);
+  out.push({x:xa+pl,y:ya+pt,w:xb-xa-pl-pr,h:yb-ya-pt-pb});}return out;}
+function fillBlock(g,b,R){
+  const d=distAt(b.x+b.w/2,b.y+b.h/2),P=DPAL[d],pk=a=>a[Math.floor(R()*a.length)];
+  g.fillStyle=P.g;rrp(g,b.x,b.y,b.w,b.h,6);g.fill();g.strokeStyle='rgba(0,0,0,.07)';g.lineWidth=1;g.stroke();
+  const L=LOCS.find(l=>l.x>b.x&&l.x<b.x+b.w&&l.y>b.y&&l.y<b.y+b.h);const fp=L?{x:L.x-66,y:L.y-60,w:132,h:120}:null;
+  const free=(x,y,w,h)=>!fp||x+w<fp.x-4||x>fp.x+fp.w+4||y+h<fp.y-4||y>fp.y+fp.h+4;
+  const pack=(cell,fn)=>{for(let y=b.y+16;y+cell<=b.y+b.h-12;y+=cell)for(let x=b.x+14;x+cell<=b.x+b.w-12;x+=cell)if(free(x,y,cell,cell))fn(x,y);};
+  if(d==='old')pack(24,(x,y)=>{if(R()<.1)return;bld(g,x,y,18+R()*5,16+R()*6,pk(P.b),{ridge:1,lit:R()<.6?1:0});});
+  else if(d==='tech')pack(60,(x,y)=>{if(R()<.18){g.fillStyle='#cfd8de';rrp(g,x+2,y+2,52,52,6);g.fill();tree(g,x+28,y+28,9);return;}const w=40+R()*12,h=40+R()*12;bld(g,x,y,w,h,pk(P.b),{win:1,ac:1,lit:6});});
+  else if(d==='new')pack(48,(x,y)=>{if(R()<.22){tree(g,x+20,y+20,9);tree(g,x+8,y+32,6);tree(g,x+34,y+34,6);return;}bld(g,x+4,y+4,32,38,pk(P.b),{win:1,garden:R()<.5,lit:5});});
+  else if(d==='uni'){g.fillStyle=PAL.grass;rrp(g,b.x+10,b.y+10,b.w-20,b.h-20,8);g.fill();g.strokeStyle='#ece2c8';g.lineWidth=4;g.beginPath();g.moveTo(b.x+12,b.y+b.h/2);g.lineTo(b.x+b.w-12,b.y+b.h/2);g.moveTo(b.x+b.w/2,b.y+12);g.lineTo(b.x+b.w/2,b.y+b.h-12);g.stroke();
+    if(!L&&b.w>200&&b.h>100){const cx=b.x+b.w/2,cy=b.y+b.h/2;g.fillStyle='#c8644a';g.beginPath();g.ellipse(cx,cy,b.w*.36,b.h*.34,0,0,7);g.fill();g.fillStyle='#8fc070';g.beginPath();g.ellipse(cx,cy,b.w*.36-12,b.h*.34-12,0,0,7);g.fill();g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1;g.beginPath();g.ellipse(cx,cy,b.w*.36-6,b.h*.34-6,0,0,7);g.stroke();}
+    else pack(44,(x,y)=>{if(x<b.x+60||x>b.x+b.w-74||y<b.y+50||y>b.y+b.h-62)bld(g,x+3,y+3,36,28,pk(P.b),{ridge:1,lit:3});else tree(g,x+20,y+20,7);});}
+  else if(d==='port'){for(let y=b.y+16;y+38<=b.y+b.h-10;y+=46)for(let x=b.x+14;x<b.x+b.w-30;){const w=Math.min(60+R()*40,b.x+b.w-12-x);if(w<26)break;if(free(x,y,w,36)){if(R()<.3){const cc=['#c0563f','#2f6f95','#c99a2e','#3f7a55','#7a4a8a'];for(let r=0;r<4;r++)for(let c=0;c<Math.floor(w/14);c++){g.fillStyle=pk(cc);g.fillRect(x+c*14,y+r*9,13,8);}}else bld(g,x,y,w,34,pk(P.b),{stripes:1,lit:2});}x+=w+10;}}
+  else{for(let y=b.y+12;y+34<=b.y+b.h-8;y+=42)for(let x=b.x+12;x+50<=b.x+b.w-8;x+=60){if(!free(x,y,54,36))continue;const r=R();
+    if(r<.14){g.fillStyle='#7fb8da';rrp(g,x,y,54,36,6);g.fill();g.strokeStyle='#cfe7f2';g.lineWidth=2;g.stroke();continue;}
+    if(r<.24){bld(g,x+8,y+6,24,20,pk(P.b),{ridge:1,lit:2});tree(g,x+44,y+12,7);continue;}
+    const c=pk(['#a9cf7f','#c7d98a','#e2d37a','#9cc47a','#8dbb6c']);g.fillStyle=c;g.fillRect(x,y,54,36);g.strokeStyle=shade(c,-.15);g.lineWidth=1;for(let k=4;k<36;k+=5){g.beginPath();g.moveTo(x+2,y+k);g.lineTo(x+52,y+k);g.stroke();}}}
+  if(d!=='field'){for(let x=b.x+12;x<b.x+b.w-6;x+=32){if(free(x-6,b.y,12,14))tree(g,x,b.y+7,4.5);if(free(x-6,b.y+b.h-14,12,14))tree(g,x,b.y+b.h-7,4.5);}}
+}
+function landmark(g,l,R){
+  const x=l.x,y=l.y;g.textAlign='center';
+  const pad=(c)=>{g.fillStyle=c;rrp(g,x-62,y-56,124,112,8);g.fill();};
+  const txt=(t,tx,ty,sz,c)=>{g.font=`900 ${sz}px "Noto Sans TC",sans-serif`;g.fillStyle=c;g.fillText(t,tx,ty);};
+  switch(l.id){
+  case'hq':pad('#efe9dc');bld(g,x-48,y-48,96,56,'#f6f1e8',{win:1,lit:8});g.fillStyle='#ff8a3d';g.fillRect(x-46,y+0,92,15);txt('競選總部',x,y+11.5,10,'#fff');
+    for(let k=0;k<9;k++){g.fillStyle=['#ff8a3d','#fff','#d42f3d'][k%3];g.beginPath();const fx=x-46+k*11;g.moveTo(fx,y+20);g.lineTo(fx+9,y+20);g.lineTo(fx+4.5,y+28);g.fill();}
+    van(g,x+30,y+42,'#ff8a3d',0);circ(g,x-40,y+40,4,'#d42f3d');circ(g,x-30,y+44,4,'#ff8a3d');break;
+  case'home':g.fillStyle='#b9d79c';rrp(g,x-48,y-44,96,88,8);g.fill();g.strokeStyle='#fffaf0';g.lineWidth=1.5;g.setLineDash([3,3]);g.stroke();g.setLineDash([]);
+    bld(g,x-30,y-30,60,42,'#5f86ad',{ridge:1,lit:3});g.fillStyle='#e6dccb';g.fillRect(x-5,y+12,10,32);tree(g,x+34,y-26,9);tree(g,x-36,y+24,7);circ(g,x+30,y+22,4,'#f3b544');break;
+  case'market':pad('#e3d6c2');{const aw=[['#d9483b','#fff6ea'],['#2f78b7','#fff6ea'],['#e2a12a','#fff6ea'],['#3c9b6a','#fff6ea']];
+    for(let r=0;r<3;r++)for(let c=0;c<4;c++){const sx=x-56+c*29,sy=y-48+r*33;const [a,b2]=aw[(r+c)%4];g.fillStyle=PAL.shadow;g.fillRect(sx+3,sy+3,25,20);for(let k=0;k<5;k++){g.fillStyle=k%2?b2:a;g.fillRect(sx+k*5,sy,5,20);}}
+    for(let k=0;k<26;k++)circ(g,x-58+R()*116,y-26+Math.floor(R()*3)*33-6+R()*6,2.2,['#34495e','#8e5a3c','#c0392b','#2c3e50','#7f8c8d'][k%5]);}break;
+  case'temple':pad('#e9e0cf');g.strokeStyle='#d8cbb2';g.lineWidth=1;for(let k=-56;k<56;k+=12){g.beginPath();g.moveTo(x+k,y-56);g.lineTo(x+k,y+56);g.stroke();}
+    roofT(g,x-50,y-44,100,40,'#e0782f');roofT(g,x-34,y-40,68,22,'#f0a04a');g.fillStyle='#b8322a';for(let k=0;k<6;k++)g.fillRect(x-42+k*16.5,y-4,4,7);
+    circ(g,x,y+20,8,'#8d6a3a');circ(g,x,y+20,4,'#5a4220');circ(g,x+6,y+12,5,'rgba(255,255,255,.55)');circ(g,x+10,y+5,6,'rgba(255,255,255,.4)');
+    roofT(g,x-26,y+40,52,12,'#e0782f');LITES.push([x-30,y-2],[x+30,y-2],[x,y+20]);break;
+  case'mrt':g.fillStyle='#9aa1aa';g.fillRect(x-150,y-16,300,16);g.strokeStyle='#6c727b';g.lineWidth=1.5;g.beginPath();g.moveTo(x-150,y-12);g.lineTo(x+150,y-12);g.moveTo(x-150,y-4);g.lineTo(x+150,y-4);g.stroke();
+    bld(g,x-54,y-34,108,44,'#eef2f5',{});g.fillStyle='#2f7fc1';g.fillRect(x-54,y-6,108,6);circ(g,x,y-20,10,'#2f7fc1');txt('M',x,y-15.5,13,'#fff');
+    g.fillStyle='#c9c3b5';g.fillRect(x-14,y+12,28,26);g.strokeStyle='#a9a294';for(let k=y+14;k<y+38;k+=4){g.beginPath();g.moveTo(x-14,k);g.lineTo(x+14,k);g.stroke();}
+    for(let k=0;k<12;k++)circ(g,x-30+R()*60,y+42+R()*12,2.2,['#34495e','#2c3e50','#c0392b','#16a085'][k%4]);LITES.push([x-30,y-14],[x,y-14],[x+30,y-14]);break;
+  case'plaza':pad('#e3e7ea');g.strokeStyle='#d0d6db';g.lineWidth=1;for(let r=14;r<56;r+=10){g.beginPath();g.arc(x,y+6,r,0,7);g.stroke();}
+    circ(g,x,y+6,16,'#7fb8da');circ(g,x,y+6,9,'#bfe0f0');circ(g,x,y+6,3,'#fff');
+    bld(g,x-60,y-54,36,44,'#8aaec6',{win:1,lit:5});bld(g,x+24,y-54,36,52,'#b4d0e2',{win:1,lit:5});tree(g,x-44,y+40,8);tree(g,x+44,y+40,8);tree(g,x-50,y+10,6);break;
+  case'gate':g.fillStyle=PAL.grass;rrp(g,x-62,y-56,124,112,8);g.fill();bld(g,x-50,y-50,100,40,'#b8654a',{ridge:1,lit:6});bld(g,x-12,y-58,24,22,'#a5553d',{});circ(g,x,y-48,5,'#f5efe2');
+    g.fillStyle='#e9dfc6';g.fillRect(x-8,y-10,16,62);g.fillStyle='#7b6a58';g.fillRect(x-30,y+36,8,14);g.fillRect(x+22,y+36,8,14);g.fillStyle='#5d4f40';g.fillRect(x-30,y+34,60,5);txt('雲澄大學',x,y+30,9,'#4a3b2d');tree(g,x-40,y+8,8);tree(g,x+40,y+8,8);break;
+  case'live':pad('#d8d2c8');bld(g,x-40,y-40,80,56,'#3d3654',{});g.fillStyle='#ff5fa2';rrp(g,x-26,y-30,52,18,4);g.fill();txt('LIVE',x,y-16.5,12,'#fff');
+    for(let k=0;k<14;k++)circ(g,x-36+k*5.5,y+28+(k%2)*4,2.3,['#2c3e50','#8e44ad','#c0392b'][k%3]);LITES.push([x-20,y-21],[x,y-21],[x+20,y-21],[x-10,y-21],[x+10,y-21]);tree(g,x+48,y+40,7);break;
+  case'farm':pad('#e6dab8');bld(g,x-44,y-44,62,46,'#b5483c',{ridge:1,lit:2});g.strokeStyle='#fff';g.lineWidth=2;g.beginPath();g.moveTo(x-22,y-6);g.lineTo(x-6,y+2);g.moveTo(x-6,y-6);g.lineTo(x-22,y+2);g.stroke();
+    circ(g,x+32,y-26,15,'#c9ccd1');circ(g,x+28,y-30,6,'#e6e8ec');for(let k=0;k<5;k++)circ(g,x-40+k*12,y+36,5,'#e7c45c');g.fillStyle='#3f8a3a';rrp(g,x+16,y+16,22,13,3);g.fill();circ(g,x+18,y+30,4,'#333');circ(g,x+36,y+30,4,'#333');break;
+  case'fish':g.fillStyle='#b48c5a';g.fillRect(x-10,y-6,SEA-x+60,14);g.strokeStyle='#8f6c42';g.lineWidth=1;for(let k=x-8;k<SEA+50;k+=5){g.beginPath();g.moveTo(k,y-6);g.lineTo(k,y+8);g.stroke();}
+    bld(g,x-58,y-48,64,38,'#3f7fb0',{stripes:1,lit:2});for(let k=0;k<6;k++){g.fillStyle=['#5b8fb9','#d0a34a'][k%2];g.fillRect(x-56+k*10,y+20,8,8);}
+    [[SEA+22,y-22,'#d24d3c'],[SEA+40,y+28,'#2f78b7'],[SEA+18,y+40,'#e2a12a']].forEach(([bx,by,c])=>{g.fillStyle='rgba(0,0,0,.15)';g.beginPath();g.ellipse(bx+2,by+3,16,6,0,0,7);g.fill();g.fillStyle=c;g.beginPath();g.ellipse(bx,by,16,6,0,0,7);g.fill();g.fillStyle='#fff';g.fillRect(bx-4,by-4,9,8);});break;
+  case'park':g.fillStyle='#a8d08a';rrp(g,x-64,y-58,128,116,14);g.fill();g.fillStyle='#7fb8da';g.beginPath();g.ellipse(x+22,y-14,28,18,0,0,7);g.fill();g.strokeStyle='#cfe7f2';g.lineWidth=2;g.stroke();
+    g.strokeStyle='#e8dcc0';g.lineWidth=5;g.beginPath();g.moveTo(x-64,y+30);g.bezierCurveTo(x-20,y+10,x+10,y+50,x+64,y+26);g.stroke();
+    g.fillStyle='#ead79b';rrp(g,x-48,y-40,36,30,6);g.fill();circ(g,x-38,y-30,5,'#e74c3c');circ(g,x-22,y-22,5,'#3498db');g.fillStyle='#f1c40f';g.fillRect(x-44,y-18,12,4);
+    [[x-54,y+48],[x-6,y-44],[x+52,y+44],[x+54,y-44],[x-20,y+44],[x+30,y+12]].forEach(p=>tree(g,p[0],p[1],8));break;
+  case'mall':g.fillStyle='#c9cbcd';rrp(g,x-64,y-56,128,112,6);g.fill();bld(g,x-58,y-52,116,46,'#e3e6ea',{ac:1,lit:6});g.fillStyle='#d9483b';g.fillRect(x-58,y-20,116,8);txt('量販',x,y-34,12,'#d9483b');
+    g.strokeStyle='#fff';g.lineWidth=1;for(let k=-54;k<58;k+=14){g.beginPath();g.moveTo(x+k,y+10);g.lineTo(x+k,y+28);g.moveTo(x+k,y+34);g.lineTo(x+k,y+52);g.stroke();}
+    [[x-46,y+19,'#e74c3c'],[x-18,y+19,'#ecf0f1'],[x+24,y+43,'#3498db'],[x+38,y+19,'#2c3e50'],[x-32,y+43,'#f1c40f']].forEach(([cx,cy,c])=>{g.fillStyle=c;rrp(g,cx-5,cy-8,10,16,3);g.fill();});break;
+  case'union':pad('#e2dfd6');bld(g,x-46,y-44,92,50,'#c0543f',{ridge:1,lit:4});g.fillStyle='#fff';g.fillRect(x-30,y+12,60,13);txt('工會會館',x,y+22,9,'#c0543f');
+    g.strokeStyle='#777';g.lineWidth=1.5;g.beginPath();g.moveTo(x+48,y+40);g.lineTo(x+48,y+12);g.stroke();g.fillStyle='#d42f3d';g.fillRect(x+48,y+12,14,9);tree(g,x-48,y+40,7);break;
+  case'dock':g.fillStyle='#c9c9c4';g.fillRect(x-66,y-58,SEA-x+70,116);{const cc=['#c0563f','#2f6f95','#c99a2e','#3f7a55'];for(let r=0;r<5;r++)for(let c=0;c<4;c++){g.fillStyle=cc[(r*3+c)%4];g.fillRect(x-60+c*15,y-50+r*10,14,9);}}
+    g.fillStyle='#2f3a4c';rrp(g,SEA+12,y-54,40,108,10);g.fill();for(let r=0;r<8;r++){g.fillStyle=['#c0563f','#2f6f95','#c99a2e'][r%3];g.fillRect(SEA+18,y-44+r*12,28,10);}
+    [[x+6,'#e67e22'],[x+40,'#d35400']].forEach(([cx,c])=>{g.strokeStyle=c;g.lineWidth=3;g.strokeRect(cx,y-20,16,40);g.beginPath();g.moveTo(cx+8,y-20);g.lineTo(SEA+40,y-20);g.stroke();});LITES.push([x+14,y-20],[x+48,y-20]);break;
+  }
+  g.textAlign='left';
+}
+function buildBG(){
+  const sc=2;bg=document.createElement('canvas');bg.width=W*sc;bg.height=H*sc;const g=bg.getContext('2d');g.scale(sc,sc);LITES=[];const R=seeded(7);
+  g.fillStyle=PAL.ground;g.fillRect(0,0,W,H);
+  g.fillStyle=PAL.sand;g.fillRect(SEA-4,0,W-SEA+4,H);const sg=g.createLinearGradient(SEA,0,W,0);sg.addColorStop(0,PAL.water);sg.addColorStop(1,PAL.deep);g.fillStyle=sg;g.fillRect(SEA+8,0,W-SEA,H);
+  g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=1.2;for(let y=14;y<H;y+=24)for(let x=SEA+16+(y%48?0:10);x<W;x+=26){g.beginPath();g.arc(x,y,5,Math.PI*1.15,Math.PI*1.85);g.stroke();}
+  g.fillStyle='#a9cf8f';g.fillRect(0,478,SEA,44);g.fillStyle=PAL.water;g.fillRect(0,487,SEA+8,26);g.strokeStyle='rgba(255,255,255,.35)';for(let x=10;x<SEA;x+=36){g.beginPath();g.moveTo(x,497);g.lineTo(x+14,497);g.moveTo(x+18,504);g.lineTo(x+28,504);g.stroke();}
+  blocks().forEach(b=>fillBlock(g,b,R));
+  g.fillStyle=PAL.road;ROADH.forEach(y=>g.fillRect(0,y-RW,SEA,RW*2));ROADV.forEach(x=>g.fillRect(x-RW,0,RW*2,H));
+  ROADV.forEach(x=>{g.fillStyle='#9a9ea6';g.fillRect(x-RW-3,482,3,36);g.fillRect(x+RW,482,3,36);});
+  g.strokeStyle=PAL.line;g.lineWidth=1.6;g.setLineDash([12,10]);ROADH.forEach(y=>{g.beginPath();g.moveTo(0,y);g.lineTo(SEA,y);g.stroke();});ROADV.forEach(x=>{g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke();});g.setLineDash([]);
+  ROADH.forEach(y=>ROADV.forEach(x=>{g.fillStyle=PAL.road;g.fillRect(x-RW,y-RW,RW*2,RW*2);g.fillStyle='rgba(245,241,230,.85)';
+    for(let k=-RW+3;k<RW-2;k+=5){g.fillRect(x+k,y-RW-9,3,8);g.fillRect(x+k,y+RW+1,3,8);g.fillRect(x-RW-9,y+k,8,3);g.fillRect(x+RW+1,y+k,8,3);}}));
+  LOCS.forEach(l=>landmark(g,l,R));
+  lights=document.createElement('canvas');lights.width=W;lights.height=H;const lg=lights.getContext('2d');
+  const glow=(x,y,r,c)=>{const gr=lg.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,c);gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.fillRect(x-r,y-r,r*2,r*2);};
+  ROADH.forEach(y=>{for(let x=40;x<SEA;x+=80)glow(x,y-RW-2,22,'rgba(255,205,130,.38)');});ROADV.forEach(x=>{for(let y=40;y<H;y+=80)glow(x+RW+2,y,22,'rgba(255,205,130,.38)');});
+  LITES.forEach(([x,y])=>{lg.fillStyle='rgba(255,214,130,.95)';lg.fillRect(x,y,2.2,2.2);});
+  glow(LOC.live.x,LOC.live.y-21,40,'rgba(255,95,162,.6)');glow(LOC.hq.x,LOC.hq.y+8,46,'rgba(255,150,70,.45)');glow(LOC.temple.x,LOC.temple.y-10,50,'rgba(255,120,60,.4)');glow(LOC.mrt.x,LOC.mrt.y-14,40,'rgba(150,200,255,.4)');
+}
+const CARS=[];(()=>{const R=seeded(99);const cols=['#e74c3c','#f1c40f','#ecf0f1','#3498db','#2c3e50','#9b59b6','#e67e22','#1abc9c','#ecf0f1'];
+  for(let i=0;i<26;i++){const hz=R()<.55;CARS.push({hz,road:hz?ROADH[Math.floor(R()*4)]:ROADV[Math.floor(R()*5)],dir:R()<.5?1:-1,p:R()*(hz?SEA:H),v:.6+R()*.9,c:cols[Math.floor(R()*cols.length)]});}})();
+function drawCars(dt,night){CARS.forEach(c=>{c.p+=c.v*c.dir*dt;const L=c.hz?SEA:H;if(c.p<-20)c.p=L+20;if(c.p>L+20)c.p=-20;
+  const x=c.hz?c.p:c.road-c.dir*7,y=c.hz?c.road+c.dir*7:c.p,w=c.hz?16:8,h=c.hz?8:16;
+  ctx.fillStyle='rgba(30,30,50,.25)';rr(x-w/2+1.5,y-h/2+2,w,h,2.5);ctx.fill();ctx.fillStyle=c.c;rr(x-w/2,y-h/2,w,h,2.5);ctx.fill();
+  ctx.fillStyle='rgba(40,50,70,.55)';if(c.hz)ctx.fillRect(x+c.dir*3-1.5,y-3,3,6);else ctx.fillRect(x-3,y+c.dir*3-1.5,6,3);
+  if(night>.2){ctx.globalCompositeOperation='lighter';const fx=c.hz?x+c.dir*16:x,fy=c.hz?y:y+c.dir*16;const gr=ctx.createRadialGradient(fx,fy,0,fx,fy,14);gr.addColorStop(0,`rgba(255,230,160,${.5*night})`);gr.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=gr;ctx.fillRect(fx-14,fy-14,28,28);ctx.globalCompositeOperation='source-over';}});}
+function sky(){const h=S.min/60;let warm=0,cool=0;if(h<7.5)warm=.14;else if(h>=16&&h<18.5)warm=.2*(h-16)/2.5;else if(h>=18.5)warm=Math.max(0,.2-(h-18.5)*.16);
+  if(h>=18)cool=Math.min(.5,(h-18)*.28);return{warm,cool,night:clamp((h-18.2)*.8,0,1)};}
+function zoom(){return S.overview?Math.min(cw/W,ch/H)*.96:Math.max(clamp(Math.min(cw/900,ch/600),.6,1.4),ch/H,cw/SEA);}
+function cam(z){if(S.overview)return{x:W/2,y:H/2};const hw=cw/2/z,hh=ch/2/z;return{x:hw*2>=W?W/2:clamp(S.px,hw,W-hw),y:hh*2>=H?H/2:clamp(S.py,hh,H-hh)};}
+let tick=0,lastDraw=0;
+function draw(){
+  if(!bg)buildBG();tick++;const now=performance.now();const dt=Math.min(3,(now-lastDraw)/16.67||1);lastDraw=now;
+  const z=zoom(),c=cam(z),sk=sky();
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0b1320';ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(dpr*z,0,0,dpr*z,dpr*(cw/2-c.x*z),dpr*(ch/2-c.y*z));
+  ctx.drawImage(bg,0,0,W,H);
+  drawCars(dt,sk.night);
+  if(S.overview)tintOverview();
+  if(sk.warm){ctx.fillStyle=`rgba(255,150,70,${sk.warm})`;ctx.fillRect(0,0,W,H);}
+  if(sk.cool){ctx.fillStyle=`rgba(18,26,72,${sk.cool})`;ctx.fillRect(0,0,W,H);}
+  if(sk.night>0){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=sk.night*.9;ctx.drawImage(lights,0,0,W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';}
+  ctx.lineJoin='round';
+  DK.forEach(d=>{const [lx,ly]=DLAB[d];ctx.font='900 26px "Noto Serif TC",serif';ctx.strokeStyle='rgba(255,255,255,.88)';ctx.lineWidth=6;ctx.strokeText(DIST[d].name,lx,ly);ctx.fillStyle='#262b3a';ctx.fillText(DIST[d].name,lx,ly);
+    ctx.font='700 12px "Noto Sans TC",sans-serif';const t=`選民 ${DIST[d].voters} 萬 · ${DIST[d].people}`;ctx.lineWidth=4;ctx.strokeText(t,lx+2,ly+20);ctx.fillStyle='#4b5366';ctx.fillText(t,lx+2,ly+20);});
+  const near=S.overview?null:nearLoc();
+  if(near){ctx.strokeStyle='#38d3b2';ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.lineDashOffset=-tick*.5;rr(near.x-66,near.y-60,132,120,12);ctx.stroke();ctx.setLineDash([]);}
+  if(S.tx!=null){ctx.strokeStyle='rgba(56,211,178,.9)';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(S.tx,S.ty,12+Math.sin(tick/6)*2,6+Math.sin(tick/6),0,0,7);ctx.stroke();}
+  trucks.forEach(t=>{van(ctx,t.x,t.y,CAND[t.who].color,t.tx<t.x);if(t.wait<=0||tick%60<30){ctx.strokeStyle=CAND[t.who].color;ctx.lineWidth=1.5;for(let k=1;k<3;k++){ctx.globalAlpha=1-((tick/20+k/2)%1);ctx.beginPath();ctx.arc(t.x,t.y,16+((tick/20+k/2)%1)*18,-.6,.6);ctx.stroke();}ctx.globalAlpha=1;}
+    ctx.font='700 11px "Noto Sans TC",sans-serif';ctx.textAlign='center';const tt=CAND[t.who].name+' 宣傳車';const w3=ctx.measureText(tt).width+12;ctx.fillStyle=CAND[t.who].color;rr(t.x-w3/2,t.y-30,w3,17,8);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(tt,t.x,t.y-18);ctx.textAlign='left';});
+  drawPlayer(S.px,S.py,moving);
+  LOCS.forEach(l=>pin(l,near===l,S.pending.find(q=>q.ev.loc===l.id)));
+  if(S.overview)labelOverview();
+}
+function pin(l,near,pend){
+  const x=l.x,y=l.y-70;ctx.font='700 13px "Noto Sans TC",sans-serif';const tw=ctx.measureText(l.name).width,w=tw+36,h=24;
+  ctx.fillStyle='rgba(20,24,40,.28)';rr(x-w/2+2,y-h/2+3,w,h,12);ctx.fill();
+  ctx.fillStyle=near?'#38d3b2':'#ffffff';rr(x-w/2,y-h/2,w,h,12);ctx.fill();ctx.beginPath();ctx.moveTo(x-6,y+h/2-1);ctx.lineTo(x+6,y+h/2-1);ctx.lineTo(x,y+h/2+7);ctx.fill();
+  ctx.fillStyle=l.hq?'#ff8a3d':l.home?'#c98f16':PIN[l.d];ctx.beginPath();ctx.arc(x-w/2+12,y,9,0,7);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='900 10px "Noto Sans TC",sans-serif';ctx.textAlign='center';ctx.fillText(l.hq?'部':l.name[0],x-w/2+12,y+3.5);
+  ctx.fillStyle=near?'#05261d':'#1d2433';ctx.font='700 13px "Noto Sans TC",sans-serif';ctx.textAlign='left';ctx.fillText(l.name,x-w/2+26,y+4.5);
+  if(near){ctx.fillStyle='#0b1320';rr(x+w/2+5,y-10,22,20,5);ctx.fill();ctx.fillStyle='#38d3b2';ctx.font='700 12px "JetBrains Mono",monospace';ctx.textAlign='center';ctx.fillText('E',x+w/2+16,y+4.5);ctx.textAlign='left';}
+  if(pend){const bx=x+w/2-4,by=y-h/2-6,pu=(tick%60)/60;ctx.strokeStyle=pend.ev.tier==='normal'?'rgba(243,181,68,'+(1-pu)+')':'rgba(239,79,93,'+(1-pu)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(bx,by,11+pu*10,0,7);ctx.stroke();
+    ctx.fillStyle=pend.ev.tier==='normal'?'#f3b544':'#ef4f5d';ctx.beginPath();ctx.arc(bx,by,11,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.font='900 15px sans-serif';ctx.textAlign='center';ctx.fillText('!',bx,by+5.5);ctx.textAlign='left';}
+}
+function drawPlayer(x,y,walk){
+  const ph=walk?Math.sin(tick/4):0,fem=S.look==='f',suit=fem?'#7a3f5f':'#2b3653',hair=fem?'#2a1d1a':'#1c1c22';
+  ctx.fillStyle='rgba(30,30,50,.3)';ctx.beginPath();ctx.ellipse(x+2,y+12,12,5,0,0,7);ctx.fill();
+  ctx.strokeStyle='rgba(56,211,178,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(x,y+12,17,7,0,0,7);ctx.stroke();
+  if(fem){ctx.fillStyle=hair;ctx.beginPath();ctx.ellipse(x,y-9,9.5,10,0,0,7);ctx.fill();
+    ctx.fillStyle='#2a2430';rr(x-5,y+4+ph*2,3.5,9,1.5);ctx.fill();rr(x+1.5,y+4-ph*2,3.5,9,1.5);ctx.fill();
+    ctx.fillStyle=suit;ctx.beginPath();ctx.moveTo(x-8,y);ctx.lineTo(x+8,y);ctx.lineTo(x+11,y+8);ctx.lineTo(x-11,y+8);ctx.closePath();ctx.fill();
+    rr(x-12,y-7-ph*1.5,4,10,2);ctx.fill();rr(x+8,y-7+ph*1.5,4,10,2);ctx.fill();rr(x-8,y-9,16,12,5);ctx.fill();}
+  else{ctx.fillStyle='#1f2536';rr(x-6,y+2+ph*2.2,5,10,2);ctx.fill();rr(x+1,y+2-ph*2.2,5,10,2);ctx.fill();
+  ctx.fillStyle=suit;rr(x-13,y-7-ph*1.5,5,11,2.5);ctx.fill();rr(x+8,y-7+ph*1.5,5,11,2.5);ctx.fill();
+  rr(x-9,y-9,18,15,5);ctx.fill();}ctx.fillStyle='#e9eef5';ctx.beginPath();ctx.moveTo(x-3,y-9);ctx.lineTo(x+3,y-9);ctx.lineTo(x,y-3);ctx.fill();
+  ctx.strokeStyle='#d42f3d';ctx.lineWidth=3.5;ctx.beginPath();ctx.moveTo(x-8,y-8);ctx.lineTo(x+7,y+5);ctx.stroke();
+  circ(ctx,x,y-15,7.5,fem?'#f6d3b4':'#f0c7a2');ctx.fillStyle=hair;ctx.beginPath();ctx.arc(x,y-16.5,7.8,Math.PI*1.02,Math.PI*1.98);ctx.fill();
+  if(fem){ctx.beginPath();ctx.ellipse(x-3,y-19,6,3.2,-.35,0,7);ctx.fill();rr(x-9.5,y-18,4,15,2);ctx.fill();rr(x+5.5,y-18,4,15,2);ctx.fill();circ(ctx,x+5,y-21,2.2,'#ff8fab');}
+  ctx.font='900 13px "Noto Sans TC",sans-serif';ctx.textAlign='center';const nm=(S.num?S.num+' 號 ':'')+S.name;const nw=ctx.measureText(nm).width+16;
+  ctx.fillStyle='rgba(20,24,40,.3)';rr(x-nw/2+2,y-47,nw,21,10);ctx.fill();ctx.fillStyle='#ff8a3d';rr(x-nw/2,y-49,nw,21,10);ctx.fill();ctx.fillStyle='#2a1300';ctx.fillText(nm,x,y-34);ctx.textAlign='left';
+}
+function tintOverview(){DK.forEach(d=>{const [x,y,w,h]=DIST[d].rect;if(!S.poll)return;const v=S.poll.sh[d];const lead=['P','A','B'].reduce((a,X)=>v[X]>v[a]?X:a,'P');ctx.globalAlpha=.32;ctx.fillStyle=CAND[lead].color;ctx.fillRect(x,y,w,h);ctx.globalAlpha=1;});}
+function labelOverview(){
+  DK.forEach(d=>{const [x,y,w,h]=DIST[d].rect;const cx=x+w/2,cy=y+h/2;ctx.textAlign='center';
+    if(S.poll){const v=S.poll.sh[d];const lead=['P','A','B'].reduce((a,X)=>v[X]>v[a]?X:a,'P');ctx.fillStyle='rgba(10,16,28,.88)';rr(cx-120,cy-34,240,84,12);ctx.fill();
+      ctx.font='700 17px "Noto Sans TC",sans-serif';ctx.fillStyle='#edf1f7';ctx.fillText(`領先：${lead==='P'?S.name:CAND[lead].name}`,cx,cy-8);
+      ctx.font='500 14px "JetBrains Mono",monospace';ctx.fillStyle='#93a2b7';ctx.fillText(`你 ${(v.P*100).toFixed(0)} · 黃 ${(v.A*100).toFixed(0)} · 林 ${(v.B*100).toFixed(0)}`,cx,cy+16);}
+    else{ctx.fillStyle='rgba(10,16,28,.85)';rr(cx-130,cy-26,260,72,12);ctx.fill();ctx.font='500 15px "Noto Sans TC",sans-serif';ctx.fillStyle='#93a2b7';ctx.fillText('做內部民調才看得到數字',cx,cy+2);}
+    ctx.font='700 13px "Noto Sans TC",sans-serif';ctx.fillStyle='#f3b544';ctx.fillText(`投票熱度 ${Math.round(S.heat[d])}`,cx,cy+(S.poll?40:30));ctx.textAlign='left';});
+  ctx.font='700 16px "Noto Sans TC",sans-serif';ctx.lineWidth=5;ctx.strokeStyle='rgba(255,255,255,.9)';const t=S.poll?`顏色是 D-${61-S.poll.day} 內部民調的領先者 · 點地圖或按 M 回到街上`:'點地圖或按 M 回到街上';ctx.strokeText(t,20,H-20);ctx.fillStyle='#1d2433';ctx.fillText(t,20,H-20);
+}
+const trucks=[{who:'A',x:640,y:1026,tx:640,ty:1026,wait:0,ds:['old','field','port']},{who:'B',x:330,y:300,tx:330,ty:300,wait:0,ds:['uni','tech','new']}];
+function moveTrucks(dt){trucks.forEach(t=>{if(t.wait>0){t.wait-=dt;return;}const dx=t.tx-t.x,dy=t.ty-t.y,d=Math.hypot(dx,dy);if(d<3){t.wait=120+Math.random()*200;const l=pick(LOCS.filter(q=>t.ds.includes(q.d)&&!q.hq&&!q.home));t.tx=l.x+rnd(-40,40);t.ty=l.y+AOFF+rnd(0,12);return;}t.x+=dx/d*1.6*dt;t.y+=dy/d*1.6*dt;});}
+
+/* ---------- loop ---------- */
+const keys={};let moving=false,last=0,hudT=0;
+function busy(){return['ovCall','ovPanel','ovMini','ovDlg','ovPolicy'].some(id=>!$('#'+id).hidden)||!$('#sheet').hidden||S.paused;}
+function update(dt){
+  if(eat){tickEat(dt);return;}
+  let mx=0,my=0;if(keys.arrowleft||keys.a)mx--;if(keys.arrowright||keys.d)mx++;if(keys.arrowup||keys.w)my--;if(keys.arrowdown||keys.s)my++;
+  if(mx||my){S.tx=null;S.tloc=null;}
+  else if(S.tx!=null){const dx=S.tx-S.px,dy=S.ty-S.py,d=Math.hypot(dx,dy);if(d<4){S.tx=null;const l=S.tloc&&LOC[S.tloc];S.tloc=null;if(l&&Math.hypot(l.x-S.px,l.y-S.py)<90)openLoc(l);}else{mx=dx/d;my=dy/d;}}
+  moving=!!(mx||my);
+  if(moving&&!S.overview){const n=Math.hypot(mx,my);const run=keys.shift;const sp=(run?5.4:3.1)*dt;const step=S.tx!=null?Math.min(sp,Math.hypot(S.tx-S.px,S.ty-S.py)):sp;
+    S.px=clamp(S.px+mx/n*step,12,SEA-8);S.py=clamp(S.py+my/n*step,12,H-12);S.walk+=step;while(S.walk>=9){S.walk-=9;advance(1);}if(run)S.energy-=.004*dt;}
+  if(!moving&&S.autoTime&&!S.overview){S.idle=(S.idle||0)+dt;if(S.idle>=60){S.idle-=60;advance(1);}}
+  moveTrucks(dt);
+  if(S.energy<=0)return collapse();
+  if(EVENING[S.day]&&!S.done[S.day]&&S.min>=19*60)return runEvening(EVENING[S.day],()=>{});
+  if(S.calls.length&&S.min>=S.calls[0]){S.calls.shift();const ev=pickEvent();if(ev)return showCall(ev,{});}
+  const ex=S.pending.find(p=>p.due<=S.min);if(ex)expire(ex);
+  if(S.min>=23*60)return forceSleep();
+}
+function openLoc(l){const p=S.pending.find(q=>q.ev.loc===l.id);if(p)openPanel(p);else openSheet(l);}
+function hud(){
+  const w=wdOf(S.day);$('#hDay').textContent=`第 ${dn()} 天 · 週${WD[w]}${S.ng?' · 連任之戰':''}`;$('#hTime').textContent=fmt(S.min);$('#hLeft').textContent=S.day>=60?'明天投票':`距離投票 ${61-S.day} 天`;
+  $('#hBars').innerHTML=barH('體力',S.energy)+barH('肚子',S.hunger,'hun')+barH('嗓子',S.voice);
+  $('#hChips').innerHTML=`<div><small>資金</small><b style="color:${S.money<0?'#ff8b95':'inherit'}">${Math.round(S.money)}萬</b></div><div><small>聲量</small><b>${Math.round(S.buzz)}</b></div><div><small>誠信</small><b>${Math.round(S.integ)}</b></div><div><small>家庭</small><b>${Math.round(S.family)}</b></div>`;
+  const pk=S.pending.map(p=>p.ev.id+p.due).join()+'|'+S.pending.length;const pd=$('#hPend');if(pd.dataset.k!==pk){pd.dataset.k=pk;pd.innerHTML=`<h4><span>待處理的事</span><span>${S.pending.length}</span></h4>`+(S.pending.length?'':'<div class="empty">目前沒有人找你。</div>');
+  S.pending.forEach((p,i)=>{const b=el('button','pitem '+(p.ev.tier==='normal'?'normal':''),`<b>${DIST[p.ev.d].short}</b>${esc(p.ev.title)}<small>${p.ev.loc?LOC[p.ev.loc].name+' · ':'電話 · '}${fmt(p.due)} 前</small>`);b.type='button';b.onclick=()=>{if(busy())return;if(p.ev.loc){const l=LOC[p.ev.loc];S.tx=l.x;S.ty=l.y+AOFF;S.tloc=l.id;}else openPanel(p);};pd.appendChild(b);});}
+  let h='時間在走：點地圖或用方向鍵移動，走到地點按 <em>E</em>';
+  if(S.overview)h='全市地圖：按 <em>M</em> 回到街上';
+  else if(S.energy<25)h=`體力剩 <em>${Math.round(S.energy)}%</em>，去 <em>總部</em> 小睡或回家休息`;
+  else if(S.hunger<30)h='肚子餓了：趁現在沒人找你，去 <em>總部</em> 吃便當';
+  else if(S.voice<30)h='嗓子快啞了：去 <em>總部</em> 喝溫水，演講效果會變好';
+  else if(S.pending.length)h=`還有 <em>${S.pending.length}</em> 件事等你處理，點右邊的清單`;
+  else if(EVENING[S.day]&&!S.done[S.day])h={forum:'今晚 19:00 政見發表會',debate:'今晚 19:00 電視辯論會',rally:'今晚 19:00 選前之夜造勢大會'}[EVENING[S.day]]+'，時間到會自動開始';
+  $('#hint').innerHTML=h;
+}
+function loop(ts){
+  requestAnimationFrame(loop);const dt=Math.min(3,(ts-last)/16.67||1);last=ts;
+  if(scr!=='scrGame')return;
+  if(!busy())update(dt);else if(eat&&$('#ovCall').hidden&&!S.paused)tickEat(dt);
+  draw();if(ts-hudT>200){hudT=ts;hud();}
+}
+requestAnimationFrame(loop);
+
+/* ---------- input ---------- */
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select')return;
+  if(S.miniKey&&!$('#ovMini').hidden){if(k==='c'||k===' '){e.preventDefault();S.miniKey('c');}else if(/^[1-3]$/.test(k))S.miniKey(+k);return;}
+  if(scr!=='scrGame')return;
+  if(!$('#ovPanel').hidden){if(/^[1-3]$/.test(k)){const b=document.querySelectorAll('#pOpts .opt')[+k-1];if(b)b.click();}return;}
+  if(!$('#ovCall').hidden||!$('#ovDlg').hidden||!$('#ovPolicy').hidden)return;
+  if(!$('#sheet').hidden){if(k==='escape')closeSheet();else if(/^[1-9]$/.test(k)){const b=document.querySelectorAll('#sheet .opt')[+k-1];if(b&&!b.disabled)b.click();}return;}
+  if(eat&&k==='e'){stopEat(false);toast('先不吃了','肚子只回了一點');return;}
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+  keys[k]=true;if(e.shiftKey)keys.shift=true;
+  if(k==='e'&&!S.paused){const l=nearLoc();if(l)openLoc(l);else toast('附近沒有地點','走到地點旁邊再按 E');}
+  if(k==='m')toggleMap();if(k==='p')pause();
+});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(!e.shiftKey)keys.shift=false;});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+cv.addEventListener('pointerdown',e=>{
+  if(busy()||eat)return;const r=cv.getBoundingClientRect();const z=zoom(),c=cam(z);
+  const wx=(e.clientX-r.left-cw/2)/z+c.x,wy=(e.clientY-r.top-ch/2)/z+c.y;
+  if(S.overview){S.overview=false;return;}
+  const l=LOCS.find(q=>Math.abs(q.x-wx)<66&&wy>q.y-84&&wy<q.y+60);
+  if(l){if(Math.hypot(l.x-S.px,l.y-S.py)<84)return openLoc(l);S.tx=l.x;S.ty=l.y+AOFF;S.tloc=l.id;}
+  else{S.tx=clamp(wx,12,SEA-8);S.ty=clamp(wy,12,H-12);S.tloc=null;}
+});
+function toggleMap(){S.overview=!S.overview;}
+function pause(){S.paused=true;dlg({eyebrow:`第 ${dn()} 天 · ${fmt(S.min)}`,title:'暫停中',html:`<p>目前的政見：</p>${polList()}<p class="mute">遊戲每天早上會自動存檔，關掉網頁之後可以從標題畫面繼續。站著不動時，時間大約一秒過一分鐘，可以在這裡關掉。</p>`,buttons:[{t:'繼續',fn:()=>{S.paused=false;}},{t:S.autoTime?'時間自動流動：開（點一下關閉）':'時間自動流動：關（點一下開啟）',cls:'ghost',fn:()=>{S.autoTime=!S.autoTime;S.paused=false;toast(S.autoTime?'時間會自己流動':'時間只在移動和做事時前進',S.autoTime?'站著不動，大約一秒過一分鐘':'可以慢慢想再行動');}},{t:'回到標題',cls:'ghost',fn:()=>{S.paused=false;saveGame();titleScreen();}}]});}
+$('#bPause').onclick=pause;$('#bTrend').onclick=()=>{if(busy())return;dlg({cls:'wide',eyebrow:`選情走勢 · ${S.day>=51?'封關期間只剩內部民調':'每週日更新'}`,title:'三位候選人的支持度',html:trendSVG()});};$('#bMap').onclick=toggleMap;
+$('#bPol').onclick=()=>{if(busy())return;dlg({eyebrow:`政見 · 誠信 ${Math.round(S.integ)}`,title:'你的政見',html:`${polList()}<p class="mute">誠信越高，政見加分打的折越少。要修改政見，到競選總部開政見會議（每 7 天一次）。</p>`});};
+$('#bEnd').onclick=()=>{if(busy())return;dlg({title:'現在就結束今天嗎？',html:`<p>現在 ${fmt(S.min)}。越早睡，明天體力回得越多${EVENING[S.day]&&!S.done[S.day]?'。今晚的特別行程會先進行':''}。</p>`,buttons:[{t:'結束今天',fn:()=>endDay()},{t:'再跑一下',cls:'ghost'}]});};
+
+/* ---------- boot ---------- */
+function start(data){
+  paintFaces();
+  if(data&&data.save){try{const sv=data.save;S=Object.assign(S0(),sv);S.pending=(sv.pending||[]).filter(p=>EV[p.id]).map(p=>({ev:EV[p.id],ctx:p.ctx||{},due:p.due,late:p.late}));if(data.scr==='scrGame'&&!S.over){show('scrGame');resize();morning();return;}}catch(e){S=S0();}}
+  titleScreen();
+}
+if(window.claude&&window.claude.hot&&window.claude.hot.snapshot){try{window.claude.hot.snapshot(()=>({save:ser(),scr}));}catch(e){}}
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+})();
+</script>
+
+</body>
+</html>

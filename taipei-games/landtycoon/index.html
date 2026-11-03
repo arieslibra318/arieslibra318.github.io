@@ -1,0 +1,1929 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>地產大亨</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Serif+TC:wght@700;900&family=VT323&display=swap">
+<style>
+/* 版面：全螢幕 3D 大富翁棋盤（台北 1980s，48 格、河岸機場港口）＋報紙米黃 HUD、LED 房市看板、權狀卡、拍賣板、代碼連線 */
+:root{
+  --paper:#f6eedb; --paper-2:#eadfc4; --ink:#2b2622; --ink-soft:#6b6155;
+  --up:#d7263d; --down:#14965a; --led:#ffb000; --board:#15110d;
+  --accent:#c8402f; --gold:#e3a52b; --teal:#2b7f86; --shadow:rgba(30,20,10,.3);
+  --f-ui:'Huninn','Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;
+  --f-news:'Noto Serif TC','Songti TC','PMingLiU',serif;
+  --f-led:'VT323',ui-monospace,monospace;
+  color-scheme:light;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:#cdb88f;color:var(--ink);font-family:var(--f-ui);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{position:fixed;inset:0;overflow:hidden}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;cursor:grab}
+#c.drag{cursor:grabbing}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.paper{background:var(--paper);border:2.5px solid var(--ink);border-radius:12px;box-shadow:0 4px 0 var(--ink),0 10px 24px var(--shadow)}
+.btn{border:2.5px solid var(--ink);background:var(--paper);border-radius:10px;padding:7px 16px;font-size:15px;box-shadow:0 3px 0 var(--ink)}
+.btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.sm{font-size:13px;padding:3px 10px;border-width:2px;box-shadow:0 2px 0 var(--ink)}
+.up{color:var(--up)}.down{color:var(--down)}
+#hud{position:absolute;inset:0;pointer-events:none}
+#hud > *{pointer-events:auto}
+
+/* 玩家卡 */
+#tl{position:absolute;left:max(12px,env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:7px;max-width:min(42vw,300px)}
+.pc{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;align-items:center;padding:5px 12px 5px 5px;border-radius:12px;background:var(--paper);border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);position:relative;transition:transform .2s}
+.pc canvas{width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);background:#e9d9b4}
+.pc b{font-size:15px;display:flex;gap:6px;align-items:center}
+.pc b i{font-style:normal;width:10px;height:10px;border-radius:3px;border:1.5px solid var(--ink);flex:none}
+.pc small{display:block;font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc small em{font-style:normal;color:var(--ink);font-weight:700}
+.pc .deeds{display:flex;flex-wrap:wrap;gap:2px;margin-top:3px}
+.pc .deeds span{width:9px;height:12px;border:1.5px solid var(--ink);border-radius:2px}
+.pc .deeds span.m{opacity:.35}
+.pc.on{background:#fff6dc;transform:translateX(6px)}
+.pc.on::before{content:"";position:absolute;left:-12px;top:50%;margin-top:-7px;border:7px solid transparent;border-left:9px solid var(--accent)}
+.pc.out{opacity:.45;filter:grayscale(1)}
+.pc b .rv{font-size:10px;font-weight:400;background:#2b7f86;color:#fff;border-radius:6px;padding:0 5px}
+.pc .tag{position:absolute;right:-6px;top:-8px;font-size:11px;background:var(--ink);color:var(--paper);border-radius:6px;padding:0 6px}
+
+/* LED 房市看板 */
+#ticker{position:absolute;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--board);color:var(--led);border:2.5px solid var(--ink);border-radius:10px;box-shadow:0 3px 0 var(--ink);padding:4px 14px 2px;font-family:var(--f-led);font-size:26px;display:flex;gap:10px;align-items:center;white-space:nowrap;line-height:1}
+#ticker .k{font-family:var(--f-ui);font-size:12px;color:#c9b48a}
+#ticker .ph{font-family:var(--f-ui);font-size:12px;padding:2px 8px;border-radius:6px;background:#3a2f22;color:#f6eedb}
+#ticker .wx{font-family:var(--f-ui);font-size:12px;padding:2px 8px;border-radius:6px;background:#2b3a55;color:#e8f0ff}
+#tkChg.upc{color:#ff5a6a}#tkChg.dnc{color:#3ddc8a}
+#tr{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;gap:7px}
+.ib{width:46px;height:46px;border-radius:12px;background:var(--paper);border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);display:grid;place-items:center;padding:0;position:relative;font-size:11px}
+.ib:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.ib svg{width:25px;height:25px}
+.ib.on{background:var(--gold)}
+.ib.off::after{content:"";position:absolute;left:8px;right:8px;top:50%;height:3px;background:var(--accent);transform:rotate(-40deg)}
+.ib b{position:absolute;bottom:2px;font-size:10px;font-weight:400}
+
+#toasts{position:absolute;left:50%;top:calc(100px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;z-index:4}
+.toast{padding:7px 16px;font-size:14px;background:var(--paper);border:2.5px solid var(--ink);border-radius:999px;box-shadow:0 3px 0 var(--ink);animation:tin .3s ease-out,tout .4s ease-in 2.8s forwards;max-width:calc(100vw - 32px);text-align:center}
+@keyframes tin{from{transform:translateY(-10px);opacity:0}}
+@keyframes tout{to{opacity:0;transform:translateY(-6px)}}
+
+/* 對話框 */
+#dialog{position:absolute;left:50%;bottom:calc(46px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(640px,calc(100vw - 210px));display:flex;gap:12px;padding:12px 16px 12px 12px;cursor:pointer;z-index:3}
+#dlgP{width:64px;height:64px;flex:none;border-radius:50%;border:2.5px solid var(--ink);background:#e9d9b4}
+#dlgBody{flex:1;min-width:0}
+#dlgName{display:inline-block;font-size:13px;background:var(--ink);color:var(--paper);padding:2px 10px;border-radius:6px;margin-bottom:4px}
+#dlgText{font-size:17px;line-height:1.55;min-height:1.6em}
+#dlgText b{color:var(--accent)}
+#dlgNext{position:absolute;right:16px;bottom:10px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid var(--accent);animation:nb .8s infinite}
+@keyframes nb{50%{transform:translateY(4px)}}
+#dlgCh{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#dlgCh button{text-align:left;border:2.5px solid var(--ink);background:#fff;border-radius:10px;padding:7px 14px;font-size:15px;box-shadow:0 3px 0 var(--ink)}
+#dlgCh button.pri{background:var(--accent);color:#fff}
+#dlgCh button:hover:not(:disabled){filter:brightness(.96)}
+
+/* 右下按鈕 */
+#tbtns{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(48px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:flex-end;z-index:3}
+.tb{width:62px;height:62px;border-radius:50%;background:var(--paper);border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);font-size:15px;padding:0;line-height:1.1}
+.tb:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.tb.big{width:82px;height:82px;background:var(--accent);color:#fff;font-size:18px}
+.tb.big.pulse{animation:pulse 1.2s infinite}
+@keyframes pulse{50%{box-shadow:0 3px 0 var(--ink),0 0 0 8px rgba(200,64,47,.25)}}
+.tb small{display:block;font-size:10px;opacity:.8}
+
+#marquee{position:absolute;left:0;right:0;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);background:var(--board);border-top:2.5px solid var(--ink);overflow:hidden;height:calc(34px + env(safe-area-inset-bottom,0px));pointer-events:none}
+#mqIn{position:absolute;left:0;top:4px;white-space:nowrap;font-family:var(--f-led);font-size:24px;color:var(--led);will-change:transform}
+#mqIn span{margin-right:40px}
+#mqIn span i{font-style:normal;color:#ff5a6a}#mqIn span u{text-decoration:none;color:#3ddc8a}
+
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.lbl{position:absolute;left:0;top:0;font-size:12px;padding:1px 8px;border:2px solid var(--ink);border-radius:6px;white-space:nowrap;pointer-events:none;will-change:transform;color:#fff;font-weight:700}
+.fly{position:absolute;left:0;top:0;font-family:var(--f-led);font-size:30px;pointer-events:none;white-space:nowrap;text-shadow:0 2px 0 var(--ink),0 0 2px var(--ink);animation:fly 1.6s ease-out forwards}
+.fly.p{color:#7dff9e}.fly.n{color:#ff6b6b}
+@keyframes fly{0%{opacity:0;margin-top:0}12%{opacity:1}100%{opacity:0;margin-top:-70px}}
+#tip{position:absolute;left:0;top:0;font-size:13px;padding:3px 10px;background:var(--paper);border:2px solid var(--ink);border-radius:8px;pointer-events:none;white-space:nowrap;z-index:2}
+
+/* 標題 */
+#title{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+#logo{font-family:var(--f-news);font-weight:900;font-size:clamp(54px,13vw,120px);line-height:1;color:var(--paper);-webkit-text-stroke:3px var(--ink);paint-order:stroke fill;text-shadow:0 6px 0 var(--ink);letter-spacing:.06em}
+#logo span{color:var(--up)}
+#logoSub{display:inline-block;background:var(--board);color:var(--led);font-family:var(--f-led);font-size:clamp(20px,4vw,30px);padding:2px 16px;border:2.5px solid var(--ink);border-radius:8px}
+#logoZh{font-size:clamp(16px,3.6vw,22px);color:#fff;text-shadow:0 2px 0 var(--ink),0 0 8px rgba(0,0,0,.5);letter-spacing:.1em}
+#titleBtns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+#titleBtns .btn{font-size:19px;padding:10px 24px}
+#titleNote{font-size:13px;color:#fff;max-width:560px;line-height:1.6;background:rgba(43,38,34,.68);padding:8px 14px;border-radius:10px}
+
+/* 視窗 */
+.modal{position:absolute;inset:0;display:grid;place-items:center;background:rgba(30,20,10,.4);padding:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:10}
+.box{width:min(760px,100%);max-height:min(88vh,800px);display:flex;flex-direction:column;overflow:hidden}
+.box.sm{width:min(440px,100%)}
+.bh{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:2.5px solid var(--ink);background:var(--paper-2)}
+.bh h3{margin:0;font-size:18px;flex:1}
+.bh .x{width:36px;height:36px;border-radius:10px;border:2.5px solid var(--ink);background:#fff;font-size:20px;padding:0}
+.bb{overflow:auto;padding:12px 14px 16px;background:#fffaf0;flex:1;min-height:0}
+.bf{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:10px 14px;border-top:2.5px solid var(--ink);background:var(--paper-2)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tab{border:2px solid var(--ink);background:#fff;border-radius:8px;padding:4px 12px;font-size:14px}
+.tab.on{background:var(--ink);color:var(--paper)}
+table.q{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+table.q th{font-size:12px;color:var(--ink-soft);text-align:right;font-weight:400;padding:4px 6px;border-bottom:2px solid var(--ink)}
+table.q th:first-child,table.q td:first-child{text-align:left}
+table.q td{padding:7px 6px;border-bottom:1.5px dashed #d8c9a8;text-align:right;white-space:nowrap}
+table.q.lt th:nth-child(2),table.q.lt td:nth-child(2){text-align:left}
+table.q td .sec{display:block;font-size:11px;color:var(--ink-soft)}
+.tw{overflow-x:auto}
+.gdot{display:inline-block;width:12px;height:12px;border:1.5px solid var(--ink);border-radius:3px;margin-right:6px;vertical-align:-1px}
+.acts{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+.need{background:#fde2dc;border:2px solid var(--accent);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:15px}
+.note{font-size:13px;color:var(--ink-soft);line-height:1.6}
+
+/* 權狀 */
+.deed{border:2.5px solid var(--ink);border-radius:8px;background:#fffdf5;overflow:hidden;font-variant-numeric:tabular-nums}
+.deed .dh{padding:10px 12px;color:#fff;text-align:center;border-bottom:2.5px solid var(--ink)}
+.deed .dh small{display:block;font-size:12px;letter-spacing:.3em;opacity:.9}
+.deed .dh b{display:block;font-family:var(--f-news);font-size:26px;letter-spacing:.06em}
+.deed .db{padding:10px 14px;font-size:14px}
+.deed .row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e3d6b8}
+.deed .row.cur{background:#fff1c9;font-weight:700}
+.deed .stamp{display:inline-block;border:2.5px solid var(--up);color:var(--up);border-radius:6px;padding:0 8px;font-weight:700;transform:rotate(-6deg)}
+.deed .own{margin-top:8px;display:flex;align-items:center;gap:8px}
+
+/* 卡片、號外 */
+.card{border:2.5px solid var(--ink);border-radius:12px;background:#fffdf5;padding:16px 18px;text-align:center}
+.card .ck{font-family:var(--f-news);font-weight:900;font-size:30px;letter-spacing:.2em}
+.card .ct{font-family:var(--f-news);font-weight:900;font-size:22px;margin:8px 0 6px;line-height:1.4}
+.card p{margin:0;font-size:15px;line-height:1.6;color:var(--ink-soft)}
+.news{font-family:var(--f-news)}
+.news .mast{display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px double var(--ink);padding-bottom:4px}
+.news .mast b{font-size:30px;color:var(--up);font-weight:900}
+.news h2{font-size:clamp(24px,5vw,34px);margin:10px 0;line-height:1.3}
+.seat{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border:2px solid var(--ink);border-radius:10px;background:#fff;margin-bottom:8px}
+.seat canvas{width:48px;height:48px;border-radius:50%;border:2px solid var(--ink)}
+.seat input{width:100%;min-width:0;box-sizing:border-box;font:inherit;font-size:15px;border:2px solid var(--ink);border-radius:8px;padding:4px 8px;background:#fffdf5}
+.seg{display:flex;border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 10px;font-size:13px;border-right:2px solid var(--ink)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.offer{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.offer input{width:90px;font:inherit;font-size:16px;border:2px solid var(--ink);border-radius:8px;padding:3px 8px;text-align:right}
+.spark{width:100%;height:90px;display:block}
+
+
+/* 狀態列、拍賣板、線上 */
+#stat{position:absolute;left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);border-radius:999px;padding:4px 14px;font-size:13px;white-space:nowrap;z-index:2;box-shadow:0 2px 0 rgba(0,0,0,.25)}
+#stat i{font-style:normal;display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--led);margin-right:6px;animation:nb .9s infinite}
+#auc{position:absolute;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(380px,calc(100vw - 130px));padding:8px 12px 10px;z-index:3}
+#auc .ah{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink-soft)}
+#auc .ah b{font-family:var(--f-news);font-size:16px;color:var(--accent)}
+#auc .an{font-family:var(--f-news);font-weight:900;font-size:20px;display:flex;align-items:center;gap:6px;margin:2px 0}
+#auc .ap{display:flex;align-items:baseline;gap:10px;background:var(--board);color:var(--led);border-radius:8px;padding:2px 10px;border:2px solid var(--ink)}
+#auc .ap b{font-family:var(--f-led);font-size:34px;line-height:1}
+#auc .ap span{font-size:13px;color:#f6eedb}
+#auc .bd{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+#auc .bd span{font-size:12px;border:2px solid var(--ink);border-radius:999px;padding:0 8px;background:#fff}
+#auc .bd span.x{opacity:.4;text-decoration:line-through}
+#auc .bd span.l{background:var(--gold)}
+#dlgCh select{font:inherit;font-size:15px;border:2.5px solid var(--ink);border-radius:10px;padding:6px 8px;background:#fffdf5;max-width:100%;flex-basis:100%}
+.ib.net{width:auto;padding:0 10px;font-size:12px;line-height:1.15;text-align:center;background:var(--board);color:var(--led)}
+.ib.net b{position:static;display:block;font-family:var(--f-led);font-size:20px;font-weight:400;letter-spacing:.08em}
+.code{font-family:var(--f-led);font-size:56px;letter-spacing:.18em;background:var(--board);color:var(--led);border:2.5px solid var(--ink);border-radius:10px;padding:0 16px;display:inline-block;line-height:1.1}
+.codein{font-family:var(--f-led);font-size:34px;letter-spacing:.2em;width:7.2em;text-transform:uppercase;border:2.5px solid var(--ink);border-radius:10px;padding:2px 10px;background:#fffdf5;text-align:center}
+.nm{font:inherit;font-size:16px;border:2.5px solid var(--ink);border-radius:10px;padding:5px 10px;background:#fffdf5;width:10em}
+.row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:1px 9px;border:2px solid var(--ink);background:#fff}
+.pill.ok{background:#d9f2df}.pill.wait{background:#fff1c9}.pill.off{background:#f3d3cd}
+.fxl{display:inline-block;font-size:12px;border-radius:6px;padding:0 6px;background:var(--ink);color:var(--paper);margin:2px 4px 2px 0}
+
+/* 市政府委託 */
+#jobs{position:absolute;left:max(12px,env(safe-area-inset-left,0px));bottom:calc(46px + env(safe-area-inset-bottom,0px));width:196px;padding:8px 11px 6px;font-size:13px;z-index:2;line-height:1.45}
+#jobs h4{margin:0 0 3px;font-size:13px;display:flex;justify-content:space-between;align-items:baseline}
+#jobs .jb{border-top:1.5px dashed #d8c9a8;padding:4px 0}
+#jobs .jb b{color:var(--accent)}
+#jobs .jb small{color:var(--ink-soft)}
+#bJobs{display:none}
+#bJobs i{position:absolute;right:-5px;top:-6px;font-style:normal;font-size:11px;background:var(--accent);color:#fff;border:2px solid var(--ink);border-radius:999px;min-width:18px;height:18px;line-height:14px;text-align:center}
+ul.era{margin:6px 0 0;padding-left:20px;font-family:var(--f-ui);font-size:15px;line-height:1.7}
+ul.era li{margin:2px 0}
+.bizl{background:#fff6dc;border:2px solid var(--ink);border-radius:10px;padding:6px 10px;margin-bottom:10px;font-size:14px}
+@media (max-width:1099px){#jobs{display:none!important}#bJobs{display:grid}}
+@media (max-width:760px){
+  #tl{max-width:none;right:max(12px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .pc{grid-template-columns:30px minmax(0,1fr);padding:3px 8px 3px 3px;gap:5px;box-shadow:0 2px 0 var(--ink)}
+  .pc .nw{display:none}
+  .pc canvas{width:30px;height:30px}
+  .pc b{font-size:13px}.pc small{font-size:11px}.pc .deeds{display:none}
+  .pc.on{transform:none;background:var(--gold)}.pc.on::before{display:none}
+  #ticker{top:calc(98px + env(safe-area-inset-top,0px));font-size:20px;padding:3px 10px 1px;gap:6px}
+  #ticker .wx{display:none}
+  #tr{top:calc(140px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));flex-direction:column;gap:6px}
+  #tr .ib{width:40px;height:40px}
+  #tr .ib.net{padding:0;font-size:9px;line-height:1}#tr .ib.net b{font-size:13px;letter-spacing:0}
+  #dialog{width:calc(100vw - 24px);bottom:calc(140px + env(safe-area-inset-bottom,0px));left:50%}
+  #dlgP{width:44px;height:44px}#dlgText{font-size:15px}
+  #tbtns{right:50%;transform:translateX(50%);bottom:calc(42px + env(safe-area-inset-bottom,0px))}
+  .tb{width:56px;height:56px;font-size:14px}.tb.big{width:76px;height:76px}
+  #toasts{top:auto;bottom:calc(240px + env(safe-area-inset-bottom,0px))}
+  #stat{top:calc(132px + env(safe-area-inset-top,0px));font-size:12px}
+  #auc{top:calc(162px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));transform:none;width:calc(100vw - 84px)}
+  #auc .ap b{font-size:28px}
+  .code{font-size:44px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <canvas id="c" tabindex="0" aria-label="3D 大富翁棋盤，拖曳可以轉動視角"></canvas>
+  <div id="labels"></div>
+  <div id="tip" hidden></div>
+
+  <div id="title">
+    <div id="logo">地產<span>大亨</span></div>
+    <div id="logoSub">TAIPEI 1980s ▲ REAL ESTATE</div>
+    <div id="logoZh">從 1985 到 2025，56 格台北地產＋平溪、貓空兩條支線</div>
+    <div id="titleBtns"><button class="btn pri" id="bNew" type="button">開始新的一局</button><button class="btn pri" id="bNet" type="button">代碼連線 PK</button><button class="btn" id="bCont" type="button" hidden>繼續上一局</button><button class="btn" id="bHelpT" type="button">怎麼玩</button></div>
+    <div id="titleNote">遊戲裡的人物、地價與新聞都是虛構或經過改編的，僅供娛樂，不構成任何投資建議。</div>
+  </div>
+
+  <div id="hud" hidden>
+    <div id="tl"></div>
+    <div id="ticker"><span class="k">房市指數</span><b id="tkIdx">100.0</b><span id="tkChg">0.0%</span><span class="ph" id="tkRound">第 1 回合</span><span class="wx" id="tkYear">1985 春</span></div>
+    <div id="tr">
+      <button class="ib net" id="bNetChip" type="button" aria-label="連線房間" hidden>連線<b id="netCode">-----</b></button>
+      <button class="ib" id="bJobs" type="button" aria-label="市政府委託"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/></svg><i id="jobN">0</i></button>
+      <button class="ib" id="bView" type="button" aria-label="全景"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></button>
+      <button class="ib" id="bMarket" type="button" aria-label="房市與地產"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 20V10l7-5 7 5v10"/><path d="M9 20v-6h6v6"/></svg></button>
+      <button class="ib" id="bSpeed" type="button" aria-label="速度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l7 6-7 6zM13 6l7 6-7 6z"/></svg><b id="spdTxt">1x</b></button>
+      <button class="ib" id="bSnd" type="button" aria-label="聲音"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg></button>
+      <button class="ib" id="bHelp" type="button" aria-label="說明"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.5"/></svg></button>
+    </div>
+    <div id="stat" hidden></div>
+    <div id="auc" class="paper" hidden></div>
+    <div id="jobs" class="paper" hidden></div>
+    <div id="toasts" aria-live="polite"></div>
+    <div id="dialog" class="paper" hidden><canvas id="dlgP" width="128" height="128"></canvas><div id="dlgBody"><span id="dlgName">旁白</span><div id="dlgText"></div><div id="dlgCh"></div></div><div id="dlgNext" hidden></div></div>
+    <div id="tbtns">
+      <button class="tb" id="bManage" type="button" hidden>管理<small>地產</small></button>
+      <button class="tb big pulse" id="bRoll" type="button" hidden>擲骰子<small>Space</small></button>
+      <button class="tb" id="bEnd" type="button" hidden>結束<small>回合</small></button>
+    </div>
+    <div id="marquee"><div id="mqIn"></div></div>
+  </div>
+
+  <div id="modal" class="modal" hidden><div class="box paper" id="box"></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=Math.random,rr=(a,b)=>a+rnd()*(b-a),pick=a=>a[rnd()*a.length|0];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fm=n=>Math.round(n).toLocaleString('zh-TW');
+const r10=v=>Math.max(10,Math.round(v/10)*10);
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
+// 只保留 <b>、<small>、<br> 的安全 HTML（給連線收到的文字用）
+function safeHTML(s){const t=document.createElement('template');t.innerHTML=String(s==null?'':s);const out=document.createElement('div');
+  (function walk(src,dst){for(const n of src.childNodes){if(n.nodeType===3)dst.appendChild(document.createTextNode(n.textContent));else if(n.nodeType===1){const tag=n.tagName.toLowerCase();if(tag==='b'||tag==='small'||tag==='br'){const e=document.createElement(tag);walk(n,e);dst.appendChild(e);}else walk(n,dst);}}})(t.content,out);return out.innerHTML;}
+const SAVE_KEY='dcdh.save4';
+if(!window.THREE){document.getElementById('titleNote').textContent='3D 引擎載入失敗，請確認網路連線後重新整理。';return;}
+const V3=THREE.Vector3;
+
+/* ---------- 棋盤資料：48 格 ---------- */
+const GROUPS={
+  brown:{name:'萬華',col:'#8a5a3b',hc:50},lb:{name:'大稻埕',col:'#5fb0d6',hc:50},
+  olive:{name:'新店木柵',col:'#7a8b2e',hc:100},pink:{name:'西門町',col:'#d9548a',hc:100},
+  orange:{name:'士林天母',col:'#e8892b',hc:100},teal:{name:'北投',col:'#1f9e8f',hc:150},
+  red:{name:'中山',col:'#d7263d',hc:150},yellow:{name:'東區',col:'#e3b52b',hc:150},
+  purple:{name:'內湖南港',col:'#6a4c9c',hc:200},green:{name:'松山信義',col:'#2f9a5a',hc:200},
+  navy:{name:'陽明山仁愛',col:'#2a4f9a',hc:200},
+  pingxi:{name:'平溪線',col:'#b5532f',hc:100},maokong:{name:'貓空',col:'#3d6b4a',hc:150}};
+const T=[
+ {t:'go',n:'起點'},
+ {t:'prop',g:'brown',n:'華西街',d:'萬華',p:60,r:[2,10,30,90,160,250]},
+ {t:'chance',n:'機會'},
+ {t:'prop',g:'brown',n:'龍山寺',d:'萬華',p:60,r:[4,20,60,180,320,450]},
+ {t:'tax',k:'income',n:'綜合所得稅'},
+ {t:'rail',n:'台北車站',p:200},
+ {t:'prop',g:'lb',n:'迪化街',d:'大稻埕',p:100,r:[6,30,90,270,400,550]},
+ {t:'fate',n:'命運'},
+ {t:'prop',g:'lb',n:'延平北路',d:'大稻埕',p:100,r:[6,30,90,270,400,550]},
+ {t:'prop',g:'lb',n:'大稻埕碼頭',d:'大稻埕',p:120,r:[8,40,100,300,450,600]},
+ {t:'util',u:'elec',n:'台電公司',p:150},
+ {t:'prop',g:'olive',n:'碧潭',d:'新店',p:130,r:[9,45,130,400,560,700]},
+ {t:'prop',g:'olive',n:'木柵動物園',d:'木柵',p:150,r:[11,55,160,470,650,800]},
+ {t:'auction',n:'法拍中心'},
+ {t:'jail',n:'看守所'},
+ {t:'prop',g:'pink',n:'成都路',d:'西門町',p:140,r:[10,50,150,450,625,750]},
+ {t:'prop',g:'pink',n:'中華商場',d:'西門町',p:140,r:[10,50,150,450,625,750]},
+ {t:'build',n:'建設公司'},
+ {t:'prop',g:'pink',n:'漢中街',d:'西門町',p:160,r:[12,60,180,500,700,900]},
+ {t:'air',n:'松山機場',p:300},
+ {t:'round',n:'建成圓環'},
+ {t:'prop',g:'orange',n:'士林夜市',d:'士林',p:180,r:[14,70,200,550,750,950]},
+ {t:'chance',n:'機會'},
+ {t:'prop',g:'orange',n:'天母西路',d:'天母',p:180,r:[14,70,200,550,750,950]},
+ {t:'prop',g:'orange',n:'天母東路',d:'天母',p:200,r:[16,80,220,600,800,1000]},
+ {t:'rail',n:'公路局西站',p:200},
+ {t:'prop',g:'teal',n:'新北投',d:'北投',p:200,r:[16,80,220,600,800,1000]},
+ {t:'prop',g:'teal',n:'北投溫泉',d:'北投',p:220,r:[18,90,250,700,875,1050]},
+ {t:'park',n:'廟口夜市'},
+ {t:'prop',g:'red',n:'林森北路',d:'中山',p:220,r:[18,90,250,700,875,1050]},
+ {t:'fate',n:'命運'},
+ {t:'prop',g:'red',n:'南京西路',d:'中山',p:220,r:[18,90,250,700,875,1050]},
+ {t:'prop',g:'red',n:'中山北路',d:'中山',p:240,r:[20,100,300,750,925,1100]},
+ {t:'util',u:'water',n:'自來水公司',p:150},
+ {t:'prop',g:'yellow',n:'忠孝東路',d:'東區',p:260,r:[22,110,330,800,975,1150]},
+ {t:'prop',g:'yellow',n:'頂好商圈',d:'東區',p:260,r:[22,110,330,800,975,1150]},
+ {t:'stock',n:'證券號子'},
+ {t:'prop',g:'yellow',n:'敦化南路',d:'東區',p:280,r:[24,120,360,850,1025,1200]},
+ {t:'rail',hsr:1,n:'南港高鐵站',p:200},
+ {t:'prop',g:'purple',n:'大直',d:'大直',p:280,r:[24,120,360,850,1025,1200]},
+ {t:'prop',g:'purple',n:'內湖科學園區',d:'內湖',p:290,r:[25,125,370,870,1050,1230]},
+ {t:'prop',g:'purple',n:'南港軟體園區',d:'南港',p:310,r:[27,135,400,950,1150,1320]},
+ {t:'gojail',n:'警察臨檢'},
+ {t:'prop',g:'green',n:'民生社區',d:'松山',p:300,r:[26,130,390,900,1100,1275]},
+ {t:'prop',g:'green',n:'信義計畫區',d:'信義',p:300,r:[26,130,390,900,1100,1275]},
+ {t:'fate',n:'命運'},
+ {t:'prop',g:'green',n:'世貿中心',d:'信義',p:320,r:[28,150,450,1000,1200,1400]},
+ {t:'air',n:'中正機場',p:300},
+ {t:'util',u:'gas',n:'瓦斯公司',p:150},
+ {t:'rail',port:1,n:'基隆港',p:200},
+ {t:'round',n:'敦化圓環'},
+ {t:'auction',n:'法拍中心'},
+ {t:'prop',g:'navy',n:'陽明山別墅',d:'陽明山',p:350,r:[35,175,500,1100,1300,1500]},
+ {t:'chance',n:'機會'},
+ {t:'tax',k:'land',n:'土地增值稅'},
+ {t:'prop',g:'navy',n:'仁愛路豪宅',d:'仁愛路',p:400,r:[50,200,600,1400,1700,2000]}];
+// 支線格子接在主線 56 格後面
+T.push(
+ {t:'prop',g:'pingxi',n:'菁桐老街',d:'平溪',p:170,r:[14,70,200,560,760,960]},
+ {t:'chance',n:'機會'},
+ {t:'prop',g:'pingxi',n:'十分瀑布',d:'平溪',p:180,r:[15,75,210,580,780,980]},
+ {t:'lantern',n:'天燈廣場'},
+ {t:'prop',g:'pingxi',n:'猴硐貓村',d:'瑞芳',p:200,r:[17,85,240,640,840,1040]},
+ {t:'fate',n:'命運'},
+ {t:'prop',g:'maokong',n:'貓空茶園',d:'貓空',p:250,r:[22,110,320,780,960,1150]},
+ {t:'fate',n:'命運'},
+ {t:'prop',g:'maokong',n:'指南宮',d:'木柵',p:260,r:[23,115,340,820,1000,1180]},
+ {t:'view',n:'纜車觀景台'},
+ {t:'prop',g:'maokong',n:'樟山寺',d:'貓空',p:280,r:[25,125,370,880,1060,1250]},
+ {t:'chance',n:'機會'});
+const SIDE=14,N=56,NT=T.length,JAIL=14,PARK=28,GOJ=42,SALARY=200,BAIL=50,START=1800;
+const LV=['空地','平房','透天厝','公寓','電梯大樓','商業大樓','地標大樓'];
+const MRT_T=[8,18,32,46];
+const rentLv=(t,l)=>l<=5?t.r[l]:Math.round(t.r[5]*1.7);
+const BUYABLE=t=>t.t==='prop'||t.t==='rail'||t.t==='util'||t.t==='air';
+const RAIL_R=[25,60,120,220],AIR_R=[80,200],UTIL_X=[4,10,20];
+const TYPE_N={rail:'車站港口',air:'機場',util:'公用事業'};
+const FX_N={fest:'廟會 ×2',flood:'淹水 ½',strike:'罷工',tour:'觀光 ×2',epi:'疫情打折'};
+const BR=[
+  {id:'pingxi',n:'平溪支線',g:'pingxi',from:7,to:21,tiles:[56,57,58,59,60,61],desc:'6 站之後接回士林夜市，比主線近 7 步，還有天燈廣場可以許願。'},
+  {id:'maokong',n:'貓空纜車線',g:'maokong',from:35,to:49,tiles:[62,63,64,65,66,67],desc:'6 站之後接回基隆港，可以避開警察臨檢，還有纜車觀景台。'}];
+const brOf=i=>BR.find(b=>b.tiles.includes(i));
+const BUILD_CAP=3; // 每回合最多加蓋幾層
+const SEATS=[
+  {name:'阿德',look:'ade',col:'#d7263d',veh:'scooter',vn:'偉士牌',ai:'builder'},
+  {name:'王董',look:'wang',col:'#2a6fd6',veh:'taxi',vn:'計程車',ai:'builder'},
+  {name:'阿桃',look:'tao',col:'#2f9a5a',veh:'truck',vn:'發財車',ai:'saver'},
+  {name:'林老闆',look:'lin',col:'#8e4fc8',veh:'bus',vn:'公車',ai:'flipper'}];
+const HUMAN_LOOK=['ade','p2','p3','p4'];
+const AI_DESC={builder:'建商，有地就蓋',saver:'包租婆，保守存錢',flipper:'炒地皮，低買高賣'};
+
+/* ---------- 頭像 ---------- */
+const LOOKS={
+  ade:{skin:'#f0c7a2',hair:'#1c1c22',style:'short',shirt:'#d7263d'},
+  wang:{skin:'#e5b991',hair:'#7a7a80',style:'bald',shirt:'#2a3a5a',glasses:1,tie:'#2a6fd6'},
+  tao:{skin:'#f3cdab',hair:'#3a2a26',style:'perm',shirt:'#2f9a5a'},
+  lin:{skin:'#e9c19c',hair:'#18191f',style:'slick',shirt:'#3a2a4a',chain:1},
+  p2:{skin:'#f3d0b0',hair:'#3b2519',style:'pony',shirt:'#2a6fd6'},
+  p3:{skin:'#eac19c',hair:'#18191f',style:'short',shirt:'#2f9a5a'},
+  p4:{skin:'#f5d3b5',hair:'#4b2c22',style:'long',shirt:'#8e4fc8'},
+  narr:{skin:'#efd9b5',hair:'#2b2622',style:'news',shirt:'#f6eedb'}};
+function drawFace(cv,key,bg){
+  const g=cv.getContext('2d'),W=cv.width,L=LOOKS[key]||LOOKS.ade,s=W/128;
+  g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,128,128);g.fillStyle=bg||'#e9d9b4';g.fillRect(0,0,128,128);
+  if(key==='narr'){g.fillStyle='#2b2622';g.font='900 54px "Noto Serif TC",serif';g.textAlign='center';g.textBaseline='middle';g.fillText('報',64,68);return;}
+  if(L.style==='long'||L.style==='perm'){g.fillStyle=L.hair;g.beginPath();g.ellipse(64,62,40,44,0,0,7);g.fill();if(L.style==='long')g.fillRect(24,60,80,56);}
+  if(L.style==='pony'){g.fillStyle=L.hair;g.beginPath();g.ellipse(98,56,12,22,.4,0,7);g.fill();}
+  g.fillStyle=L.shirt;g.beginPath();g.ellipse(64,132,46,34,0,0,7);g.fill();
+  if(L.tie){g.fillStyle='#fff';g.beginPath();g.moveTo(54,100);g.lineTo(64,118);g.lineTo(74,100);g.fill();g.fillStyle=L.tie;g.fillRect(61,104,6,20);}
+  if(L.chain){g.strokeStyle='#e3a52b';g.lineWidth=3;g.beginPath();g.arc(64,100,14,.3,Math.PI-.3);g.stroke();}
+  g.fillStyle=L.skin;g.fillRect(56,86,16,14);g.beginPath();g.ellipse(64,62,30,34,0,0,7);g.fill();
+  g.beginPath();g.ellipse(34,64,5,8,0,0,7);g.ellipse(94,64,5,8,0,0,7);g.fill();
+  g.fillStyle=L.hair;
+  if(L.style==='short'){g.beginPath();g.ellipse(64,40,31,18,0,Math.PI,0);g.fill();g.fillRect(33,38,62,8);}
+  else if(L.style==='slick'){g.beginPath();g.ellipse(64,40,31,17,0,Math.PI,0);g.fill();g.fillRect(33,38,62,6);g.strokeStyle='#3a3a44';g.lineWidth=2;for(let k=0;k<4;k++){g.beginPath();g.moveTo(42+k*10,28);g.lineTo(52+k*10,40);g.stroke();}}
+  else if(L.style==='bald'){g.beginPath();g.ellipse(36,54,6,12,0,0,7);g.ellipse(92,54,6,12,0,0,7);g.fill();}
+  else if(L.style==='perm'){for(let k=0;k<9;k++){g.beginPath();g.arc(32+k*8,34+(k%2)*4,9,0,7);g.fill();}}
+  else{g.beginPath();g.ellipse(64,42,32,20,0,Math.PI,0);g.fill();g.beginPath();g.moveTo(34,46);g.quadraticCurveTo(64,36,96,50);g.lineTo(96,40);g.lineTo(34,40);g.fill();}
+  g.fillStyle='#2b2622';g.beginPath();g.arc(52,64,3.4,0,7);g.arc(76,64,3.4,0,7);g.fill();
+  g.strokeStyle='#2b2622';g.lineWidth=2.6;g.lineCap='round';g.beginPath();g.moveTo(45,55);g.lineTo(57,54);g.moveTo(71,54);g.lineTo(83,55);g.stroke();
+  g.strokeStyle='#8a3a2a';g.beginPath();g.arc(64,74,9,.25,Math.PI-.25);g.stroke();
+  if(L.glasses){g.strokeStyle='#2b2622';g.lineWidth=2.4;g.strokeRect(42,57,20,13);g.strokeRect(66,57,20,13);g.beginPath();g.moveTo(62,63);g.lineTo(66,63);g.stroke();}
+  g.fillStyle='rgba(255,120,110,.25)';g.beginPath();g.ellipse(44,76,6,3.5,0,0,7);g.ellipse(84,76,6,3.5,0,0,7);g.fill();
+}
+
+/* ---------- 3D：渲染器 ---------- */
+const cv=$('#c');
+const R=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+R.setPixelRatio(Math.min(2,window.devicePixelRatio||1));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xe9dcbc);scene.fog=new THREE.Fog(0xe9dcbc,95,230);
+const cam=new THREE.PerspectiveCamera(38,1,0.5,500);
+const hemi=new THREE.HemisphereLight(0xfff6e0,0x8a7a60,0.7);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffffff,0.72);sun.position.set(26,44,18);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-56,right:56,top:56,bottom:-56,near:1,far:180});sun.shadow.bias=-0.0006;scene.add(sun);
+const amb=new THREE.AmbientLight(0xffffff,0.12);scene.add(amb);
+
+/* ---------- 材質 ---------- */
+const GRAD=(()=>{const d=new Uint8Array([120,120,120,182,182,182,232,232,232,255,255,255]);const t=new THREE.DataTexture(d,4,1,THREE.RGBFormat);t.minFilter=t.magFilter=THREE.NearestFilter;t.generateMipmaps=false;t.needsUpdate=true;return t;})();
+const OUTLINE=new THREE.ShaderMaterial({uniforms:{uColor:{value:new THREE.Color(0x2b2622)},uW:{value:0.03}},
+  vertexShader:`uniform float uW;void main(){vec4 mv=modelViewMatrix*vec4(position,1.0);vec3 n=normalize(normalMatrix*normal);mv.xyz+=n*uW*(1.0+(-mv.z)*0.02);gl_Position=projectionMatrix*mv;}`,
+  fragmentShader:`uniform vec3 uColor;void main(){gl_FragColor=vec4(uColor,1.0);}`,side:THREE.BackSide});
+const TOON_VC=new THREE.MeshToonMaterial({vertexColors:true,gradientMap:GRAD});
+const GLOW=new THREE.MeshBasicMaterial({vertexColors:true});
+const matCache={};
+const toon=c=>matCache[c]||(matCache[c]=new THREE.MeshToonMaterial({color:c,gradientMap:GRAD}));
+
+/* ---------- 合併建模器 ---------- */
+const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_s=new V3(),_p=new V3();
+const GEO={box:new THREE.BoxGeometry(1,1,1),sph:new THREE.SphereGeometry(1,12,8),sph6:new THREE.SphereGeometry(1,6,4)};
+const cylCache={};const cylGeo=(r1,r2,h,seg)=>{const k=[r1,r2,h,seg].join();return cylCache[k]||(cylCache[k]=new THREE.CylinderGeometry(r1,r2,h,seg));};
+class GB{
+  constructor(){this.L=[];}
+  push(geo,col,m){const g=geo.index?geo.toNonIndexed():geo.clone();g.applyMatrix4(m);this.L.push([g,col instanceof THREE.Color?col.clone():new THREE.Color(col)]);return this;}
+  add(geo,col,x=0,y=0,z=0,rx=0,ry=0,rz=0,sx=1,sy=1,sz=1){_e.set(rx,ry,rz,'YXZ');_q.setFromEuler(_e);_m.compose(_p.set(x,y,z),_q,_s.set(sx,sy,sz));return this.push(geo,col,_m);}
+  box(w,h,d,col,x=0,y=0,z=0,ry=0,rx=0,rz=0){return this.add(GEO.box,col,x,y,z,rx,ry,rz,w,h,d);}
+  cyl(r1,r2,h,col,x=0,y=0,z=0,seg=10,rx=0,ry=0,rz=0){return this.add(cylGeo(r1,r2,h,seg),col,x,y,z,rx,ry,rz);}
+  sph(r,col,x=0,y=0,z=0,sx=1,sy=1,sz=1,lo){return this.add(lo?GEO.sph6:GEO.sph,col,x,y,z,0,0,0,r*sx,r*sy,r*sz);}
+  cone(r,h,col,x=0,y=0,z=0,seg=8){return this.add(cylGeo(0.001,r,h,seg),col,x,y,z);}
+  merge(o,m){for(const [g,c] of o.L){const g2=g.clone();g2.applyMatrix4(m);this.L.push([g2,c]);}return this;}
+  geometry(){let n=0;for(const [g] of this.L)n+=g.attributes.position.count;
+    const pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3);let o=0;
+    for(const [g,c] of this.L){const cnt=g.attributes.position.count;pos.set(g.attributes.position.array,o*3);nor.set(g.attributes.normal.array,o*3);for(let i=0;i<cnt;i++){const k=(o+i)*3;col[k]=c.r;col[k+1]=c.g;col[k+2]=c.b;}o+=cnt;}
+    const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.BufferAttribute(pos,3));G.setAttribute('normal',new THREE.BufferAttribute(nor,3));G.setAttribute('color',new THREE.BufferAttribute(col,3));G.computeBoundingSphere();return G;}
+  mesh(outline=true,mat=TOON_VC){const m=new THREE.Mesh(this.geometry(),mat);m.castShadow=true;m.receiveShadow=true;if(outline&&this.L.length)m.add(new THREE.Mesh(m.geometry,OUTLINE));return m;}
+}
+const mat4=(x,y,z,ry)=>new THREE.Matrix4().compose(new V3(x,y,z),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry,0)),new V3(1,1,1));
+
+/* ---------- 招牌圖集 ---------- */
+const ATLAS=(()=>{const c=document.createElement('canvas');c.width=2048;c.height=2048;return{c,g:c.getContext('2d'),v:0,h:0};})();
+const SIGN_FONT='"Noto Serif TC","Huninn","PMingLiU",serif';
+const SIGN_LIST=[];
+function signCell(text,bg,fg,vertical){
+  let x,y,w,h;
+  if(vertical){const i=ATLAS.v++;if(i>=48)return null;x=(i%16)*128;y=Math.floor(i/16)*384;w=128;h=384;}
+  else{const i=ATLAS.h++;if(i>=36)return null;x=(i%4)*512;y=1152+Math.floor(i/4)*96;w=512;h=96;}
+  const cell={text,bg,fg,vertical,x,y,w,h};SIGN_LIST.push(cell);paintSign(cell);
+  return{u0:x/2048,v0:1-(y+h)/2048,u1:(x+w)/2048,v1:1-y/2048};
+}
+function paintSign(c){const g=ATLAS.g,{x,y,w,h}=c;g.fillStyle=c.bg;g.fillRect(x,y,w,h);g.strokeStyle=c.fg;g.lineWidth=7;g.strokeRect(x+7,y+7,w-14,h-14);g.fillStyle=c.fg;g.textAlign='center';g.textBaseline='middle';const ch=[...c.text];
+  if(c.vertical){const fs=Math.min(88,330/ch.length);g.font=`900 ${fs}px ${SIGN_FONT}`;ch.forEach((t,k)=>g.fillText(t,x+w/2,y+h/2+(k-(ch.length-1)/2)*fs*1.05));}
+  else{const fs=Math.min(68,440/ch.length);g.font=`900 ${fs}px ${SIGN_FONT}`;g.fillText(c.text,x+w/2,y+h/2+3);}}
+const SIGNS={pos:[],uv:[]};
+function signQuad(m,cx,cy,cz,w,h,ry,cell){if(!cell)return;const M=m.clone().multiply(mat4(cx,cy,cz,ry));
+  const c=[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([x,y])=>new V3(x,y,0).applyMatrix4(M));const uv=[[cell.u0,cell.v0],[cell.u1,cell.v0],[cell.u1,cell.v1],[cell.u0,cell.v1]];
+  for(const i of [0,1,2,0,2,3]){SIGNS.pos.push(c[i].x,c[i].y,c[i].z);SIGNS.uv.push(...uv[i]);}}
+const ATLAS_TEX=new THREE.CanvasTexture(ATLAS.c);ATLAS_TEX.anisotropy=4;
+
+/* ---------- 城市：騎樓街屋 ---------- */
+const CITY=new GB(),CITYGL=new GB();
+const WALLS=[0xe9e1d2,0xd9c8a9,0xc9d3c4,0xe6c9b8,0xd8d2c0,0xbfc9cc,0xe8dcc0,0xcfb79a];
+const SHOP_TXT=['西藥房','銀樓','鐘錶眼鏡','牛肉麵','自助餐','冰果室','照相館','書局','唱片行','錄影帶','電器行','五金行','理髮廳','牙科','補習班','旅社','委託行','茶行','布莊','皮鞋','代書','建設公司','房屋仲介','當舖','米店','麵包店','西服','診所','漫畫店','美容院','鎖匙','雜貨店','中藥行','瓦斯行','電玩店','KTV'];
+const SIGN_COL=[['#c8402f','#fff3d6'],['#1f4f9a','#ffffff'],['#f2c14e','#7a1f12'],['#ffffff','#c8402f'],['#1d6b52','#fff3d6'],['#2b2622','#ffb000'],['#e8789a','#ffffff'],['#ffffff','#1f4f9a']];
+const SCOOT=[0xd7263d,0x2b7f86,0xf4efe4,0x1f4f9a,0x5f9e6a,0x2b2622];
+const FLH=2.4,DEP=5;
+function mScooter(gb,x,z,col,ry=0){const m=mat4(x,0,z,ry),s=new GB();s.box(0.26,0.3,0.84,col,0,0.34,0);s.box(0.24,0.08,0.42,0x2b2622,0,0.53,-0.12);s.box(0.28,0.44,0.08,col,0,0.55,0.36);s.box(0.5,0.04,0.04,0x333333,0,0.8,0.34);for(const zz of [0.34,-0.32])s.cyl(0.15,0.15,0.09,0x222222,0,0.15,zz,10,0,0,Math.PI/2);gb.merge(s,m);}
+function mShop(w,fl,m){
+  const gb=new GB(),gl=new GB(),tile=pick(WALLS);
+  gb.box(w,FLH,DEP-1.4,0x7d756b,0,FLH/2,-0.7);
+  if(rnd()<0.6){gl.box(w*0.8,FLH*0.7,0.05,0xfff0d0,0,1.1,DEP/2-1.38);for(let i=0;i<3;i++)gb.box(rr(.4,.8),rr(.3,.8),.5,[0xd7263d,0xf2c14e,0x2b7f86][i],-w/3+i*w/3,.35,DEP/2-1.8);}
+  else{gb.box(w*0.86,FLH*0.86,0.06,0xa9adb0,0,FLH*0.43,DEP/2-1.37);for(let k=0;k<5;k++)gb.box(w*0.86,0.03,0.08,0x888c8f,0,0.3+k*0.36,DEP/2-1.35);}
+  gb.box(w,0.2,1.4,tile,0,FLH-0.1,DEP/2-0.7);for(const s of [-1,1])gb.box(0.36,FLH,0.36,tile,s*(w/2-0.18),FLH/2,DEP/2-0.18);
+  gb.box(w,0.06,1.4,0xb85c4a,0,0.03,DEP/2-0.7);
+  if(rnd()<0.6){const n=1+(rnd()*2|0);for(let k=0;k<n;k++)mScooter(gb,-w/2+0.9+k*1.1,DEP/2-1.0,pick(SCOOT));}
+  for(let f=1;f<fl;f++){const y0=f*FLH;gb.box(w,FLH,DEP,tile,0,y0+FLH/2,0);gb.box(w+0.06,0.12,DEP+0.06,0xf4efe4,0,y0+0.06,0);
+    const nw=w>4.4?3:2;for(let i=0;i<nw;i++){const x=(i-(nw-1)/2)*(w/nw),ww=Math.min(1.2,w/nw-0.5);gl.box(ww,1.0,0.04,0xffe9b8,x,y0+1.25,DEP/2+0.02);
+      if(rnd()<0.65){gb.box(ww+0.16,1.16,0.06,0x3a3f42,x,y0+1.25,DEP/2+0.3);gb.box(ww+0.16,0.06,0.32,0x3a3f42,x,y0+0.67,DEP/2+0.16);for(let b=0;b<4;b++)gb.box(0.03,1.1,0.03,0x3a3f42,x-ww/2+b*ww/3,y0+1.25,DEP/2+0.3);}
+      if(rnd()<0.3)gb.box(0.6,0.4,0.4,0xe9ecec,x+0.15,y0+0.4,DEP/2+0.22);}}
+  const top=fl*FLH;for(const [x,z,sw,sd] of [[0,DEP/2-0.06,w,0.12],[0,-DEP/2+0.06,w,0.12],[w/2-0.06,0,0.12,DEP],[-w/2+0.06,0,0.12,DEP]])gb.box(sw,0.45,sd,tile,x,top+0.22,z);
+  if(rnd()<0.6){gb.cyl(0.42,0.42,0.85,rnd()<0.5?0xd9dcde:0x3b7fc4,rr(-w/4,w/4),top+0.72,-DEP/2+1.2,12);gb.box(0.85,0.3,0.85,0x666666,0,top+0.15,-DEP/2+1.2);}
+  CITY.merge(gb,m);CITYGL.merge(gl,m);
+  const sc=pick(SIGN_COL);if(fl>1)signQuad(m,0,FLH+0.36,DEP/2+0.08,Math.min(w*0.9,6),Math.min(w*0.9,6)/5.33,0,signCell(pick(SHOP_TXT),sc[0],sc[1],false));
+  if(fl>2&&rnd()<0.7){const vs=pick(SIGN_COL),cell=signCell(pick(SHOP_TXT),vs[0],vs[1],true),sx=(rnd()<.5?-1:1)*(w/2-0.5);signQuad(m,sx,FLH+2.1,DEP/2+0.45,0.66,2.0,Math.PI/2,cell);signQuad(m,sx,FLH+2.1,DEP/2+0.45,0.66,2.0,-Math.PI/2,cell);}
+}
+function mTower(w,fl,m){const gb=new GB(),gl=new GB(),c=pick([0xbfc9cc,0xd8d2c0,0xc9d3c4,0xe6dccb]);gb.box(w,fl*FLH,DEP,c,0,fl*FLH/2,0);
+  for(let f=1;f<fl;f++)gl.box(w*0.86,0.7,0.04,f%3?0xbfd6e6:0xffe9b8,0,f*FLH+1.1,DEP/2+0.02);gb.box(w*0.5,1.2,DEP*0.5,0x8a9aa0,0,fl*FLH+0.6,0);CITY.merge(gb,m);CITYGL.merge(gl,m);}
+
+/* ---------- 地景小物件 ---------- */
+function mPlane(gb,m,col,s=1){const g=new GB();
+  g.cyl(0.32*s,0.26*s,3.2*s,0xf4efe4,0,0,0,10,0,0,Math.PI/2);g.sph(0.3*s,0xf4efe4,1.6*s,0,0,1.1,0.95,0.95);g.sph(0.26*s,0xf4efe4,-1.6*s,0.04*s,0,1.3,0.9,0.9);
+  g.box(0.8*s,0.07*s,3.4*s,0xdcd6c8,0.1*s,-0.08*s,0);g.box(0.45*s,0.06*s,1.3*s,0xdcd6c8,-1.4*s,0.05*s,0);g.box(0.5*s,0.75*s,0.07*s,col,-1.42*s,0.4*s,0);
+  g.box(3.0*s,0.08*s,0.66*s,col,0,0.05*s,0);for(const z of [-0.9,0.9])g.cyl(0.13*s,0.13*s,0.5*s,0x9aa3a8,0.3*s,-0.22*s,z*s,8,0,0,Math.PI/2);
+  for(let k=0;k<6;k++)g.box(0.12*s,0.1*s,0.02*s,0x2b3a55,1.0*s-k*0.35*s,0.14*s,0.3*s);gb.merge(g,m);}
+function mShip(gb,m,col){const g=new GB();g.box(1.4,0.5,4.2,col,0,0.25,0);g.box(1.2,0.12,4.0,0xc8402f,0,0.04,0);g.box(1.0,0.7,1.0,0xf4efe4,0,0.85,-1.3);g.cyl(0.16,0.16,0.6,0x2b2622,0,1.4,-1.3,8);
+  for(let k=0;k<3;k++)g.box(0.9,0.45,0.75,[0xd7263d,0x2a6fd6,0xe3a52b][k],0,0.72,0.2+k*0.85);gb.merge(g,m);}
+function mCrane(gb,m,col=0xe3a52b,h=4){const g=new GB();for(const x of [-0.6,0.6])for(const z of [-0.6,0.6])g.box(0.14,h,0.14,col,x,h/2,z);g.box(1.5,0.3,1.5,col,0,h,0);g.box(0.3,0.3,4.2,col,0,h+0.3,1.2);g.box(0.04,1.2,0.04,0x2b2622,0,h-0.3,2.8);gb.merge(g,m);}
+
+/* ---------- 棋盤幾何：每邊 12 格 ---------- */
+const TW=2.6,TD=4,CS=4;
+const HALF=(CS*2+(SIDE-1)*TW)/2; // 18.3
+// 支線：從主線中段斜穿公園，每條 6 格
+const BRF={};
+BR.forEach((b,bi)=>{const IN=HALF-TD,A=bi===0?[0,IN]:[0,-IN],B=bi===0?[-IN,0]:[IN,0];const L=Math.hypot(B[0]-A[0],B[1]-A[1]),u=[(B[0]-A[0])/L,(B[1]-A[1])/L];Object.assign(b,{A,B,L,u});
+  const n=b.tiles.length,d0=3.6,step=(L-2*d0)/(n-1);b.tiles.forEach((ti,k)=>{const d=d0+k*step;BRF[ti]={x:A[0]+u[0]*d,z:A[1]+u[1]*d,ry:Math.atan2(-u[1],u[0]),w:TW,d:TD,corner:false,side:-1,br:bi};});});
+function tileFrame(i){
+  if(i>=N)return BRF[i];
+  const side=Math.floor(i/SIDE),k=i%SIDE;
+  if(k===0){const c=HALF-CS/2;const P=[[c,c],[-c,c],[-c,-c],[c,-c]][side];return{x:P[0],z:P[1],ry:[0,-Math.PI/2,Math.PI,Math.PI/2][side],w:CS,d:CS,corner:true,side};}
+  const a=HALF-CS-TW*(k-0.5),b=HALF-TD/2;
+  const P=[[a,b],[-b,a],[-a,-b],[b,-a]][side];
+  return{x:P[0],z:P[1],ry:[0,-Math.PI/2,Math.PI,Math.PI/2][side],w:TW,d:TD,corner:false,side};
+}
+const MOVE_RY=[-Math.PI/2,Math.PI,Math.PI/2,0];
+const sideOf=i=>Math.floor(((i%N)+N)%N/SIDE);
+function faceRy(pos,dir){if(pos>=N){const u=BR[BRF[pos].br].u;return Math.atan2(u[0],u[1])+(dir<0?Math.PI:0);}return MOVE_RY[sideOf(pos)]+(dir<0?Math.PI:0);}
+function local(i,lx,lz,y=0.75){const f=tileFrame(i),c=Math.cos(f.ry),s=Math.sin(f.ry);return new V3(f.x+lx*c+lz*s,y,f.z-lx*s+lz*c);}
+
+/* ---------- 地面、道路、公園、河岸、機場、港口 ---------- */
+function buildWorld(){
+  const gb=new GB(),RS=HALF+5.6,LN=HALF+2.8,DIST=RS+0.6+DEP/2,FAR=DIST+DEP/2;
+  gb.box(360,0.2,360,0x5b616f,0,-0.1,0);
+  for(const s of [1,-1]){gb.box(2*RS+1.2,0.22,1.2,0xb85c4a,0,0.0,s*RS);gb.box(1.2,0.22,2*RS+1.2,0xb85c4a,s*RS,0.0,0);}
+  for(let t=-RS+1.3;t<=RS-1.3;t+=2.6)for(const s of [1,-1]){gb.box(1.3,0.03,0.14,0xf2c14e,t,0.02,s*LN);gb.box(0.14,0.03,1.3,0xf2c14e,s*LN,0.02,t);}
+  for(const s of [1,-1])for(let k=-3;k<=3;k++){gb.box(0.5,0.03,2.2,0xf5f1e6,k*0.9,0.02,s*LN);gb.box(2.2,0.03,0.5,0xf5f1e6,s*LN,0.02,k*0.9);}
+  gb.box(2*HALF+0.6,0.5,2*HALF+0.6,0x5a4636,0,0.25,0);
+  const IN=HALF-TD;gb.box(2*IN-0.2,0.12,2*IN-0.2,0x9cc47a,0,0.56,0);
+  gb.box(2*IN-0.6,0.02,1.4,0xe6dcc0,0,0.63,0);gb.box(1.4,0.02,2*IN-0.6,0xe6dcc0,0,0.63,0);
+  gb.cyl(2.2,2.3,0.25,0xd8d2c0,0,0.7,0,24);gb.cyl(1.9,1.9,0.06,0x7fb8da,0,0.83,0,24);gb.cyl(0.25,0.35,0.9,0xd8d2c0,0,1.1,0,10);
+  // 池塘、小船
+  const nearBr=(x,z,r)=>BR.some(b=>{const px=x-b.A[0],pz=z-b.A[1],t=clamp(px*b.u[0]+pz*b.u[1],0,b.L);return Math.hypot(b.A[0]+b.u[0]*t-x,b.A[1]+b.u[1]*t-z)<r+2.4;});
+  const HILLS=[[-11,-2,3.4],[-7.6,1.6,1.8],[-13.4,-6,1.6]],POND=[8.5,8.5,2.8];
+  const blocked=(x,z,r)=>nearBr(x,z,r)||HILLS.some(h=>Math.hypot(x-h[0],z-h[1])<h[2]+r)||Math.hypot(x-POND[0],z-POND[1])<POND[2]+r+0.3;
+  gb.cyl(2.7,2.8,0.12,0xd8d2c0,8.5,0.66,8.5,22);gb.cyl(2.4,2.4,0.06,0x6fa8d0,8.5,0.74,8.5,22);gb.box(0.5,0.2,1.0,0xd7263d,9.0,0.86,8.0,0.6);gb.box(0.4,0.2,0.8,0xf2c14e,7.7,0.86,9.2,-0.3);
+  // 支線鐵軌（平溪線）與纜車道（貓空）
+  BR.forEach((b,bi)=>{const ry=Math.atan2(-b.u[1],b.u[0]),px=Math.sin(ry),pz=Math.cos(ry);
+    for(let d=0.4;d<b.L;d+=0.9)gb.box(0.32,0.05,1.7,bi===0?0x7a5a3a:0xb8a98a,b.A[0]+b.u[0]*d,0.65,b.A[1]+b.u[1]*d,ry);
+    if(bi===0)for(const s of [-0.5,0.5])gb.box(b.L,0.07,0.09,0x3a3f42,b.A[0]+b.u[0]*b.L/2+px*s,0.7,b.A[1]+b.u[1]*b.L/2+pz*s,ry);
+    else{for(const d of [0.6,b.L/2,b.L-0.6]){const x=b.A[0]+b.u[0]*d-px*2.3,z=b.A[1]+b.u[1]*d-pz*2.3;gb.box(0.3,6.2,0.3,0x8a9aa0,x,3.7,z);gb.box(1.2,0.2,0.3,0x8a9aa0,x,6.8,z,ry);}
+      gb.box(b.L,0.04,0.04,0x2b2622,b.A[0]+b.u[0]*b.L/2-px*2.3,6.6,b.A[1]+b.u[1]*b.L/2-pz*2.3,ry);}});
+  // 小山丘
+  HILLS.forEach(([x,z,r],k)=>gb.sph(r,[0x6fae5a,0x86c06a,0x78b062][k],x,0.5,z,1,0.55+k*0.05,1));gb.cyl(0.06,0.06,1.2,0x7a5a3a,-11,2.7,-2,6);gb.box(0.7,0.4,0.04,0xc8402f,-10.7,3.1,-2);
+  // 紀念堂
+  gb.box(4.2,0.4,4.2,0xe6dcc0,-9,0.8,-9);gb.box(3.4,0.3,3.4,0xf4efe4,-9,1.15,-9);gb.box(2.5,1.7,2.5,0xf4efe4,-9,2.1,-9);gb.add(cylGeo(0.001,2.2,1.3,8),0x2a4f9a,-9,3.6,-9,0,Math.PI/8,0);gb.box(0.8,1.1,0.06,0x2b3a55,-9,1.9,-7.72);
+  for(const s of [-1,1])for(let t=-14;t<=14;t+=4.6){if(Math.abs(t)<2)continue;for(const [x,z,c] of [[s*15.4,t,0x5f9e6a],[t,s*15.4,0x6fa862]]){if(blocked(x,z,0.8))continue;gb.cyl(0.12,0.16,1.1,0x7a5a3a,x,1.15,z,6);gb.sph(0.8,c,x,2.05,z,1,0.9,1,true);}}
+  const trees=[[-12.3,-2],[-12.3,2.5],[-12.5,5.8],[12.5,1],[12.5,5],[12.3,9],[9,12.5],[5.5,12.3],[-3.5,12.3],[0.8,12.5],[-12.5,12.5],[12.5,12.5],[-12.5,-12.5],[-3,-12.5],[2.5,-12.5],[5.6,-5.2],[-5.6,-5.2],[-6.2,1.6],[6.2,1.6],[6.6,5.6],[-6.4,-1.8],[-2.6,-8.6],[2.6,-8.4]];
+  trees.forEach(([x,z])=>{if(blocked(x,z,0.85))return;gb.cyl(0.12,0.16,1.1,0x7a5a3a,x,1.15,z,6);gb.sph(0.85,0x5f9e6a,x,2.1,z,1,0.9,1,true);gb.sph(0.6,0x78b062,x+0.2,2.5,z-0.1,1,1,1,true);});
+  for(const [x,z] of [[-4.5,-3.6],[4.5,-3.6],[-3,9],[3,9]]){if(blocked(x,z,0.8))continue;gb.box(1.4,0.1,0.4,0xb0763d,x,1.0,z);gb.box(0.1,0.4,0.4,0x3a3f42,x-0.6,0.8,z);gb.box(0.1,0.4,0.4,0x3a3f42,x+0.6,0.8,z);}
+  // 中央 LED 看板支架
+  gb.box(0.25,2.2,0.25,0x3a3f42,-1.7,1.7,-5.4);gb.box(0.25,2.2,0.25,0x3a3f42,1.7,1.7,-5.4);gb.box(4.4,2.1,0.4,0x2b2622,0,2.95,-5.4);
+
+  // 西岸：淡水河、橋、觀音山
+  const RX=-(FAR+8);gb.box(13,0.12,360,0x4f8fbf,RX,0.01,0);gb.box(1.2,0.3,360,0x8fb36a,RX+7,0.1,0);gb.box(1.2,0.3,360,0x8fb36a,RX-7,0.1,0);
+  for(const z of [-14,16]){gb.box(15,0.35,2.6,0xbfc9cc,RX,1.1,z);for(const x of [-5,0,5])gb.box(0.6,1.1,0.6,0x8a9aa0,RX+x,0.55,z);for(const s of [-1,1])gb.box(15,0.3,0.12,0xd7263d,RX,1.45,z+s*1.25);}
+  mShip(gb,mat4(RX+2.5,0,-30,0.1),0x2b7f86);mShip(gb,mat4(RX-3,0,34,-0.2),0x8a5a3b);
+  gb.box(60,0.2,360,0x86b26a,RX-37,0.02,0);
+  for(let z=-150;z<=150;z+=19){const r=rr(10,17);gb.sph(r,pick([0x6fa05a,0x5f9050,0x7aa862]),RX-24-r*0.6+rr(-4,4),0,z,1,rr(0.42,0.6),1,true);}
+  // 北邊：陽明山
+  for(let x=-150;x<=150;x+=22){const r=rr(15,24);gb.sph(r,pick([0x6fa05a,0x5f9050,0x7aa862]),x+rr(-6,6),0,-(FAR+42+rr(0,18)),1,rr(0.45,0.62),1,true);}
+  // 東邊：機場跑道
+  const AX=FAR+13;gb.box(24,0.06,360,0x8fb36a,AX,0.02,0);gb.box(7,0.08,150,0x3a3d44,AX,0.06,0);for(let z=-70;z<=70;z+=6)gb.box(0.35,0.02,3,0xf5f1e6,AX,0.11,z);
+  gb.box(8,0.08,30,0x4a4d54,AX+8,0.05,-8);gb.box(5,3,16,0xd9dcde,AX+10,1.5,-24);gb.box(5.4,0.4,16.4,0x2a4f9a,AX+10,3.1,-24);
+  gb.box(1.2,7,1.2,0xe6dcc0,AX+9.5,3.5,18);gb.box(2.6,1.4,2.6,0x2b3a55,AX+9.5,7.6,18);gb.box(3,0.2,3,0xf4efe4,AX+9.5,8.4,18);
+  mPlane(gb,mat4(AX,1.0,-36,Math.PI/2),0xd7263d,1.4);mPlane(gb,mat4(AX+8,0.9,-12,0),0x2a6fd6,1.2);mPlane(gb,mat4(AX+8,0.9,0,0),0x2f9a5a,1.2);
+  // 南邊：基隆港（遠方）
+  const HZ=FAR+DEP+9;gb.box(360,0.12,70,0x4f8fbf,0,0.01,HZ+35);gb.box(360,0.5,1.5,0xbfc9cc,0,0.25,HZ);
+  for(let x=-40;x<=40;x+=16)mCrane(gb,mat4(x,0,HZ-1.6,0),pick([0xe3a52b,0xd7263d,0x2a6fd6]),5.5);
+  for(const [x,c] of [[-30,0x2b7f86],[-6,0xc8402f],[22,0x2a4f9a]])mShip(gb,mat4(x,0,HZ+5,Math.PI/2),c);
+  for(let k=0;k<14;k++)gb.box(2.4,1.1,1.0,pick([0xd7263d,0x2a6fd6,0xe3a52b,0x2f9a5a,0x8a5a3b]),-48+k*7+rr(-1,1),0.55+(k%3===0?1.1:0),HZ-4.6);
+  const world=gb.mesh(false);world.castShadow=false;scene.add(world);
+
+  // 外圈街屋（四邊不同風貌）
+  const sides=[{n:[0,-1],ry:Math.PI},{n:[0,1],ry:0},{n:[1,0],ry:Math.PI/2},{n:[-1,0],ry:-Math.PI/2}];
+  sides.forEach((sd,si)=>{const tv=[-sd.n[1],sd.n[0]];const lim=si<2?FAR:RS;let t=-lim;
+    while(t<lim){const w=rr(3.2,5.4);if(t+w>lim)break;const c=t+w/2;const x=-sd.n[0]*DIST+tv[0]*c,z=-sd.n[1]*DIST+tv[1]*c;
+      const fl=si===1?3+(rnd()*3|0):2+(rnd()*3|0);mShop(w,fl,mat4(x,0,z,sd.ry));
+      const bk=DIST+DEP+1,bx=-sd.n[0]*bk+tv[0]*c,bz=-sd.n[1]*bk+tv[1]*c;
+      if(si===0)mTower(w-0.2,3+(rnd()*4|0),mat4(bx,0,bz,sd.ry));
+      else if(si===1)mTower(w-0.2,8+(rnd()*10|0),mat4(bx,0,bz,sd.ry));
+      t+=w+0.15;}});
+  for(const [x,z] of [[FAR+3,-(FAR+3)],[-(FAR+3),-(FAR+3)]])mTower(6,10+(rnd()*6|0),mat4(x,0,z,Math.atan2(-x,-z)));
+  const city=CITY.mesh(true);scene.add(city);const glm=CITYGL.mesh(false,GLOW);glm.castShadow=false;scene.add(glm);
+  const sg=new THREE.BufferGeometry();sg.setAttribute('position',new THREE.Float32BufferAttribute(SIGNS.pos,3));sg.setAttribute('uv',new THREE.Float32BufferAttribute(SIGNS.uv,2));sg.computeVertexNormals();
+  scene.add(new THREE.Mesh(sg,new THREE.MeshBasicMaterial({map:ATLAS_TEX,side:THREE.DoubleSide})));
+}
+
+/* ---------- 格子貼圖 ---------- */
+const tileTex=[],tileMesh=[];
+const PAPER='#f6eedb';
+function tileCanvas(i){const f=tileFrame(i);const c=document.createElement('canvas');c.width=f.corner?384:256;c.height=f.corner?384:394;return c;}
+function fxOf(i){if(!G||!G.fx)return[];const t=T[i];return G.fx.filter(f=>(f.g&&f.g===t.g)||(f.k==='strike'&&t.t==='rail')||(f.k==='tour'&&t.t==='air')||f.k==='epi');}
+function drawTile(i){
+  const t=T[i],c=tileTex[i].image,g=c.getContext('2d'),W=c.width,H=c.height,st=G?G.tiles[i]:{o:-1,l:0,m:false};
+  g.fillStyle=PAPER;g.fillRect(0,0,W,H);g.strokeStyle='#2b2622';g.lineWidth=5;g.strokeRect(2.5,2.5,W-5,H-5);
+  g.textAlign='center';g.textBaseline='middle';const F=(w,s)=>`${w} ${s}px ${SIGN_FONT}`;
+  const own=st.o>=0&&G?G.players[st.o]:null,fx=fxOf(i);
+  const nameP=(n,fs)=>{g.fillStyle='#2b2622';g.font=F(900,n.length>4?Math.min(fs,36):fs);g.fillText(n,W/2,262);};
+  const priceP=()=>{g.font=F(700,30);g.fillStyle='#6b6155';g.fillText(`${fm(G?priceOf(i):t.p)} 萬`,W/2,312);};
+  if(t.t==='prop'){const gr=GROUPS[t.g];g.fillStyle=gr.col;g.fillRect(5,5,W-10,64);g.fillStyle='#fff';g.font=F(900,30);g.fillText(t.d,W/2,38);nameP(t.n,t.n.length>4?38:46);priceP();}
+  else if(t.t==='rail'){if(t.port)drawShip(g,W/2,140);else if(t.hsr)drawHSR(g,W/2,140);else drawTrain(g,W/2,140);nameP(t.n,42);priceP();}
+  else if(t.t==='round'){g.strokeStyle='#2b7f86';g.lineWidth=16;g.beginPath();g.arc(W/2,150,66,-0.3,Math.PI*1.55);g.stroke();g.fillStyle='#2b7f86';g.beginPath();g.moveTo(W/2+70,98);g.lineTo(W/2+30,92);g.lineTo(W/2+64,62);g.closePath();g.fill();g.fillStyle='#2b7f86';g.font=F(900,62);g.fillText('迴',W/2,154);nameP(t.n,40);g.font=F(700,26);g.fillStyle='#6b6155';g.fillText('停下可以迴轉',W/2,312);}
+  else if(t.t==='air'){drawPlaneIcon(g,W/2,140);nameP(t.n,42);priceP();}
+  else if(t.t==='util'){drawUtil(g,W/2,140,t.u);nameP(t.n,40);priceP();}
+  else if(t.t==='chance'||t.t==='fate'){const ch=t.t==='chance';g.fillStyle=ch?'#c8402f':'#1f4f9a';g.font=F(900,170);g.fillText(ch?'?':'命',W/2,165);g.fillStyle='#2b2622';g.font=F(900,52);g.fillText(t.n,W/2,300);}
+  else if(t.t==='tax'){g.strokeStyle='#c8402f';g.lineWidth=8;g.beginPath();g.arc(W/2,150,70,0,7);g.stroke();g.fillStyle='#c8402f';g.font=F(900,84);g.fillText('稅',W/2,154);nameP(t.n,36);g.font=F(700,24);g.fillStyle='#6b6155';g.fillText(t.k==='land'?'土地市值 5%':'200 萬或資產 10%',W/2,312);}
+  else if(t.t==='auction'||t.t==='build'||t.t==='stock'||t.t==='lantern'||t.t==='view'){const M={auction:['拍','#c8402f','競標法拍屋'],build:['建','#e8892b','半價加蓋'],stock:['股','#14965a','買賣股票'],lantern:['燈','#c8402f','放天燈許願'],view:['纜','#2b7f86','下次自選點數']}[t.t];
+    g.fillStyle=M[1];g.beginPath();g.arc(W/2,150,78,0,7);g.fill();g.strokeStyle='#2b2622';g.lineWidth=6;g.stroke();g.fillStyle='#fff';g.font=F(900,96);g.fillText(M[0],W/2,156);
+    nameP(t.n,40);g.font=F(700,26);g.fillStyle='#6b6155';g.fillText(M[2],W/2,312);
+    if(t.t==='auction'&&G&&G.fore&&G.fore.length){g.fillStyle='#c8402f';g.font=F(900,24);g.fillText(`待拍 ${G.fore.length} 件`,W/2,352);}}
+  else{ // 角落
+    const C={go:['起點','#c8402f',`經過領 ${G?salary():SALARY} 萬`],jail:['看守所','#2b2622','路過只是探監'],park:['廟口夜市','#e3a52b',`紅包 ${fm(G?G.pot:0)} 萬`],gojail:['警察臨檢','#1f4f9a','直接進看守所']}[t.t];
+    g.fillStyle=C[1];g.fillRect(5,5,W-10,W-10);g.fillStyle='#fff';g.font=F(900,t.t==='park'||t.t==='gojail'?62:76);g.fillText(C[0],W/2,W/2-30);g.font=F(700,30);g.fillText(C[2],W/2,W/2+44);
+    if(t.t==='go'){g.font=F(900,60);g.fillText('◀',W/2,W/2+106);}
+  }
+  if(fx.length&&BUYABLE(t)){const f=fx[0];g.fillStyle=f.k==='flood'||f.k==='strike'?'#1f4f9a':'#c8402f';g.fillRect(5,t.t==='prop'?69:5,W-10,40);g.fillStyle='#fff';g.font=F(900,26);g.fillText(FX_N[f.k],W/2,(t.t==='prop'?69:5)+21);}
+  {const jb=BR.find(b=>b.from===i||b.to===i);if(jb){const y=t.t==='prop'?118:40;g.fillStyle=GROUPS[jb.g].col;g.beginPath();g.arc(36,y,26,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=4;g.stroke();g.fillStyle='#fff';g.font=F(900,28);g.fillText('岔',36,y+1);}}
+  if(G&&G.mrt&&G.mrt.includes(i)){const y=t.t==='prop'?118:40;g.fillStyle='#1f6fd6';g.beginPath();g.arc(W-36,y,26,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=4;g.stroke();g.fillStyle='#fff';g.font=F(900,28);g.fillText('捷',W-36,y+1);}
+  if(own&&BUYABLE(t)){g.fillStyle=own.col;g.fillRect(5,H-54,W-10,49);g.fillStyle='#fff';g.font=F(900,26);g.fillText(`業主 ${own.name}${st.l?' · '+LV[st.l]:''}`,W/2,H-29);}
+  if(st.d){g.fillStyle='#7a5a3a';g.fillRect(9,H-98,100,38);g.fillStyle='#fff';g.font=F(900,24);g.fillText('房貸',59,H-78);}
+  if(st.m){g.save();g.translate(W/2,H/2+20);g.rotate(-0.25);g.strokeStyle='#d7263d';g.lineWidth=8;g.strokeRect(-90,-40,180,80);g.fillStyle='#d7263d';g.font=F(900,56);g.fillText('抵押',0,4);g.restore();}
+  tileTex[i].needsUpdate=true;
+}
+function drawTrain(g,x,y){g.fillStyle='#2b2622';g.fillRect(x-70,y-36,140,60);g.fillStyle='#e3a52b';g.fillRect(x-60,y-26,30,22);g.fillRect(x-20,y-26,30,22);g.fillRect(x+20,y-26,30,22);g.fillStyle='#2b2622';for(const dx of [-44,44]){g.beginPath();g.arc(x+dx,y+30,14,0,7);g.fill();}g.fillRect(x-80,y+44,160,6);}
+function drawShip(g,x,y){g.fillStyle='#2b2622';g.beginPath();g.moveTo(x-80,y+4);g.lineTo(x+80,y+4);g.lineTo(x+60,y+44);g.lineTo(x-64,y+44);g.closePath();g.fill();g.fillStyle='#c8402f';g.fillRect(x-50,y-24,30,28);g.fillStyle='#2a6fd6';g.fillRect(x-16,y-24,30,28);g.fillStyle='#e3a52b';g.fillRect(x+18,y-24,30,28);g.fillStyle='#5fb0d6';g.fillRect(x-90,y+50,180,8);}
+function drawHSR(g,x,y){g.fillStyle='#f4efe4';g.strokeStyle='#2b2622';g.lineWidth=5;g.beginPath();g.moveTo(x-80,y+24);g.lineTo(x+40,y+24);g.quadraticCurveTo(x+90,y+20,x+86,y-6);g.quadraticCurveTo(x+60,y-34,x-80,y-34);g.closePath();g.fill();g.stroke();g.fillStyle='#e8892b';g.fillRect(x-80,y+4,150,10);g.fillStyle='#2b3a55';for(let k=0;k<4;k++)g.fillRect(x-70+k*30,y-24,20,16);g.fillStyle='#2b2622';g.fillRect(x-90,y+40,180,6);}
+function drawPlaneIcon(g,x,y){g.save();g.translate(x,y);g.rotate(-0.5);g.fillStyle='#2a4f9a';g.beginPath();g.ellipse(0,0,84,16,0,0,7);g.fill();g.beginPath();g.moveTo(-10,-6);g.lineTo(-40,-70);g.lineTo(-18,-70);g.lineTo(30,-6);g.closePath();g.fill();g.beginPath();g.moveTo(-10,6);g.lineTo(-40,70);g.lineTo(-18,70);g.lineTo(30,6);g.closePath();g.fill();
+  g.beginPath();g.moveTo(-70,-4);g.lineTo(-86,-36);g.lineTo(-74,-36);g.lineTo(-56,-4);g.fill();g.beginPath();g.moveTo(-70,4);g.lineTo(-86,36);g.lineTo(-74,36);g.lineTo(-56,4);g.fill();g.restore();}
+function drawUtil(g,x,y,u){g.strokeStyle='#2b2622';g.lineWidth=5;
+  if(u==='elec'){g.fillStyle='#e3a52b';g.beginPath();g.moveTo(x+10,y-70);g.lineTo(x-34,y+8);g.lineTo(x-2,y+8);g.lineTo(x-14,y+70);g.lineTo(x+34,y-10);g.lineTo(x+2,y-10);g.closePath();g.fill();g.stroke();}
+  else if(u==='gas'){g.fillStyle='#e8892b';g.beginPath();g.moveTo(x,y-72);g.bezierCurveTo(x+56,y-10,x+46,y+62,x,y+62);g.bezierCurveTo(x-46,y+62,x-56,y-10,x-12,y-36);g.bezierCurveTo(x-8,y-10,x,y-20,x,y-72);g.fill();g.stroke();g.fillStyle='#f2c14e';g.beginPath();g.ellipse(x,y+30,16,26,0,0,7);g.fill();}
+  else{g.fillStyle='#5fb0d6';g.beginPath();g.moveTo(x,y-70);g.bezierCurveTo(x+60,y,x+50,y+60,x,y+60);g.bezierCurveTo(x-50,y+60,x-60,y,x,y-70);g.fill();g.stroke();}}
+const tileGroup=new THREE.Group();scene.add(tileGroup);
+function buildBoard(){
+  for(let i=0;i<T.length;i++){const f=tileFrame(i);
+    const slab=new THREE.Mesh(new THREE.BoxGeometry(f.w-0.08,0.3,f.d-0.08),toon(0xf3ead2));slab.position.set(f.x,0.65,f.z);slab.rotation.y=f.ry;slab.receiveShadow=true;slab.castShadow=true;slab.userData.idx=i;slab.add(new THREE.Mesh(slab.geometry,OUTLINE));
+    tileGroup.add(slab);tileMesh[i]=slab;
+    const tex=new THREE.CanvasTexture(tileCanvas(i));tex.anisotropy=4;tileTex[i]=tex;
+    const pl=new THREE.Mesh(new THREE.PlaneGeometry(f.w-0.16,f.d-0.16),new THREE.MeshLambertMaterial({map:tex}));pl.rotation.x=-Math.PI/2;pl.position.y=0.152;pl.receiveShadow=true;pl.userData.idx=i;slab.add(pl);
+    drawTile(i);decorate(i);}
+}
+function decorate(i){const t=T[i],gb=new GB();
+  if(t.t==='rail'&&t.port){mShip(gb,mat4(0,0.05,-1.6,Math.PI/2),0x2b7f86);}
+  else if(t.t==='rail'&&t.hsr){gb.box(1.9,0.45,0.62,0xf4efe4,0,0.4,-0.95);gb.box(1.9,0.1,0.64,0xe8892b,0,0.3,-0.95);gb.box(0.5,0.3,0.6,0xf4efe4,1.1,0.33,-0.95);gb.box(1.5,0.14,0.66,0x2b3a55,-0.1,0.55,-0.95);gb.box(2.4,0.12,0.9,0xbfc9cc,0,0.1,-0.95);}
+  else if(t.t==='round'){gb.cyl(1.05,1.05,0.06,0x5b616f,0,0.03,-0.3,24);gb.cyl(0.7,0.7,0.14,0x9cc47a,0,0.07,-0.3,20);gb.cyl(0.14,0.2,0.9,0xd8d2c0,0,0.5,-0.3,8);gb.sph(0.22,0xe3a52b,0,1.05,-0.3);for(let k=0;k<3;k++){const a=k*2.1;gb.box(0.3,0.04,0.12,0xf5f1e6,Math.cos(a)*0.88,0.08,-0.3+Math.sin(a)*0.88,-a);}gb.box(0.05,0.9,0.05,0x3a3f42,0.95,0.45,-1.5);gb.box(0.5,0.5,0.05,0x1f6fd6,0.95,1.05,-1.5);}
+  else if(t.t==='rail'){gb.box(1.9,0.5,0.7,0x2b2622,0,0.25,-0.95);gb.box(1.7,0.42,0.55,0x2b7f86,0,0.66,-0.95);gb.box(1.5,0.12,0.6,0xe3a52b,0,0.92,-0.95);for(const x of [-0.6,0.6])gb.cyl(0.16,0.16,0.62,0x222222,x,0.12,-0.95,10,Math.PI/2);}
+  else if(t.t==='air'){mPlane(gb,mat4(0,0.55,-1.0,0),0xd7263d,0.62);gb.box(0.4,1.6,0.4,0xe6dcc0,0.9,0.8,-1.5);gb.box(0.7,0.4,0.7,0x2b3a55,0.9,1.75,-1.5);}
+  else if(t.t==='util'){if(t.u==='elec'){gb.cyl(0.08,0.1,2.4,0x7a5a3a,-0.5,1.2,-0.9,6);gb.box(1.0,0.08,0.08,0x3a3f42,-0.5,2.2,-0.9);gb.cyl(0.18,0.18,0.4,0x9aa3a8,-0.2,1.8,-0.9,8);}
+    else if(t.u==='gas'){gb.sph(0.55,0xe6e9ea,0,1.25,-1.0);gb.box(1.12,0.06,1.12,0xe8892b,0,1.25,-1.0);for(const x of [-0.45,0.45])for(const z of [-0.55,-1.45])gb.box(0.08,0.9,0.08,0x3a3f42,x,0.45,z);gb.box(1.5,0.06,0.06,0xe8892b,0,1.3,-0.3);}
+    else{gb.cyl(0.45,0.45,0.8,0x3b7fc4,0,1.6,-0.9,12);for(const x of [-0.3,0.3])for(const z of [-0.6,-1.2])gb.box(0.07,1.2,0.07,0x3a3f42,x,0.6,z);}}
+  else if(t.t==='auction'){gb.box(1.8,1.0,1.1,0xe6dcc0,0,0.5,-1.1);gb.box(2.0,0.14,1.3,0xc8402f,0,1.07,-1.1);gb.box(0.7,0.5,0.5,0x7a5a3a,0.9,0.25,-0.2);gb.cyl(0.14,0.14,0.5,0x7a5a3a,0.9,0.75,-0.2,8,0,0,Math.PI/2);gb.box(0.06,0.06,0.5,0x7a5a3a,0.9,0.75,0.05);}
+  else if(t.t==='build'){mCrane(gb,mat4(-0.5,0,-1.2,Math.PI/2),0xe3a52b,2.4);gb.box(0.9,0.6,0.9,0xbfc9cc,0.6,0.3,-0.9);}
+  else if(t.t==='stock'){gb.box(1.9,1.4,1.0,0xd8d2c0,0,0.7,-1.2);gb.box(1.7,0.4,0.05,0x15110d,0,1.1,-0.68);}
+  else if(t.t==='go'){for(const x of [-1.3,1.3])gb.box(0.3,2.2,0.3,0xc8402f,x,1.1,-0.6);gb.box(3.0,0.5,0.32,0xc8402f,0,2.35,-0.6);}
+  else if(t.t==='jail'){gb.box(2.4,1.6,1.6,0xbfc9cc,0,0.8,-0.8);for(let k=0;k<6;k++)gb.box(0.06,1.2,0.06,0x2b2622,-0.75+k*0.3,0.8,0.02);gb.box(2.6,0.15,1.8,0x8a9aa0,0,1.66,-0.8);}
+  else if(t.t==='park'){for(let k=0;k<3;k++){gb.box(0.9,0.06,0.8,[0xd7263d,0xe3a52b,0x2b7f86][k],-1.1+k*1.1,1.15,-0.8);gb.box(0.8,0.7,0.6,0xb0763d,-1.1+k*1.1,0.35,-0.8);}for(let k=0;k<5;k++)gb.sph(0.16,0xd7263d,-1.4+k*0.7,1.8,-1.4,1,1.2,1,true);gb.box(3.2,0.03,0.03,0x2b2622,0,1.95,-1.4);}
+  else if(t.t==='gojail'){gb.box(1.3,1.6,1.3,0xf4efe4,0,0.8,-0.8);gb.box(1.5,0.2,1.5,0x1f4f9a,0,1.7,-0.8);gb.sph(0.18,0xd7263d,0,1.95,-0.8,1,1,1,true);}
+  else if(t.t==='lantern'){gb.box(1.6,0.6,1.0,0xe6dcc0,0,0.3,-1.1);gb.box(1.8,0.1,1.2,0xc8402f,0,0.65,-1.1);for(const x of [-0.5,0.1,0.7])gb.cyl(0.18,0.22,0.42,0xf2c14e,x,1.0,-1.1,8);}
+  else if(t.t==='view'){gb.box(0.2,1.6,0.2,0x8a9aa0,-0.6,0.8,-1.2);gb.box(0.2,1.6,0.2,0x8a9aa0,0.6,0.8,-1.2);gb.box(1.8,0.12,1.0,0xb0763d,0,1.6,-1.2);gb.box(1.9,0.4,0.05,0x3a3f42,0,1.85,-0.72);gb.box(0.5,0.4,0.5,0xd7263d,0.4,2.3,-1.4);}
+  else if(t.t==='chance'||t.t==='fate'){gb.box(0.08,1.4,0.08,0x3a3f42,0.8,0.7,-1.2);gb.box(0.7,0.7,0.08,t.t==='chance'?0xc8402f:0x1f4f9a,0.8,1.5,-1.2);}
+  {const jb=BR.find(b=>b.from===i||b.to===i);if(jb){gb.box(0.07,1.3,0.07,0x3a3f42,-0.95,0.65,-1.7);gb.box(1.0,0.38,0.06,new THREE.Color(GROUPS[jb.g].col),-0.95,1.25,-1.7);}}
+  if(!gb.L.length)return;const f=tileFrame(i);const m=gb.mesh(true);if(t.port)m.scale.setScalar(0.5);const p=local(i,0,0,0.8);m.position.copy(p);m.rotation.y=f.ry;scene.add(m);}
+
+/* ---------- 地產上的建築 ---------- */
+const bldMesh=[];
+function bldModel(lvl,col,name){
+  const gb=new GB(),gl=new GB(),oc=new THREE.Color(col);
+  if(lvl===0){gb.cyl(0.04,0.04,1.4,0x3a3f42,0.7,0.7,0.2,6);gb.box(0.5,0.32,0.03,oc,0.95,1.22,0.2);gb.box(1.8,0.12,0.05,0xf4efe4,0,0.25,0.62);for(let k=0;k<5;k++)gb.box(0.06,0.4,0.06,0xf4efe4,-0.85+k*0.425,0.2,0.62);}
+  else if(lvl===1){gb.box(1.5,0.9,1.1,0xefe4cc,0,0.45,0);gb.box(1.7,0.12,0.75,0xb8553e,0,1.05,-0.27,0,0.5);gb.box(1.7,0.12,0.75,0xb8553e,0,1.05,0.27,0,-0.5);gb.box(0.3,0.55,0.04,0x7a5a3a,0,0.28,0.56);gl.box(0.35,0.3,0.04,0xffe9b8,0.45,0.55,0.56);gb.box(0.25,0.18,0.03,oc,-0.45,0.6,0.57);}
+  else{
+    const spec={2:[1.6,3,1.3,0xe8dcc0],3:[1.9,4,1.45,0xd9c8a9],4:[2.0,6,1.55,0xc9d3c4],5:[2.1,9,1.6,0x9fb4c2],6:[2.2,13,1.7,0x8fb3cf]}[lvl];
+    const [w,fl,d,c]=spec,fh=lvl>=5?0.9:0.85,H=fl*fh;
+    gb.box(w,H,d,c,0,H/2,0);
+    for(let f=0;f<fl;f++){const y=f*fh+fh*0.55;if(lvl>=5){gl.box(w*0.9,fh*0.5,0.03,f%2?0xbfd6e6:0xffe9b8,0,y,d/2+0.01);}else{const n=lvl===2?2:3;for(let k=0;k<n;k++){const x=(k-(n-1)/2)*(w/n);gl.box(w/n*0.6,fh*0.42,0.03,0xffe9b8,x,y,d/2+0.01);if(lvl===3&&f>0)gb.box(w/n*0.7,fh*0.55,0.05,0x3a3f42,x,y,d/2+0.12);}}}
+    gb.box(w+0.08,0.12,d+0.08,oc,0,H,0);
+    if(lvl===2){for(const s of [-1,1])gb.box(0.18,fh,0.18,c,s*(w/2-0.09),fh/2,d/2+0.25);gb.box(w,0.1,0.5,oc,0,fh,d/2+0.25);}
+    if(lvl===3)gb.cyl(0.25,0.25,0.5,0x3b7fc4,0.4,H+0.35,-0.2,10);
+    if(lvl>=4){gb.box(w*0.5,0.6,d*0.5,0x8a9aa0,0,H+0.3,0);}
+    if(lvl>=5){gb.box(0.05,1.4,0.05,0x3a3f42,-0.6,H+1.2,0);gb.box(w*0.95,0.7,0.08,oc,0,H+0.75,d/2-0.1);}
+    if(lvl===6){gb.box(w*0.72,0.9,d*0.72,0xe3a52b,0,H+0.45,0);gb.box(w*0.45,0.7,d*0.45,0xe3a52b,0,H+1.25,0);gb.cyl(0.04,0.12,2.6,0xe3a52b,0,H+2.9,0,6);for(let f=3;f<fl;f+=3)gb.box(w+0.12,0.1,d+0.12,0xe3a52b,0,f*fh,0);}
+    gb.box(0.04,0.8,0.04,0x3a3f42,w/2-0.15,H+(lvl>=5?1.6:0.4),-d/2+0.15);gb.box(0.4,0.26,0.03,oc,w/2+0.06,H+(lvl>=5?1.86:0.66),-d/2+0.15);
+  }
+  const grp=new THREE.Group();const a=gb.mesh(true);grp.add(a);if(gl.L.length){const b=gl.mesh(false,GLOW);b.castShadow=false;grp.add(b);}
+  if(lvl>=5&&name){const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.fillStyle=col;g.fillRect(0,0,256,64);g.fillStyle='#fff';g.font=`900 40px ${SIGN_FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText(name+(lvl===6?'金融':'')+'大樓',128,34);
+    const pl=new THREE.Mesh(new THREE.PlaneGeometry(2.0,0.6),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));pl.position.set(0,(lvl===6?13:9)*0.9+0.75,(lvl===6?1.7:1.6)/2-0.05);grp.add(pl);}
+  return grp;
+}
+function setBuilding(i,anim){
+  const st=G.tiles[i];if(bldMesh[i]){scene.remove(bldMesh[i]);bldMesh[i]=null;}
+  if(st.o<0||T[i].t!=='prop')return;
+  const p=G.players[st.o];if(!p)return;const m=bldModel(st.l,p.col,p.name);const f=tileFrame(i);m.position.copy(local(i,0,-0.55,0.8));m.rotation.y=f.ry;scene.add(m);bldMesh[i]=m;
+  if(anim){m.scale.set(1,0.01,1);anims.push({t:0,d:0.6,f:k=>{const e=k<1?1-Math.pow(1-k,3)*Math.cos(k*6):1;m.scale.y=Math.max(0.01,e);}});}
+}
+
+/* ---------- 支線動態：天燈、纜車 ---------- */
+const BFX={lan:[],cab:[],t:0};
+(function(){const lm=new THREE.MeshBasicMaterial({color:0xffc04a,transparent:true,opacity:0.95});const lg=new THREE.CylinderGeometry(0.16,0.22,0.42,8);
+  for(let k=0;k<6;k++){const m=new THREE.Mesh(lg,lm.clone());m.userData={ph:k/6,ox:rr(-1.2,1.2),oz:rr(-1.2,1.2)};scene.add(m);BFX.lan.push(m);}
+  const b=BR[1],ry=Math.atan2(-b.u[1],b.u[0]),px=Math.sin(ry),pz=Math.cos(ry);
+  for(let k=0;k<3;k++){const g=new GB();g.box(0.7,0.55,0.6,[0xd7263d,0xe3a52b,0x2b7f86][k],0,-0.55,0);g.box(0.6,0.2,0.62,0x2b3a55,0,-0.45,0);g.box(0.04,0.5,0.04,0x2b2622,0,-0.05,0);
+    const m=g.mesh(true);m.userData={ph:k/3,px,pz};scene.add(m);BFX.cab.push(m);}})();
+function launchLantern(){const m=BFX.lan.find(x=>x.userData.ph>0.6)||BFX.lan[0];m.userData.ph=0;}
+function updBranch(dt){BFX.t+=dt;const c=tileFrame(59);
+  BFX.lan.forEach(m=>{const u=m.userData;u.ph=(u.ph+dt*0.07)%1;m.position.set(c.x+u.ox+Math.sin(BFX.t*0.7+u.ox*3)*0.3*u.ph,1.3+u.ph*11,c.z+u.oz);m.material.opacity=u.ph>0.8?(1-u.ph)*5:0.95;});
+  const b=BR[1];BFX.cab.forEach(m=>{const u=m.userData;u.ph=(u.ph+dt*0.03)%1;const d=u.ph*b.L;m.position.set(b.A[0]+b.u[0]*d-u.px*2.3,6.55,b.A[1]+b.u[1]*d-u.pz*2.3);m.rotation.y=Math.atan2(b.u[0],b.u[1]);});}
+/* ---------- 棋子：交通工具 ---------- */
+function vehicle(type,col){
+  const gb=new GB(),c=new THREE.Color(col);
+  if(type==='scooter'){gb.box(0.34,0.36,1.0,c,0,0.42,0);gb.box(0.3,0.1,0.5,0x2b2622,0,0.66,-0.15);gb.box(0.36,0.5,0.1,c,0,0.66,0.44);gb.box(0.6,0.05,0.05,0x333333,0,0.95,0.42);gb.sph(0.08,0xfff2b0,0,0.8,0.52,1,1,0.6,true);for(const z of [0.4,-0.38])gb.cyl(0.18,0.18,0.12,0x222222,0,0.18,z,10,0,0,Math.PI/2);
+    gb.box(0.36,0.5,0.26,0xf4efe4,0,0.95,-0.15);gb.sph(0.2,0xf0c7a2,0,1.33,-0.12);gb.sph(0.22,c,0,1.4,-0.14,1,0.7,1);}
+  else if(type==='taxi'){gb.box(0.78,0.36,1.5,c,0,0.4,0);gb.box(0.7,0.32,0.8,c,0,0.74,-0.08);gl3(gb,0.72,0.26,0.82,0.74,-0.08);gb.box(0.36,0.16,0.2,0xf2c14e,0,0.98,-0.08);for(const x of [-0.4,0.4])for(const z of [0.48,-0.5])gb.cyl(0.17,0.17,0.12,0x222222,x,0.2,z,10,0,0,Math.PI/2);gb.box(0.6,0.08,0.04,0xfff2b0,0,0.45,0.76);}
+  else if(type==='truck'){gb.box(0.8,0.6,0.6,c,0,0.55,0.48);gl3(gb,0.72,0.26,0.62,0.7,0.48);gb.box(0.82,0.12,1.0,c,0,0.32,-0.32);for(const x of [-0.41,0.41])gb.box(0.04,0.3,1.0,c,x,0.5,-0.32);gb.box(0.82,0.3,0.04,c,0,0.5,-0.82);for(let k=0;k<3;k++)gb.box(0.28,0.28,0.28,[0xb0763d,0xe3a52b,0xf4efe4][k],-0.2+k*0.2,0.55,-0.3-k*0.12);for(const x of [-0.4,0.4])for(const z of [0.45,-0.55])gb.cyl(0.16,0.16,0.12,0x222222,x,0.18,z,10,0,0,Math.PI/2);}
+  else{gb.box(0.82,0.78,1.8,c,0,0.6,0);gb.box(0.84,0.24,1.6,0xf4efe4,0,0.82,-0.05);for(let k=0;k<5;k++)gb.box(0.86,0.18,0.24,0x2b3a55,0,0.82,-0.7+k*0.32);gb.box(0.7,0.3,0.04,0x2b3a55,0,0.82,0.91);for(const x of [-0.42,0.42])for(const z of [0.55,-0.6])gb.cyl(0.18,0.18,0.12,0x222222,x,0.2,z,10,0,0,Math.PI/2);}
+  const m=gb.mesh(true);m.scale.setScalar(1.05);return m;
+}
+function gl3(gb,w,h,d,y,z){gb.box(w,h,d,0x2b3a55,0,y,z);}
+
+/* ---------- 骰子 ---------- */
+function dieTex(n){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');g.fillStyle='#fffdf5';g.fillRect(0,0,128,128);g.strokeStyle='#2b2622';g.lineWidth=8;g.strokeRect(4,4,120,120);
+  const P={1:[[64,64]],2:[[36,36],[92,92]],3:[[32,32],[64,64],[96,96]],4:[[36,36],[92,36],[36,92],[92,92]],5:[[34,34],[94,34],[64,64],[34,94],[94,94]],6:[[36,30],[92,30],[36,64],[92,64],[36,98],[92,98]]}[n];
+  g.fillStyle=n===1||n===4?'#d7263d':'#2b2622';for(const [x,y] of P){g.beginPath();g.arc(x,y,n===1?17:12,0,7);g.fill();}const t=new THREE.CanvasTexture(c);return t;}
+const DIE_MATS=[3,4,1,6,2,5].map(n=>new THREE.MeshToonMaterial({map:dieTex(n),gradientMap:GRAD}));
+const BASEQ={1:new THREE.Quaternion(),6:new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI,0,0)),2:new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI/2,0,0)),5:new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,0)),3:new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,Math.PI/2)),4:new THREE.Quaternion().setFromEuler(new THREE.Euler(0,0,-Math.PI/2))};
+const dice=[0,1].map(()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9),DIE_MATS);m.castShadow=true;m.add(new THREE.Mesh(m.geometry,OUTLINE));m.position.set(0,-5,0);scene.add(m);return m;});
+
+/* ---------- LED 看板 ---------- */
+const LEDC=document.createElement('canvas');LEDC.width=512;LEDC.height=240;const LEDT=new THREE.CanvasTexture(LEDC);
+(()=>{const pl=new THREE.Mesh(new THREE.PlaneGeometry(4.1,1.9),new THREE.MeshBasicMaterial({map:LEDT}));pl.position.set(0,2.95,-5.19);scene.add(pl);const pb=pl.clone();pb.rotation.y=Math.PI;pb.position.z=-5.61;scene.add(pb);})();
+function drawLED(){const g=LEDC.getContext('2d');g.fillStyle='#15110d';g.fillRect(0,0,512,240);g.textAlign='center';g.textBaseline='middle';
+  const idx=G?G.idx:100,prev=G?G.idxPrev:100,ch=(idx/prev-1)*100;g.fillStyle='#c9b48a';g.font=`700 30px ${SIGN_FONT}`;g.fillText('台 北 房 市 指 數',256,40);
+  g.fillStyle='#ffb000';g.font='130px VT323, monospace';g.fillText(idx.toFixed(1),256,128);g.fillStyle=ch>=0?'#ff5a6a':'#3ddc8a';g.font='54px VT323, monospace';g.fillText(`${ch>=0?'▲':'▼'} ${Math.abs(ch).toFixed(1)}%`,256,206);
+  for(let x=0;x<512;x+=4){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(x,0,1,240);}LEDT.needsUpdate=true;}
+
+/* ---------- 相機 ---------- */
+const camS={yaw:0.35,pitch:0.92,dist:34,tx:0,ty:0.8,tz:0,goal:new V3(0,0.8,0),auto:0};
+function updateCam(dt){
+  const k=1-Math.pow(0.02,dt);camS.tx+=(camS.goal.x-camS.tx)*k;camS.ty+=(camS.goal.y-camS.ty)*k;camS.tz+=(camS.goal.z-camS.tz)*k;
+  if(camS.auto)camS.yaw+=dt*camS.auto;
+  const cp=Math.cos(camS.pitch),sp=Math.sin(camS.pitch),dd=camS.dist*(cam.aspect<0.8?1.3:1);
+  cam.position.set(camS.tx+Math.sin(camS.yaw)*cp*dd,camS.ty+sp*dd,camS.tz+Math.cos(camS.yaw)*cp*dd);cam.lookAt(camS.tx,camS.ty,camS.tz);
+}
+let overview=false;
+function focusOn(v,dist){if(overview)return;camS.goal.set(v.x*0.55,0.8,v.z*0.55);if(dist)camS.dist=dist;}
+function setOverview(on){overview=on;$('#bView').classList.toggle('on',on);if(on){camS.goal.set(0,0.8,0);camS.dist=70;camS.pitch=1.25;}else{camS.pitch=0.92;camS.dist=30;const p=curP();if(p)focusOn(tokenPos(p));}}
+// 拖曳旋轉、滾輪縮放、雙指縮放
+const ptrs=new Map();let dragMoved=0,pinch0=0;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});dragMoved=0;if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);}cv.classList.add('drag');});
+cv.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p){hover(e);return;}const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(ptrs.size===1){dragMoved+=Math.abs(dx)+Math.abs(dy);camS.yaw-=dx*0.006;camS.pitch=clamp(camS.pitch+dy*0.004,0.35,1.42);}
+  else if(ptrs.size===2){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(pinch0){camS.dist=clamp(camS.dist*pinch0/d,14,96);}pinch0=d;dragMoved+=10;}});
+const endPtr=e=>{const was=ptrs.has(e.pointerId);ptrs.delete(e.pointerId);if(!ptrs.size)cv.classList.remove('drag');if(was&&e.type==='pointerup'&&dragMoved<6)clickTile(e);};
+cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
+cv.addEventListener('wheel',e=>{e.preventDefault();camS.dist=clamp(camS.dist*(1+Math.sign(e.deltaY)*0.08),14,96);},{passive:false});
+const ray=new THREE.Raycaster(),mv=new THREE.Vector2();
+function pickTile(e){const r=cv.getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,cam);const hit=ray.intersectObjects(tileMesh,false)[0];return hit?hit.object.userData.idx:-1;}
+function clickTile(e){if(!G||!$('#title').hidden)return;const i=pickTile(e);if(i>=0)showDeed(i);}
+function hover(e){const tip=$('#tip');if(!G||!$('#title').hidden){tip.hidden=true;return;}const i=pickTile(e);if(i<0){tip.hidden=true;cv.style.cursor='';return;}cv.style.cursor='pointer';
+  const t=T[i],st=G.tiles[i];let s=t.n;if(BUYABLE(t)){s+=st.o>=0?` · ${G.players[st.o].name}${st.l?' · '+LV[st.l]:''}${st.m?' · 抵押中':''}`:` · ${fm(priceOf(i))} 萬`;const fx=fxOf(i);if(fx.length)s+=' · '+FX_N[fx[0].k];}
+  tip.textContent=s;tip.hidden=false;tip.style.transform=`translate(${e.clientX+14}px,${e.clientY+10}px)`;}
+
+/* ---------- 動畫 ---------- */
+const anims=[];
+function tween(d,f){return new Promise(res=>anims.push({t:0,d,f,res}));}
+const spd=()=>SPEEDS[speedI];const SPEEDS=[1,2,3];let speedI=0;
+
+/* ---------- 遊戲狀態 ---------- */
+let G=null;
+const tokens=[],labels=[];
+const isAI=p=>!p.human||!!p.bot;
+const isLocal=p=>!!p&&p.human&&!p.net&&!p.bot;
+const range=n=>[...Array(n).keys()];
+function priceOf(i){const t=T[i];return Math.max(1,Math.round(t.p*(G?G.idx:100)/100*(t.g&&G?(G.gm[t.g]||1):1)));}
+function mortVal(i){return Math.round(T[i].p/2);}
+function redeemCost(i){return Math.round(mortVal(i)*1.1);}
+function sellVal(i){const st=G.tiles[i];return Math.round(priceOf(i)*(G.sellR||0.8))-(st.m?redeemCost(i):0)-(st.d||0);}
+const loanMax=i=>Math.round((priceOf(i)+bVal(i))*0.5/10)*10;
+function canLoan(p,i){const st=G.tiles[i];return T[i].t==='prop'&&st.o===p.id&&!st.m&&!st.d&&st.l>0;}
+function debtOf(p){return G.tiles.reduce((a,s)=>a+(s.o===p.id?(s.d||0):0),0);}
+function doLoan(p,i){const v=loanMax(i);G.tiles[i].d=v;p.cash+=v;fly(p,v);snd('coin');drawTile(i);addNews(`${p.name}拿${T[i].n}向銀行貸款 ${fm(v)} 萬`);refresh();}
+function doRepay(p,i){const v=G.tiles[i].d||0;if(!v||p.cash<v)return;p.cash-=v;G.tiles[i].d=0;fly(p,-v);drawTile(i);refresh();}
+function builtNow(p){const b=G.bt&&G.bt[p.id];return b&&b.r===G.round?b.n:0;}
+const canBuildMore=p=>builtNow(p)<BUILD_CAP;
+const groupIdx=g=>T.map((t,i)=>t.g===g?i:-1).filter(i=>i>=0);
+const ownsGroup=(pid,g)=>groupIdx(g).every(i=>G.tiles[i].o===pid);
+function countType(pid,type){return T.reduce((a,t,i)=>a+(t.t===type&&G.tiles[i].o===pid?1:0),0);}
+function tileCol(i){const t=T[i];return t.g?GROUPS[t.g].col:t.t==='rail'?'#2b2622':t.t==='air'?'#5f6f78':'#9aa3a8';}
+function fxMul(i){let m=1;for(const f of fxOf(i)){if(f.k==='fest'||f.k==='tour')m*=2;else if(f.k==='flood')m*=0.5;else if(f.k==='strike')m=0;else if(f.k==='epi')m*=T[i].t==='air'?0:(f.m||0.5);}return m;}
+const epidemic=()=>!!(G&&G.fx&&G.fx.some(f=>f.k==='epi'));
+function rentOf(i,dice){const t=T[i],st=G.tiles[i];let r=0;
+  if(t.t==='prop'){r=rentLv(t,st.l);if(ownsGroup(st.o,t.g))r*=GROUP_BONUS;r*=(G.gm[t.g]||1);if(G.era>=1&&G.mrt&&G.mrt.includes(i))r*=1.5;}
+  else if(t.t==='rail')r=RAIL_R[countType(st.o,'rail')-1]||0;
+  else if(t.t==='air')r=AIR_R[countType(st.o,'air')-1]||0;
+  else if(t.t==='util')r=(dice||7)*(UTIL_X[countType(st.o,'util')-1]||4);
+  return Math.round(r*G.idx/100*fxMul(i));}
+function bVal(i){const t=T[i],l=G.tiles[i].l;return t.t==='prop'?(l+(l>5?2:0))*GROUPS[t.g].hc:0;}
+function netWorth(p){let v=p.cash;T.forEach((t,i)=>{const st=G.tiles[i];if(st.o!==p.id)return;v+=st.m?priceOf(i)-redeemCost(i):priceOf(i);v+=bVal(i)*0.5-(st.d||0);});return Math.round(v);}
+function liquid(p){let v=p.cash;T.forEach((t,i)=>{const st=G.tiles[i];if(st.o!==p.id)return;v+=bVal(i)/2;v+=Math.max(0,sellVal(i));});return v;}
+const curP=()=>G&&G.players[G.cur];
+function yearNum(r){if(!G||!G.max)return 1985+(r-1)*2;return 1985+Math.round(Math.min(1,(r-1)/Math.max(1,G.max-1))*40);}
+const yearOf=r=>`${yearNum(r)} 年`;
+const salary=()=>SALARY+50*((G&&G.era)||0);
+const buildCost=i=>{const st=G.tiles[i];return Math.round(GROUPS[T[i].g].hc*(st.l===5?3:1)*(G.costMul||1));};
+function phase(){const f=G.max?G.round/G.max:Math.min(1,G.round/30);return f<.55?'boom':f<.75?'peak':'bust';}
+
+function newGame(cfg){
+  const seats=cfg.seats.filter(s=>s.on);
+  G={v:4,players:seats.map((s,k)=>({id:k,name:s.name,look:s.look,col:s.col,veh:s.veh,vn:s.vn,ai:s.ai||'builder',human:!!s.human,net:!!s.net,bot:false,peer:s.peer||'',cash:START,pos:0,jail:0,jailCards:0,mCards:0,out:false,biz:[],loans:[],dir:1,pick:0})),
+    tiles:T.map(()=>({o:-1,l:0,m:false})),cur:0,round:1,max:cfg.rounds,idx:100,idxPrev:100,hist:[100],gm:{},pot:0,news:[],chance:shuffle(range(CHANCE.length)),fate:shuffle(range(FATE.length)),
+    over:false,fx:[],fore:[],tk:{},wseq:0,askId:0,wait:null,ask:null,raise:null,auc:null,net:!!cfg.net,dbl:0,era:0,mrt:[],jobs:[],audit:-1,eraPend:0,rate:0.06,costMul:1,sellR:0.8,bt:{},prot:{},evDone:[],evPend:[],noRed:false};
+  addNews('1985 年，台北房地產蠢蠢欲動。誰會成為地產大亨？');refreshJobs();
+}
+function addNews(s){G.news.unshift(s);G.news=G.news.slice(0,10);renderMarquee();push();}
+
+/* ---------- 棋子位置 ---------- */
+const SLOTS=[[-0.62,1.15],[0.62,1.15],[-0.62,0.45],[0.62,0.45]],CSLOTS=[[-0.9,0.9],[0.9,0.9],[-0.9,-0.4],[0.9,-0.4]];
+function tokenPos(p,pos){pos=pos==null?p.pos:pos;const f=tileFrame(pos),s=(f.corner?CSLOTS:SLOTS)[p.id%4];return local(pos,s[0],s[1],0.82);}
+function jailPos(p){return local(JAIL,-0.7+p.id*0.45,-0.9,0.82);}
+function placeTokens(){G.players.forEach(p=>{const t=tokens[p.id];if(!t)return;t.visible=!p.out;t.position.copy(p.jail?jailPos(p):tokenPos(p));t.rotation.y=faceRy(p.pos,p.dir||1);});}
+function buildTokens(){tokens.forEach(t=>t&&scene.remove(t));labels.forEach(l=>l.remove());tokens.length=0;labels.length=0;
+  G.players.forEach(p=>{const m=vehicle(p.veh,p.col);scene.add(m);tokens[p.id]=m;const l=el('div','lbl',esc(p.name));l.style.background=p.col;$('#labels').appendChild(l);labels[p.id]=l;});placeTokens();}
+
+/* ---------- 聲音 ---------- */
+let AC=null,sndOn=true;
+function snd(type){if(!sndOn)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime;
+  const tone=(f,d,w='square',v=0.05,at=0)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=w;o.frequency.value=f;g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(0.0001,t+at+d);o.connect(g);g.connect(AC.destination);o.start(t+at);o.stop(t+at+d);};
+  if(type==='dice')for(let k=0;k<6;k++)tone(180+rnd()*200,0.04,'triangle',0.06,k*0.06);
+  if(type==='step')tone(520,0.05,'triangle',0.03);
+  if(type==='coin'){tone(988,0.08,'square',0.04);tone(1319,0.18,'square',0.04,0.08);}
+  if(type==='pay'){tone(330,0.12,'sawtooth',0.04);tone(247,0.2,'sawtooth',0.04,0.1);}
+  if(type==='build'){tone(196,0.1,'square',0.06);tone(262,0.1,'square',0.05,0.1);tone(392,0.2,'square',0.05,0.2);}
+  if(type==='jail'){tone(220,0.3,'sawtooth',0.05);tone(165,0.4,'sawtooth',0.05,0.25);}
+  if(type==='card'){tone(660,0.06,'triangle',0.05);tone(880,0.12,'triangle',0.05,0.07);}
+  if(type==='bid'){tone(784,0.07,'square',0.04);tone(1046,0.1,'square',0.04,0.07);}
+}catch(e){}}
+
+/* ---------- 介面：玩家卡、看板、跑馬燈、狀態列 ---------- */
+function isMe(p){return NET.role==='guest'?p.id===NET.seat:isLocal(p);}
+function renderPlayers(){const box=$('#tl');box.innerHTML='';
+  G.players.forEach(p=>{const d=el('div','pc'+(p.id===G.cur?' on':'')+(p.out?' out':''));const c=el('canvas');c.width=c.height=88;drawFace(c,p.look);d.appendChild(c);
+    const deeds=T.map((t,i)=>G.tiles[i].o===p.id?`<span class="${G.tiles[i].m?'m':''}" style="background:${tileCol(i)}"></span>`:'').join('');
+    const info=el('div','',`<b><i style="background:${p.col}"></i>${esc(p.name)}${(p.dir||1)<0?'<span class="rv">逆向</span>':''}${p.pick?'<span class="rv">自選</span>':''}</b><small>現金 <em>${fm(p.cash)}</em> 萬<span class="nw"> · 總資產 ${fm(netWorth(p))}</span></small><div class="deeds">${deeds}</div>`);d.appendChild(info);
+    const tag=p.out?'破產':p.jail?'看守所':p.offline&&!p.bot?'斷線':p.bot?'代打':!p.human?'電腦':NET.role==='guest'&&p.id===NET.seat?'你':p.net?'線上':'';
+    if(tag)d.appendChild(el('span','tag',tag));
+    box.appendChild(d);});}
+function renderTicker(){const ch=(G.idx/G.idxPrev-1)*100;$('#tkIdx').textContent=G.idx.toFixed(1);const c=$('#tkChg');c.textContent=`${ch>=0?'▲':'▼'}${Math.abs(ch).toFixed(1)}%`;c.className=ch>=0?'upc':'dnc';
+  const rd=G.max?Math.min(G.round,G.max):G.round;$('#tkRound').textContent=G.max?`第 ${rd} / ${G.max} 回合`:`第 ${rd} 回合`;$('#tkYear').textContent=yearOf(rd)+(G.era?' · '+ERA[G.era].t:'');drawLED();}
+function renderStat(){const s=$('#stat');if(!G||G.over){s.hidden=true;return;}let txt='';
+  if(G.ask){const p=G.players[G.ask.pid];if(p&&!isMe(p))txt=`等 ${p.name} 決定…`;}
+  else if(G.raise){const p=G.players[G.raise.pid];if(p&&!isMe(p))txt=`${p.name} 正在籌錢…`;}
+  else if(G.wait){const p=G.players[G.wait.pid];if(p&&!isMe(p))txt=G.wait.kind==='roll'?`等 ${p.name} 擲骰子…`:`${p.name} 正在整理地產…`;}
+  if(NET.role==='guest'&&NET.lastAt&&Date.now()-NET.lastAt>12000)txt='和房主的連線中斷了，等待重新連線…';
+  s.hidden=!txt;if(txt)s.innerHTML=`<i></i>${esc(txt)}`;}
+let mqX=0;
+function renderMarquee(){if(!G)return;$('#mqIn').innerHTML=G.news.map(s=>`<span>${esc(s).replace(/▲[\d.]+%/g,m=>`<i>${m}</i>`).replace(/▼[\d.]+%/g,m=>`<u>${m}</u>`)}</span>`).join('');}
+function refresh(){if(!G)return;renderPlayers();renderTicker();renderStat();renderJobs();push();}
+function toast(s,local){const t=el('div','toast',esc(s));$('#toasts').appendChild(t);setTimeout(()=>t.remove(),3300);while($('#toasts').children.length>3)$('#toasts').firstChild.remove();if(!local)bcast({k:'to',s:String(s)});}
+function fly(p,amt){if(!amt)return;const t=tokens[p.id];if(!t)return;const v=t.position.clone();v.y+=1.6;v.project(cam);const r=cv.getBoundingClientRect();
+  const d=el('div','fly '+(amt>0?'p':'n'),`${amt>0?'+':'−'}${fm(Math.abs(amt))} 萬`);d.style.transform=`translate(${(v.x+1)/2*r.width-30}px,${(1-v.y)/2*r.height-20}px)`;$('#labels').appendChild(d);setTimeout(()=>d.remove(),1700);}
+function renderAuc(){const b=$('#auc'),a=G&&G.auc;if(!a||!T[a.i]){b.hidden=true;return;}const t=T[a.i],lead=a.l>=0?G.players[a.l]:null,sel=a.s>=0?G.players[a.s]:null;
+  b.innerHTML=`<div class="ah"><b>${esc(a.t)}</b><span>${sel?'賣方 '+esc(sel.name):'銀行拍賣'}</span></div><div class="an"><span class="gdot" style="background:${tileCol(a.i)}"></span>${esc(t.n)}<small class="note" style="font-weight:400;font-family:var(--f-ui)">市價 ${fm(priceOf(a.i))} 萬</small></div>
+    <div class="ap"><b>${fm(a.p)}</b><span>萬　${lead?'領先：'+esc(lead.name):'底價，還沒人出價'}</span></div><div class="bd">${(a.b||a.a).map(id=>{const q=G.players[id];return q?`<span class="${id===a.l?'l':a.a.includes(id)?'':'x'}">${esc(q.name)}</span>`:'';}).join('')}</div>`;b.hidden=false;}
+
+/* ---------- 對話框 ---------- */
+let dlgRes=null,dlgTimer=0,lastSel=null;
+function talk(who,text,choices,o={}){
+  if(!o.local)bcast({k:'t',w:who&&who.id!=null?who.id:-1,x:text,ms:o.ms||1500});
+  return talkShow(who,text,choices,o);}
+function talkShow(who,text,choices,o={}){
+  return new Promise(res=>{const d=$('#dialog');d.hidden=false;clearTimeout(dlgTimer);
+    const W=who&&who.name?who:{name:'旁白',look:'narr'};$('#dlgName').textContent=W.name;drawFace($('#dlgP'),W.look||'narr');$('#dlgText').innerHTML=text;
+    const ch=$('#dlgCh');ch.innerHTML='';$('#dlgNext').hidden=!!choices;
+    if(choices){let sel=null;
+      if(o.sel&&o.sel.length){sel=el('select');sel.id='dlgSel';sel.setAttribute('aria-label','選擇');o.sel.forEach(v=>{const op=el('option');op.value=v;op.textContent=selLabel(v,o.sk);sel.appendChild(op);});if(o.selDef!=null)sel.value=o.selDef;else if(o.sk==='num')sel.value=7;sel.addEventListener('click',e=>e.stopPropagation());ch.appendChild(sel);}
+      choices.forEach((c,k)=>{const b=el('button',c.pri?'pri':'',c.t);b.type='button';if(c.dis)b.disabled=true;b.onclick=ev=>{ev.stopPropagation();lastSel=sel?+sel.value:null;dlgRes=null;res(k);};ch.appendChild(b);});
+      dlgRes=null;setTimeout(()=>{const b=ch.querySelector('button:not(:disabled)');b&&b.focus();},30);}
+    else{dlgRes=()=>{dlgRes=null;clearTimeout(dlgTimer);res();};dlgTimer=setTimeout(()=>dlgRes&&dlgRes(),(o.ms||1500)/spd());}
+  });}
+$('#dialog').addEventListener('click',()=>{dlgRes&&dlgRes();});
+function hideTalk(){$('#dialog').hidden=true;$('#dlgCh').innerHTML='';dlgRes=null;clearTimeout(dlgTimer);}
+function selLabel(j,k){const t=T[j],st=G.tiles[j];if(!t)return'';
+  if(k==='num')return `${j} 點`;
+  if(k==='build'||k==='buildfree')return `${t.n} → ${LV[Math.min(6,st.l+1)]}${k==='build'?`（${fm(buildCost(j)/2)} 萬）`:''}`;
+  if(k==='buy90')return `${t.n}・${GROUPS[t.g].name}（${fm(Math.round(priceOf(j)*0.9))} 萬）`;
+  if(!BUYABLE(t))return t.n;if(st.o<0)return `${t.n}（沒人買 · ${fm(priceOf(j))} 萬）`;const o=G.players[st.o];return `${t.n}（${o?o.name:''}${st.l?' · '+LV[st.l]:''}）`;}
+// 由真人（本機或線上）決定的選擇
+async function ask(p,who,text,ch,o={}){
+  if(isAI(p))return o.def!=null?o.def:ch.length-1;
+  if(p.net)return netAsk(p,who,text,ch,o);
+  const k=await talk(who,text,ch,o);o.v=lastSel;hideTalk();return k;}
+function netAsk(p,who,text,ch,o){
+  return new Promise(res=>{
+    const id=++G.askId;
+    G.ask={id,pid:p.id,w:who&&who.id!=null?who.id:-1,x:text,c:ch.map(c=>({t:c.t,p:c.pri?1:0,d:c.dis?1:0})),s:o.sel||null,sk:o.sk||''};
+    NET.askRes=(k,v)=>{if(!(k>=0&&k<ch.length)||ch[k].dis)return;if(o.sel&&k!==(o.def!=null?o.def:ch.length-1)&&!o.sel.includes(v))return;
+      G.ask=null;NET.askRes=null;NET.askDef=null;o.v=v;renderStat();push(true);res(k);};
+    NET.askDef=()=>{const k=o.def!=null?o.def:ch.length-1;G.ask=null;NET.askRes=null;NET.askDef=null;o.v=null;renderStat();push(true);res(k);};
+    renderStat();push(true);
+  });}
+
+/* ---------- 按鈕等待 ---------- */
+let waitBtn=null,busy=false;
+function setBtns(o){$('#bRoll').hidden=!o.roll;$('#bEnd').hidden=!o.end;$('#bManage').hidden=!o.manage;}
+function waitFor(kind,local){return new Promise(res=>{waitBtn={kind,res,local};});}
+function resolveWait(){if(!waitBtn)return;const r=waitBtn.res;waitBtn=null;r();}
+async function humanWait(p,kind,msg){
+  G.wait={pid:p.id,kind,id:++G.wseq};
+  if(p.net){renderStat();push(true);await waitFor(kind,false);}
+  else{setBtns({roll:kind==='roll',end:kind==='end',manage:true});const w=waitFor(kind,true);if(msg)talk(p,msg,null,{ms:900});push(true);await w;}
+  G.wait=null;setBtns({});renderStat();push();}
+async function busyRun(fn){if(busy)return;busy=true;setBtns({});try{await fn();}finally{busy=false;hideTalk();
+  if(G&&G.wait){const p=G.players[G.wait.pid];if(isLocal(p))setBtns({roll:G.wait.kind==='roll',end:G.wait.kind==='end',manage:true});}push(true);}}
+$('#bRoll').onclick=()=>{if(NET.role==='guest')return guestBtn('roll');if(waitBtn&&waitBtn.local&&waitBtn.kind==='roll'&&!busy){setBtns({});resolveWait();}};
+$('#bEnd').onclick=()=>{if(NET.role==='guest')return guestBtn('end');if(waitBtn&&waitBtn.local&&waitBtn.kind==='end'&&!busy){setBtns({});resolveWait();}};
+$('#bManage').onclick=()=>openManage();
+addEventListener('keydown',e=>{if(!G||!$('#modal').hidden||!$('#title').hidden)return;const tag=(e.target.tagName||'').toLowerCase();if(tag==='input'||tag==='select')return;
+  if(e.key===' '||e.key==='Enter'){if(dlgRes){e.preventDefault();dlgRes();return;}
+    if(!$('#bRoll').hidden){e.preventDefault();$('#bRoll').click();}else if(!$('#bEnd').hidden){e.preventDefault();$('#bEnd').click();}}});
+
+/* ---------- 擲骰子 ---------- */
+async function rollDice(vals){
+  snd('dice');if(!vals){vals=[1+(rnd()*6|0),1+(rnd()*6|0)];bcast({k:'d',a:vals[0],b:vals[1]});}
+  const base=new V3(camS.tx*0.3,0,camS.tz*0.3+1.5);
+  const st=dice.map((d,k)=>{const p1=new V3(base.x-0.7+k*1.4+rr(-.3,.3),1.08,base.z+1.8+rr(-.3,.3));const r=Math.hypot(p1.x,p1.z);if(r<3.4){if(r<0.01)p1.z=3.4;else{p1.x*=3.4/r;p1.z*=3.4/r;}}if(p1.z<-4.1&&p1.z>-6.7&&Math.abs(p1.x)<2.7)p1.z=-3.8;
+    return{p0:new V3(p1.x-0.8+k*1.6,6,p1.z+0.4),p1,q0:new THREE.Quaternion().setFromEuler(new THREE.Euler(rr(0,6),rr(0,6),rr(0,6))),spin:new V3(rr(8,14),rr(6,12),rr(8,14)),qf:new THREE.Quaternion().setFromEuler(new THREE.Euler(0,rr(0,6.28),0)).multiply(BASEQ[vals[k]])};});
+  await tween(0.95,k=>{dice.forEach((d,i)=>{const s=st[i];const e=Math.min(1,k);d.position.lerpVectors(s.p0,s.p1,e);d.position.y=s.p1.y+(s.p0.y-s.p1.y)*Math.pow(1-e,2)+Math.abs(Math.sin(e*Math.PI*2.5))*(1-e)*1.4;
+    if(k<0.78){d.quaternion.copy(s.q0);d.rotateX(s.spin.x*k);d.rotateY(s.spin.y*k);d.rotateZ(s.spin.z*k);}else{const cur=d.quaternion.clone();d.quaternion.copy(cur).slerp(s.qf,(k-0.78)/0.22);}});});
+  dice.forEach((d,i)=>d.quaternion.copy(st[i].qf));return vals;
+}
+function hideDice(){dice.forEach(d=>d.position.y=-5);bcast({k:'hd'});}
+
+/* ---------- 移動 ---------- */
+function stepPos(pos,dir){if(pos>=N){const br=brOf(pos),k=br.tiles.indexOf(pos);if(dir>0)return k+1<br.tiles.length?br.tiles[k+1]:br.to;return k>0?br.tiles[k-1]:br.from;}return (pos+dir+N)%N;}
+function junctionAt(pos,dir){return pos<N?BR.find(b=>dir>0?b.from===pos:b.to===pos):null;}
+function landAfter(pos,dir,k,ent){let q=pos;for(let s=0;s<k;s++)q=(s===0&&ent!=null)?ent:stepPos(q,dir);return q;}
+function tileScore(p,j){const t=T[j],st=G.tiles[j];if(BUYABLE(t)){if(st.o<0)return aiWantBuy(p,j)?priceOf(j)*0.3:0;if(st.o!==p.id&&!st.m)return -rentOf(j,7);return 5;}
+  return {gojail:-200,tax:-100,park:G.pot,lantern:50,view:40,chance:15,auction:10}[t.t]||0;}
+async function chooseBranch(p,br,dir,rem){const ent=dir>0?br.tiles[0]:br.tiles[br.tiles.length-1];let go;
+  if(isAI(p)){const a=tileScore(p,landAfter(p.pos,dir,rem,ent)),b=tileScore(p,landAfter(p.pos,dir,rem,null));go=a>b+10||(Math.abs(a-b)<=10&&rnd()<0.5);}
+  else go=(await ask(p,null,`岔路口！要轉進<b>${br.n}</b>嗎？${br.desc}（這次還要走 ${rem} 步）`,[{t:`轉進${br.n}`,pri:true},{t:'走主線'}],{def:1}))===0;
+  if(go)toast(`${p.name}轉進${br.n}`);return go;}
+function aiPickNum(p){let best=7,bs=-1e9;for(let k=2;k<=12;k++){const v=tileScore(p,landAfter(p.pos,p.dir||1,k,null))+rnd();if(v>bs){bs=v;best=k;}}return best;}
+async function moveSteps(p,n,noPay,noBranch){
+  const t=tokens[p.id];
+  for(let s=0;s<Math.abs(n);s++){
+    const dir=n>0?1:-1;let nx=null;const jb=noBranch?null:junctionAt(p.pos,dir);
+    if(jb&&await chooseBranch(p,jb,dir,Math.abs(n)-s))nx=dir>0?jb.tiles[0]:jb.tiles[jb.tiles.length-1];
+    const from=t.position.clone();p.pos=nx!=null?nx:stepPos(p.pos,dir);const to=tokenPos(p);const ry=Math.atan2(to.x-from.x,to.z-from.z);
+    snd('step');push();
+    await tween(0.2,k=>{t.position.lerpVectors(from,to,k);t.position.y=to.y+Math.sin(k*Math.PI)*0.7;t.rotation.y=ry;});
+    focusOn(t.position);
+    if(p.pos===0&&!noPay)passGo(p);
+  }
+}
+function passGo(p){const s=salary();p.cash+=s;fly(p,s);snd('coin');toast(`${p.name}經過起點，領薪水 ${s} 萬`);
+  if(G.era>=1&&isPoorest(p)){p.cash+=100;setTimeout(()=>fly(p,100),400);toast(`${p.name}是最窮的玩家，領紓困金 100 萬`);}refresh();}
+function isPoorest(p){const al=G.players.filter(q=>!q.out).sort((a,b)=>netWorth(a)-netWorth(b));return al.length>1&&al[0]===p&&netWorth(al[al.length-1])>netWorth(p)*1.6;}
+async function moveTo(p,target){if(p.pos>=N)await jumpTo(p,brOf(p.pos).to,2,0.6);await moveSteps(p,(target-p.pos+N)%N,false,true);}
+async function jumpTo(p,target,h=4,d=0.7){const t=tokens[p.id],from=t.position.clone();p.pos=target;const to=p.jail?jailPos(p):tokenPos(p);push(true);
+  await tween(d,k=>{t.position.lerpVectors(from,to,k);t.position.y=to.y+Math.sin(k*Math.PI)*h;});t.rotation.y=faceRy(p.pos,p.dir||1);focusOn(t.position);}
+function nextOfType(p,type){const b0=p.pos<N?p.pos:brOf(p.pos).to;for(let k=1;k<=N;k++){const j=(b0+k)%N;if(T[j].t===type)return j;}return p.pos;}
+
+/* ---------- 付款、破產 ---------- */
+async function pay(p,amt,to,why){
+  amt=Math.max(0,Math.round(amt));if(!amt)return true;
+  if(p.cash<amt){const ok=!isAI(p)?await raiseHuman(p,amt,why):aiRaise(p,amt);if(!ok){await bankrupt(p,to);return false;}}
+  p.cash-=amt;fly(p,-amt);snd('pay');
+  if(to&&to.id!=null){to.cash+=amt;setTimeout(()=>fly(to,amt),300);}else if(to==='pot'){G.pot+=amt;drawTile(PARK);}
+  refresh();return true;}
+function gain(p,amt){p.cash+=amt;fly(p,amt);snd('coin');refresh();}
+function drawSpecials(){T.forEach((t,i)=>{if(t.t==='auction'||t.t==='park')drawTile(i);});}
+async function bankrupt(p,to){
+  p.out=true;snd('jail');const heir=to&&to.id!=null&&!to.out?to:null;
+  T.forEach((t,i)=>{const st=G.tiles[i];if(st.o!==p.id)return;st.l=0;if(heir){st.o=heir.id;}else{st.o=-1;st.m=false;st.d=0;if(!G.fore.includes(i))G.fore.push(i);}drawTile(i);setBuilding(i);});
+  if(heir&&p.cash>0)heir.cash+=p.cash;p.cash=0;tokens[p.id].visible=false;labels[p.id].style.display='none';drawSpecials();
+  addNews(`${p.name}宣告破產${heir?`，名下地產全部歸 ${heir.name}`:'，地產由銀行收回，送進法拍中心'}。`);refresh();
+  await talk(null,`<b>${esc(p.name)}</b> 付不出錢，宣告破產！${heir?`名下地產全部歸 ${esc(heir.name)}。`:'地產由銀行收回，之後在法拍中心拍賣。'}`,null,{ms:2600});
+  const alive=G.players.filter(q=>!q.out);if(alive.length<=1||!G.players.some(q=>q.human&&!q.bot&&!q.out))G.over=true;
+}
+
+/* ---------- 地產操作 ---------- */
+const GROUP_BONUS=1.4; // 集滿整區的過路費倍數
+const maxLv=()=>G.era>=2?6:5;
+function canBuild(p,i){const t=T[i],st=G.tiles[i];return t.t==='prop'&&st.o===p.id&&!st.m&&st.l<maxLv();}
+function canSellB(p,i){const t=T[i],st=G.tiles[i];return t.t==='prop'&&st.o===p.id&&st.l>0;}
+function groupBuilt(i){return T[i].t==='prop'&&G.tiles[i].l>0;}
+function canMort(p,i){const st=G.tiles[i];return st.o===p.id&&!st.m&&!st.d&&!groupBuilt(i);}
+function canSellLand(p,i){const st=G.tiles[i];return st.o===p.id&&!groupBuilt(i);}
+function canAuctionOwn(p,i){const st=G.tiles[i];return canSellLand(p,i)&&!st.m&&!st.d&&G.players.some(q=>!q.out&&q!==p);}
+function doBuild(p,i,quiet,cost,bonus){const c=cost!=null?cost:buildCost(i);p.cash-=c;if(!bonus){const b=G.bt[p.id];G.bt[p.id]=b&&b.r===G.round?{r:G.round,n:b.n+1}:{r:G.round,n:1};}G.tiles[i].l++;setBuilding(i,true);drawTile(i);snd('build');if(!quiet)toast(`${p.name}在${T[i].n}蓋了${LV[G.tiles[i].l]}`);addNews(`${p.name}在${T[i].n}蓋起${LV[G.tiles[i].l]}`);refresh();}
+function doSellB(p,i){const c=GROUPS[T[i].g].hc*(G.tiles[i].l===6?3:1)/2;p.cash+=c;G.tiles[i].l--;setBuilding(i);drawTile(i);refresh();}
+function doMort(p,i){G.tiles[i].m=true;p.cash+=mortVal(i);drawTile(i);refresh();}
+function doRedeem(p,i){p.cash-=redeemCost(i);G.tiles[i].m=false;drawTile(i);refresh();}
+function doSellLand(p,i){const v=sellVal(i);p.cash+=v;G.tiles[i]={o:-1,l:0,m:false};setBuilding(i);drawTile(i);addNews(`${p.name}把${T[i].n}賣回給銀行，進帳 ${fm(v)} 萬`);refresh();}
+function transfer(i,from,to,price){to.cash-=price;from.cash+=price;G.tiles[i].o=to.id;setBuilding(i);drawTile(i);addNews(`${to.name}以 ${fm(price)} 萬向${from.name}買下${T[i].n}`);snd('coin');refresh();}
+function buyTile(p,i,price){p.cash-=price;G.tiles[i].o=p.id;G.tiles[i].m=false;G.fore=G.fore.filter(j=>j!==i);drawTile(i);setBuilding(i,true);fly(p,-price);snd('coin');drawSpecials();addNews(`${p.name}以 ${fm(price)} 萬買下${T[i].n}`);refresh();
+  const t=T[i];if(t.g&&ownsGroup(p.id,t.g))toast(`${p.name}集滿${GROUPS[t.g].name}，整區過路費 ×${GROUP_BONUS}`);}
+
+/* ---------- 競標拍賣 ---------- */
+function aiVal(q,i){const t=T[i];let v=priceOf(i)*({builder:1.0,saver:0.8,flipper:G.idx<120?1.15:0.75}[q.ai]||1);
+  if(t.g){const others=groupIdx(t.g).filter(j=>j!==i);if(others.every(j=>G.tiles[j].o===q.id))v*=1.8;else if(others.some(j=>G.tiles[j].o===q.id))v*=1.2;
+    const opp=others.map(j=>G.tiles[j].o).filter(o=>o>=0&&o!==q.id);if(opp.length===others.length&&new Set(opp).size===1)v*=1.35;}
+  else v*=1+0.25*countType(q.id,t.t);
+  v*=rr(0.9,1.1);const cap=q.cash-(RES[q.ai]||150)*0.5;return Math.max(0,Math.floor(Math.min(v,cap)/10)*10);}
+async function auction(i,start,seller,title){
+  const t=T[i],n=G.players.length;
+  const bidders=G.players.filter(q=>!q.out&&q!==seller&&q.cash>=start).sort((a,b)=>((a.id-G.cur+n)%n)-((b.id-G.cur+n)%n));
+  if(!bidders.length){await talk(null,`${esc(title)}：${esc(t.n)}沒有人出得起底價 ${fm(start)} 萬，流標。`,null,{ms:1400});return null;}
+  const val={};bidders.forEach(q=>{if(isAI(q))val[q.id]=aiVal(q,i);});
+  let act=bidders.map(q=>q.id),price=start,lead=null,guard=0;
+  const upd=()=>{G.auc={i,p:price,l:lead?lead.id:-1,a:act.slice(),b:bidders.map(q=>q.id),t:title,s:seller?seller.id:-1};renderAuc();push();};
+  const done=()=>act.length===0||(lead&&act.length===1&&act[0]===lead.id);
+  upd();snd('card');
+  await talk(null,`<b>${esc(title)}</b>：${esc(t.n)}（市價 ${fm(priceOf(i))} 萬），底價 <b>${fm(start)} 萬</b>，開始競標！`,null,{ms:1500});
+  while(!done()&&guard++<300){
+    if(act.every(id=>isAI(G.players[id]))){ // 剩下都是電腦：直接用「次高價＋10」結算
+      const mins=lead?price+10:price;const arr=act.map(id=>{const q=G.players[id];return{q,v:q===lead?Math.max(val[id]||0,price):(val[id]||0)};}).sort((a,b)=>b.v-a.v);const top=arr[0],sec=arr[1];
+      if(top.q===lead){if(sec&&sec.v>=mins)price=Math.min(top.v,sec.v+10);}
+      else if(top.v>=mins){price=Math.max(mins,sec?Math.min(top.v,sec.v+10):mins);lead=top.q;}
+      act=lead?[lead.id]:[];upd();await sleep(500/spd());break;}
+    for(const pid of act.slice()){
+      if(done())break;if(!act.includes(pid)||(lead&&lead.id===pid))continue;
+      const q=G.players[pid],minBid=lead?price+10:price;let bid=0;
+      if(q.cash>=minBid){
+        if(isAI(q)){if(val[pid]>=minBid)bid=Math.max(minBid,Math.min(val[pid],lead?price+(rnd()<0.6?10:r10(price*0.1)):minBid));}
+        else{const opts=[...new Set([minBid,r10(price+50),r10(price+100)])].filter(v=>v>=minBid);
+          const ch=opts.map((v,k)=>({t:`出價 ${fm(v)} 萬`,pri:k===0,dis:q.cash<v})).concat([{t:'放棄'}]);
+          const k=await ask(q,null,`<b>${esc(title)}</b>：${esc(t.n)}（市價 ${fm(priceOf(i))} 萬）<br>目前 <b>${fm(price)} 萬</b>${lead?`，${esc(lead.name)}領先`:'，還沒人出價'}。${esc(q.name)}要出價嗎？`,ch,{def:ch.length-1});
+          if(k<opts.length&&q.cash>=opts[k])bid=opts[k];}}
+      if(bid>=minBid&&bid>0){price=bid;lead=q;snd('bid');upd();if(isAI(q))await talk(q,`${fm(bid)} 萬！`,null,{ms:650});}
+      else{act.splice(act.indexOf(pid),1);upd();if(isAI(q))await sleep(250/spd());}
+    }
+  }
+  G.auc=null;renderAuc();
+  if(!lead){await talk(null,`${esc(t.n)}沒有人出價，流標。`,null,{ms:1300});refresh();return null;}
+  const st=G.tiles[i];lead.cash-=price;fly(lead,-price);if(seller){seller.cash+=price;setTimeout(()=>fly(seller,price),300);}else{st.m=false;st.l=0;}
+  st.o=lead.id;G.fore=G.fore.filter(j=>j!==i);drawTile(i);setBuilding(i,true);drawSpecials();snd('coin');addNews(`${lead.name}以 ${fm(price)} 萬標下${t.n}（${title}）`);refresh();
+  await talk(lead,`${esc(t.n)}由我以 <b>${fm(price)} 萬</b>得標！`,null,{ms:1500});
+  if(t.g&&ownsGroup(lead.id,t.g))toast(`${lead.name}集滿${GROUPS[t.g].name}，整區過路費 ×${GROUP_BONUS}`);
+  return lead;}
+
+/* ---------- 併購 ---------- */
+function tkPrice(p,i){const st=G.tiles[i];let v=priceOf(i)*(p.mCards?1.1:1.5)+bVal(i)-(st.d||0);if(st.m)v-=redeemCost(i);return Math.max(10,Math.round(v));}
+function canTakeover(p,i){const t=T[i],st=G.tiles[i];if(!BUYABLE(t)||st.o<0||st.o===p.id||G.players[st.o].out)return false;if(G.tk[p.id]===G.round||(G.prot[i]||0)>=G.round)return false;
+  if(t.g)return groupIdx(t.g).some(j=>j!==i&&G.tiles[j].o===p.id);return countType(p.id,t.t)>0;}
+async function takeover(p,i){
+  const t=T[i],st=G.tiles[i],own=G.players[st.o],price=tkPrice(p,i),fee=Math.round(price*0.1),def=Math.round(price*0.3);
+  if(p.cash<price+fee){toast('現金不夠，併購要付出價加一成手續費');return false;}
+  G.tk[p.id]=G.round;const card=p.mCards>0;if(card)p.mCards--;
+  await talk(p,`我要<b>併購</b>${esc(own.name)}的${esc(t.n)}！出價 <b>${fm(price)} 萬</b>${card?'（持併購許可，不能反併購）':''}。`,null,{ms:1600});
+  let block=false;
+  if(!card&&own.cash>=def){
+    if(isAI(own)){const key=(t.g&&ownsGroup(own.id,t.g))||st.l>0||(t.g&&groupIdx(t.g).filter(j=>G.tiles[j].o===own.id).length>=2)||(!t.g&&countType(own.id,t.t)>=2);block=key&&own.cash-def>250;}
+    else{const k=await ask(own,own,`${esc(p.name)}要用 <b>${fm(price)} 萬</b>併購你的<b>${esc(t.n)}</b>（市價 ${fm(priceOf(i))} 萬）。要花 <b>${fm(def)} 萬</b>反併購嗎？`,[{t:`反併購（−${fm(def)} 萬）`,dis:own.cash<def},{t:`接受，收 ${fm(price)} 萬`,pri:true}],{def:1});block=k===0;}}
+  if(block){await pay(own,def,'pot','反併購');const lf=Math.min(p.cash,Math.round(price*0.05));p.cash-=lf;G.pot+=lf;drawTile(PARK);fly(p,-lf);
+    addNews(`${own.name}花 ${fm(def)} 萬擋下${p.name}對${t.n}的併購`);refresh();await talk(own,`想併購我的${esc(t.n)}？門都沒有！`,null,{ms:1500});await talk(p,`可惡，白付了 ${fm(lf)} 萬律師費。`,null,{ms:1200});return false;}
+  p.cash-=price+fee;own.cash+=price;G.pot+=fee;fly(p,-(price+fee));setTimeout(()=>fly(own,price),300);drawTile(PARK);st.o=p.id;G.prot[i]=G.round+2;setBuilding(i,true);drawTile(i);snd('coin');
+  addNews(`${p.name}以 ${fm(price)} 萬併購${own.name}的${t.n}`);refresh();
+  await talk(p,`${esc(t.n)}併購成功！手續費 ${fm(fee)} 萬進了廟口紅包。`,null,{ms:1500});
+  if(t.g&&ownsGroup(p.id,t.g))toast(`${p.name}集滿${GROUPS[t.g].name}`);return true;}
+
+/* ---------- 機會、命運 ---------- */
+function bCount(p){let h=0,b=0;G.tiles.forEach(s=>{if(s.o===p.id){if(s.l>=5)b+=s.l-4;else h+=s.l;}});return[h,b];}
+async function goLand(p,j,d){await moveTo(p,j);await landOn(p,d);}
+function addFx(k,g,u,m){G.fx=G.fx.filter(f=>!(f.k===k&&f.g===g));const f=g?{k,g,u}:{k,u};if(m)f.m=m;G.fx.push(f);T.forEach((t,i)=>BUYABLE(t)&&drawTile(i));push();}
+async function freeBuild(p,half){const cand=T.map((x,j)=>j).filter(j=>canBuild(p,j));if(!cand.length){if(!half){gain(p,50);await talk(p,'沒有可以加蓋的地，建照轉賣得 50 萬。',null,{ms:1300});}return false;}
+  let j=-1;const cost=x=>half?buildCost(x)/2:0;
+  if(isAI(p)){const c=cand.slice().sort((a,b)=>GROUPS[T[b].g].hc-GROUPS[T[a].g].hc)[0];if(p.cash-cost(c)>100)j=c;}
+  else{const o={sel:cand,sk:half?'build':'buildfree',def:1};const k=await ask(p,null,half?'建設公司：可以用<b>半價</b>在你的任一塊地上加蓋一層。':'拿到建築執照：<b>免費</b>在你的任一塊地上加蓋一層。',[{t:half?'半價加蓋':'免費加蓋',pri:true},{t:'不用了'}],o);if(k===0&&cand.includes(o.v))j=o.v;}
+  if(j<0||!canBuild(p,j)||p.cash<cost(j)){if(isAI(p))await talk(p,'先不蓋。',null,{ms:800});return false;}
+  doBuild(p,j,true,cost(j),true);if(cost(j))fly(p,-cost(j));await talk(p,`${esc(T[j].n)}加蓋成${LV[G.tiles[j].l]}！`,null,{ms:1200});return true;}
+const CHANCE=[
+ {t:'愛國獎券中了二獎',d:'領 100 萬。',f:async p=>gain(p,100)},
+ {t:'大家樂簽中明牌',d:'鄰居報的號碼真的開了，領 50 萬。',f:async p=>gain(p,50)},
+ {t:'回起點領薪水',d:'前進到起點，領 200 萬。',f:async p=>{await moveTo(p,0);}},
+ {t:'搭計程車去台北車站',d:'前進到台北車站，經過起點可以領薪水。',f:async(p,d)=>goLand(p,5,d)},
+ {t:'去西門町看電影',d:'前進到漢中街，經過起點可以領薪水。',f:async(p,d)=>goLand(p,18,d)},
+ {t:'到陽明山泡溫泉',d:'前進到陽明山別墅。',f:async(p,d)=>goLand(p,52,d)},
+ {t:'走錯路了',d:'後退三格。',f:async(p,d)=>{await moveSteps(p,-3,true,true);await landOn(p,d);}},
+ {t:'朋友幫你關說',d:'獲得一張「出獄許可證」，可以留著用。',f:async p=>{p.jailCards++;}},
+ {t:'股票大賺一筆',d:'每位玩家都來道賀，各給你 20 萬紅包。',f:async p=>{for(const q of G.players)if(q!==p&&!q.out)await pay(q,20,p,'紅包');}},
+ {t:'颱風過境',d:'修繕房屋：每棟建築付 25 萬，商業大樓每棟 100 萬。',f:async p=>{const [h,b]=bCount(p);await pay(p,h*25+b*100,'pot','颱風修繕');}},
+ {t:'被倒會了',d:'跟的互助會會頭跑了，損失 80 萬。',f:async p=>{await pay(p,80,'pot','倒會');}},
+ {t:'都市更新公告',d:'名下每塊地增值，銀行補貼你每塊地 10 萬。',f:async p=>{const n=G.tiles.filter(s=>s.o===p.id).length;if(n)gain(p,n*10);}},
+ {t:'出差搭飛機',d:'前進到下一個機場，可以接著搭飛機。',f:async(p,d)=>goLand(p,nextOfType(p,'air'),d)},
+ {t:'參加法拍會',d:'前進到下一個法拍中心。',f:async(p,d)=>goLand(p,nextOfType(p,'auction'),d)},
+ {t:'拿到建築執照',d:'免費在你的任一塊地上加蓋一層；沒有地的話，建照轉賣得 50 萬。',f:async p=>{await freeBuild(p,false);}},
+ {t:'年終獎金',d:'公司今年賺錢，領 80 萬。',f:async p=>gain(p,80)},
+ {t:'併購許可',d:'下一次併購只要市價 1.1 倍，對方也不能反併購。',f:async p=>{p.mCards++;}},
+ {t:'北投溫泉觀光熱',d:'北投這一回合和下一回合過路費加倍。',f:async p=>{addFx('fest','teal',G.round+1);addNews('北投溫泉觀光熱，過路費加倍');}},
+ {t:'搭火車去旅行',d:'前進到下一個車站或港口。',f:async(p,d)=>goLand(p,nextOfType(p,'rail'),d)},
+ {t:'地主請客',d:'現金最多的玩家請你吃飯，給你 50 萬。',f:async p=>{const q=G.players.filter(x=>x!==p&&!x.out).sort((a,b)=>b.cash-a.cash)[0];if(q)await pay(q,50,p,'請客');}},
+ {t:'朋友找你合夥開 KTV',d:'出資 200 萬，之後 6 回合每回合分紅 50 萬；但可能被臨檢勒令歇業。',f:async p=>{await offerBiz(p,200,()=>({n:'KTV 分紅',inc:50,left:6,risk:0.12}),{builder:p.cash>700,saver:false,flipper:p.cash>500});}},
+ {t:'地下錢莊找上門',d:'現在借你 500 萬，3 回合後要還 700 萬。',f:async p=>{const yes=isAI(p)?(p.cash<400||(p.ai==='flipper'&&phase()==='boom')):(await ask(p,null,'地下錢莊：現在借你 <b>500 萬</b>，3 回合後要還 <b>700 萬</b>。要借嗎？',[{t:'借 500 萬'},{t:'不借',pri:true}],{def:1}))===0;
+   if(!yes){await talk(p,'這種錢不能借。',null,{ms:900});return;}gain(p,500);p.loans.push({amt:700,due:G.round+3});addNews(`${p.name}向地下錢莊借了 500 萬`);await talk(p,'先拿去週轉，三回合後再說……',null,{ms:1200});}},
+ {t:'預售屋紅單',d:'花 150 萬買一張紅單，2 回合後依房市漲跌轉手：房市漲越多，賺越多。',f:async p=>{await offerBiz(p,150,()=>({n:'預售屋紅單',cost:150,idx0:G.idx,due:G.round+2}),{builder:rnd()<0.5,saver:false,flipper:phase()!=='bust'});}},
+ {t:'參選市議員',d:'花 300 萬參選，一半機會當選：之後 6 回合每回合領 80 萬研究費。',f:async p=>{if(!(await offerBiz(p,300,null,{builder:p.cash>900,saver:false,flipper:p.cash>1100})))return;
+   await talk(null,`開票中……${esc(p.name)}的票數……`,null,{ms:1500});if(rnd()<0.5){p.biz.push({n:'議員研究費',inc:80,left:6,risk:0});addNews(`${p.name}高票當選市議員`);await talk(p,'<b>當選了！</b>謝謝大家支持！',null,{ms:1500});}else{addNews(`${p.name}參選議員落選`);await talk(p,'落選了……300 萬就當繳學費。',null,{ms:1500});}}}];
+const FATE=[
+ {t:'警察臨檢',d:'身上的證件過期了，直接進看守所。',f:async p=>{await sendJail(p);}},
+ {t:'繳房屋稅',d:'每棟建築 40 萬，商業大樓每棟 115 萬。',f:async p=>{const [h,b]=bCount(p);await pay(p,h*40+b*115,'pot','房屋稅');}},
+ {t:'當選里長',d:'請每位玩家吃辦桌，各付 50 萬。',f:async p=>{for(const q of G.players)if(q!==p&&!q.out&&!p.out)await pay(p,50,q,'辦桌');}},
+ {t:'繼承祖產',d:'鄉下的阿公留了一筆錢，領 150 萬。',f:async p=>gain(p,150)},
+ {t:'住院開刀',d:'醫藥費 50 萬。',f:async p=>{await pay(p,50,'pot','醫藥費');}},
+ {t:'公告地價調漲',d:'房市指數上漲 5%。',f:async p=>{bumpIdx(0.05,'公告地價調漲');}},
+ {t:'央行選擇性信用管制',d:'房貸緊縮，房市指數下跌 8%。',f:async p=>{bumpIdx(-0.08,'央行信用管制');}},
+ {t:'捷運路網規劃通過',d:'沿線地價看漲：一個區的地價上漲 15%。',f:async p=>{const owned=[...new Set(T.filter((t,i)=>t.g&&G.tiles[i].o===p.id).map(t=>t.g))];const g=owned.length?pick(owned):pick(Object.keys(GROUPS));G.gm[g]=(G.gm[g]||1)*1.15;addNews(`捷運規劃通過，${GROUPS[g].name}地價 ▲15%`);T.forEach((t,i)=>t.g===g&&drawTile(i));toast(`${GROUPS[g].name}地價上漲 15%`);}},
+ {t:'得到出獄許可證',d:'可以留著用。',f:async p=>{p.jailCards++;}},
+ {t:'中了統一發票',d:'領 20 萬。',f:async p=>gain(p,20)},
+ {t:'違建被檢舉',d:'罰款 60 萬。',f:async p=>{await pay(p,60,'pot','違建罰款');}},
+ {t:'前進到起點',d:'領薪水 200 萬。',f:async p=>{await moveTo(p,0);}},
+ {t:'地震',d:'你名下隨機一棟建築受損，降一級。',f:async p=>{const b=T.map((t,i)=>i).filter(i=>G.tiles[i].o===p.id&&G.tiles[i].l>0);if(!b.length){await talk(p,'還好我沒蓋房子，虛驚一場。',null,{ms:1100});return;}const i=pick(b);G.tiles[i].l--;setBuilding(i);drawTile(i);addNews(`地震，${p.name}的${T[i].n}受損`);refresh();await talk(p,`${esc(T[i].n)}的房子震壞了一層……`,null,{ms:1300});}},
+ {t:'土地徵收',d:'政府徵收你一塊沒有建築的地，以市價 1.2 倍補償。',f:async p=>{const c=T.map((t,i)=>i).filter(i=>G.tiles[i].o===p.id&&!G.tiles[i].m&&!groupBuilt(i));if(!c.length){await talk(p,'沒有可以徵收的地。',null,{ms:1000});return;}const i=pick(c),v=Math.round(priceOf(i)*1.2);G.tiles[i]={o:-1,l:0,m:false};setBuilding(i);drawTile(i);gain(p,v);addNews(`政府徵收${p.name}的${T[i].n}，補償 ${fm(v)} 萬`);await talk(p,`${esc(T[i].n)}被徵收了，拿到補償 <b>${fm(v)} 萬</b>。`,null,{ms:1500});}},
+ {t:'豪雨淹水',d:'你名下的一個區（或隨機一區）淹水，這一回合和下一回合過路費減半。',f:async p=>{const owned=[...new Set(T.filter((t,i)=>t.g&&G.tiles[i].o===p.id).map(t=>t.g))];const g=owned.length?pick(owned):pick(Object.keys(GROUPS));addFx('flood',g,G.round+1);addNews(`豪雨，${GROUPS[g].name}淹水，過路費減半`);toast(`${GROUPS[g].name}淹水，過路費減半`);}},
+ {t:'客運司機罷工',d:'所有車站和港口這一回合和下一回合收不到過路費。',f:async p=>{addFx('strike',null,G.round+1);addNews('客運罷工，車站港口停收過路費');}},
+ {t:'繳遺產稅',d:'繳現金的一成。',f:async p=>{await pay(p,Math.round(p.cash*0.1),'pot','遺產稅');}},
+ {t:'被詐騙集團騙了',d:'損失 100 萬。',f:async p=>{await pay(p,100,'pot','被騙');}},
+ {t:'退稅',d:'國稅局退你 60 萬。',f:async p=>gain(p,60)},
+ {t:'道路改成單行道',d:'被迫迴轉：你的行進方向反過來。',f:async p=>{p.dir=-(p.dir||1);placeTokens();refresh();await talk(p,`改成${p.dir<0?'逆向':'順向'}走了。`,null,{ms:1000});}},
+ {t:'當上廟會主委',d:'你名下的一個區辦廟會，這一回合和下一回合過路費加倍。',f:async p=>{const owned=[...new Set(T.filter((t,i)=>t.g&&G.tiles[i].o===p.id).map(t=>t.g))];if(!owned.length){gain(p,30);await talk(p,'沒有地可以辦廟會，紅包 30 萬收下。',null,{ms:1200});return;}const g=pick(owned);addFx('fest',g,G.round+1);addNews(`${GROUPS[g].name}辦廟會，過路費加倍`);toast(`${GROUPS[g].name}辦廟會，過路費加倍`);}}];
+async function drawCard(p,kind,dice){
+  const deck=kind==='chance'?CHANCE:FATE;let c=null;for(let g=0;g<4&&!c;g++){if(!G[kind]||!G[kind].length)G[kind]=shuffle(range(deck.length));c=deck[G[kind].shift()]||deck[0];if(G.noRed&&c.t==='預售屋紅單')c=null;}if(!c)c=deck[0];snd('card');
+  const txt=`抽到${kind==='chance'?'機會':'命運'}：<b>${esc(c.t)}</b>　${esc(c.d)}`;
+  if(isLocal(p)){bcast({k:'t',w:p.id,x:txt,ms:2400});await cardModal(kind,c);}else await talk(p,txt,null,{ms:isAI(p)?2000:2600});
+  await c.f(p,dice);}
+function cardModal(kind,c){return new Promise(res=>{const ch=kind==='chance';openModal(`<div class="bb"><div class="card"><div class="ck" style="color:${ch?'#c8402f':'#1f4f9a'}">${ch?'機　會':'命　運'}</div><div class="ct">${esc(c.t)}</div><p>${esc(c.d)}</p></div></div><div class="bf"><button class="btn pri" type="button" id="cOk">好</button></div>`,'sm');$('#cOk').onclick=()=>{closeModal();res();};setTimeout(()=>$('#cOk').focus(),30);});}
+function bumpIdx(r,why){G.idxPrev=G.idx;G.idx=clamp(G.idx*(1+r),60,260);addNews(`${why}，房市指數 ${r>=0?'▲':'▼'}${Math.abs(r*100).toFixed(1)}%`);T.forEach((t,i)=>BUYABLE(t)&&drawTile(i));refresh();}
+
+/* ---------- 特殊格 ---------- */
+async function airport(p,i,dice){if(epidemic()){await talk(null,'疫情期間機場停飛，不能搭飛機。',null,{ms:1200});return;}const st=G.tiles[i];const own=st.o>=0&&st.o!==p.id?G.players[st.o]:null;const fare=st.o===p.id?0:Math.round(80*G.idx/100);if(p.cash<fare+50)return;
+  const rank=j=>BUYABLE(T[j])&&G.tiles[j].o<0?0:G.tiles[j].o===p.id?1:2;
+  const dests=T.map((x,j)=>j).filter(j=>j!==i&&j!==GOJ&&j!==JAIL).sort((a,b)=>rank(a)-rank(b)||((a-i+N)%N)-((b-i+N)%N));let dest=-1;
+  if(isAI(p))dest=aiFly(p,fare);
+  else{const o={sel:dests,sk:'tile',def:1};const k=await ask(p,null,`要從<b>${esc(T[i].n)}</b>搭飛機嗎？票價 <b>${fare?fm(fare)+' 萬':'免費（自家機場）'}</b>，可以飛到任何一格，但不會經過起點領薪水。`,[{t:'起飛',pri:true},{t:'不用了'}],o);if(k===0)dest=o.v;}
+  if(dest==null||!(dest>=0&&dest<NT)||dest===i)return;
+  if(fare&&!(await pay(p,fare,own,'機票')))return;
+  await talk(p,`搭飛機前往<b>${esc(T[dest].n)}</b>！`,null,{ms:1100});snd('coin');await jumpTo(p,dest,9,1.2);await landOn(p,dice,{noFly:true});}
+function aiFly(p,fare){if(rnd()<0.35)return -1;const res=(RES[p.ai]||150)+fare;let best=-1,bs=0;
+  T.forEach((t,j)=>{if(t.t!=='prop'||G.tiles[j].o>=0)return;if(p.cash-priceOf(j)<res)return;const others=groupIdx(t.g).filter(x=>x!==j);const sc=others.every(x=>G.tiles[x].o===p.id)?3:others.some(x=>G.tiles[x].o===p.id)?1.5:0;if(sc>bs){bs=sc;best=j;}});
+  return bs>=1.5?best:-1;}
+async function auctionHall(p){G.fore=G.fore.filter(j=>G.tiles[j].o<0);let i=G.fore.length?G.fore[0]:null;
+  if(i==null){await talk(p,'今天沒有法拍物件（只有銀行收回的地才會法拍），領 30 萬出席費。',null,{ms:1400});gain(p,30);return;}
+  await talk(null,`法拍中心今天拍賣<b>${esc(T[i].n)}</b>，底價只要市價五折！`,null,{ms:1400});
+  await auction(i,r10(priceOf(i)*0.5),null,'法拍會');}
+async function buildCo(p){
+  if(T.some((x,j)=>canBuild(p,j))){await freeBuild(p,true);return;}
+  const un=T.map((x,j)=>j).filter(j=>T[j].t==='prop'&&G.tiles[j].o<0);const p90=x=>Math.round(priceOf(x)*0.9);
+  if(!un.length){await talk(p,'建設公司今天沒有案子，喝杯茶就走。',null,{ms:1200});return;}
+  let j=-1;
+  if(isAI(p)){const c=un.filter(x=>aiWantBuy(p,x,p90(x)));j=c.length?c.sort((a,b)=>aiVal(p,b)-aiVal(p,a))[0]:-1;}
+  else{const o={sel:un,sk:'buy90',def:1};const k=await ask(p,null,'建設公司釋出預售屋：任選一塊沒人買的地，<b>九折</b>買下。',[{t:'九折買下',pri:true},{t:'不用了'}],o);if(k===0&&un.includes(o.v))j=o.v;}
+  if(j>=0&&p.cash>=p90(j)&&G.tiles[j].o<0){buyTile(p,j,p90(j));await talk(p,`九折買下${esc(T[j].n)}！`,null,{ms:1200});}
+  else if(isAI(p))await talk(p,'沒有喜歡的。',null,{ms:800});}
+async function stockEx(p){const ph=phase();let amt=0;
+  if(isAI(p)){if(p.ai==='flipper')amt=ph==='boom'?200:p.cash>900?100:0;else if(p.ai==='builder')amt=ph==='boom'&&p.cash>700?100:0;}
+  else{const k=await ask(p,null,`證券號子：要不要買股票？${ph==='boom'?'現在股市熱，':ph==='bust'?'股市在崩盤，':'股市在高檔震盪，'}漲跌全看運氣。`,[{t:'投資 100 萬',dis:p.cash<100},{t:'投資 200 萬',dis:p.cash<200},{t:'不玩',pri:true}],{def:2});amt=[100,200,0][k]||0;}
+  if(!amt||p.cash<amt){await talk(p,'看看就好。',null,{ms:900});return;}
+  p.cash-=amt;fly(p,-amt);snd('pay');refresh();
+  const m=pick({boom:[0,0.5,1.5,2,2.5,3],peak:[0,0.5,1,1.5,2],bust:[0,0,0.5,1,1.5]}[ph]),win=Math.round(amt*m);
+  if(win)gain(p,win);
+  await talk(p,m>=1.5?`股票大漲，${fm(amt)} 萬變成 <b>${fm(win)} 萬</b>！`:m>=1?`股票打平，拿回 <b>${fm(win)} 萬</b>。`:m>0?`被套牢，只拿回 <b>${fm(win)} 萬</b>。`:'股票變壁紙，血本無歸……',null,{ms:1600});
+  if(win!==amt)addNews(`${p.name}在號子${win>amt?'賺':'賠'}了 ${fm(Math.abs(win-amt))} 萬`);}
+
+
+/* ---------- 時代、捷運、委託、商機（中後期的新鮮感） ---------- */
+const ERA=[null,
+  {t:'捷運時代',h:'捷運動工通車，台北進入捷運時代！',d:['延平北路、漢中街、中山北路、世貿中心變成<b>捷運站</b>：過路費 1.5 倍；停在捷運站可以花 20 萬搭捷運到其他站。','高架捷運在北邊通車了。','起點薪水調高到 <b>250 萬</b>。','國稅局開始<b>稽查首富</b>；最窮的玩家經過起點可以領 100 萬紓困金。','市政府委託獎金提高五成，新增「擁有捷運站」委託。']},
+  {t:'泡沫時代',h:'房市泡沫高峰，地標大樓時代來臨！',d:['商業大樓可以再升級成<b>地標大樓</b>：造價是平常的 3 倍，過路費再漲七成。','金融大樓在天際線上落成。','起點薪水調高到 <b>300 萬</b>。','房市漲跌變得更猛，隨時可能崩盤。','新的委託：蓋出地標大樓，獎金加倍。']}];
+const eraGrp=new THREE.Group();scene.add(eraGrp);let trainM=null;
+function applyEraVisuals(anim){
+  while(eraGrp.children.length)eraGrp.remove(eraGrp.children[0]);trainM=null;if(!G||!G.era)return;
+  const parts=[];
+  for(const i of G.mrt||[]){const gb=new GB();gb.box(0.9,0.5,0.55,0xf4efe4,0,0.25,0);gb.box(1.05,0.1,0.75,0x1f6fd6,0,0.55,0.05);gb.box(0.06,0.9,0.06,0x3a3f42,0.6,0.45,0.2);gb.box(0.36,0.36,0.06,0x1f6fd6,0.6,1.0,0.2);gb.box(0.6,0.3,0.04,0x2b3a55,0,0.22,0.28);
+    const m=gb.mesh(true);const f=tileFrame(i);m.position.copy(local(i,0.78,-1.55,0.8));m.rotation.y=f.ry;eraGrp.add(m);parts.push(m);}
+  const Z=-(HALF+2.8),L=HALF+9;const vb=new GB();vb.box(2*L,0.35,1.7,0xd8d2c0,0,2.5,Z);for(const s of [-0.45,0.45])vb.box(2*L,0.08,0.08,0x6b6155,0,2.72,Z+s);
+  for(let x=-L+2;x<=L-2;x+=5.2){vb.box(0.55,2.4,0.7,0xbfc9cc,x,1.2,Z);vb.box(1.6,0.3,0.6,0xbfc9cc,x,2.25,Z);}
+  for(const x of [-L,L]){vb.box(3,0.9,2.4,0xf4efe4,x,3.1,Z);vb.box(3.3,0.15,2.7,0x1f6fd6,x,3.6,Z);}
+  const vm=vb.mesh(true);vm.castShadow=false;eraGrp.add(vm);parts.push(vm);
+  const tb=new GB();for(let k=0;k<3;k++){const x=(k-1)*2.25;tb.box(2.1,0.8,1.0,0xf4efe4,x,3.2,0);tb.box(2.12,0.16,1.02,0x1f6fd6,x,3.0,0);for(let w=0;w<4;w++)tb.box(0.32,0.28,1.04,0x2b3a55,x-0.72+w*0.48,3.32,0);}
+  trainM=tb.mesh(true);trainM.position.z=Z;eraGrp.add(trainM);parts.push(trainM);
+  if(G.era>=2){const gb=new GB(),gl=new GB(),X=-(HALF+22),Zt=-(HALF+22);gb.box(13,4,13,0xd8d2c0,X,2,Zt);
+    for(let k=0;k<10;k++){const y=4+k*7,w=10-k*0.3;gb.box(w,7,w,0x6f9cbf,X,y+3.5,Zt);gb.box(w+1.6,0.7,w+1.6,0x4d7fa6,X,y+6.7,Zt);gb.box(w+0.3,0.4,w+0.3,0xe3a52b,X,y+0.2,Zt);for(let f=0;f<5;f++)gl.box(w*0.86,0.6,0.05,f%2?0xbfd6e6:0xffe9b8,X,y+1.0+f*1.2,Zt+w/2+0.03);}
+    gb.box(6,5,6,0x4d7fa6,X,76.5,Zt);gb.cyl(0.3,0.8,14,0xe3a52b,X,86,Zt,8);gb.sph(1.1,0xd7263d,X,93.5,Zt);
+    const tm=gb.mesh(true);eraGrp.add(tm);parts.push(tm);const gm2=gl.mesh(false,GLOW);gm2.castShadow=false;eraGrp.add(gm2);parts.push(gm2);}
+  if(anim)parts.forEach(m=>{const s0=m.scale.y;m.scale.y=0.01;anims.push({t:0,d:1.2,f:k=>{m.scale.y=Math.max(0.01,s0*(1-Math.pow(1-k,3)));}});});
+}
+function eraHTML(e){return`<div class="bb news"><div class="mast"><b>號外</b><span class="note">城中日報 · ${yearOf(Math.min(G.round,G.max||G.round))}</span></div><h2>${ERA[e].h}</h2><ul class="era">${ERA[e].d.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="bf"><button class="btn pri" type="button" id="eraOk">知道了</button></div>`;}
+async function showcase(e){const s={yaw:camS.yaw,pitch:camS.pitch,dist:camS.dist},ov=overview;overview=true;
+  if(e===1){camS.goal.set(4,3,-(HALF+2.8));camS.pitch=0.5;camS.dist=42;camS.yaw=0.25;}else{camS.goal.set(-(HALF+18),28,-(HALF+18));camS.pitch=0.22;camS.dist=96;camS.yaw=0.78;}
+  toast(e===1?'高架捷運通車了！':'金融大樓落成！',true);await sleep(3200);Object.assign(camS,s);overview=ov;if(!ov&&G){const p=curP();if(p&&tokens[p.id])focusOn(tokens[p.id].position);}}
+async function eraAnnounce(e){
+  hideTalk();snd('build');applyEraVisuals(true);T.forEach((t,i)=>drawTile(i));addNews(`號外：${ERA[e].h}`);refreshJobs();refresh();push(true);await showcase(e);
+  if(G.players.some(isLocal))await new Promise(res=>{openModal(eraHTML(e));$('#modal').dataset.lock='1';let tm=0;const done=()=>{clearTimeout(tm);$('#modal').dataset.lock='';closeModal();res();};$('#eraOk').onclick=done;if(G.net)tm=setTimeout(done,15000);});
+  else await talk(null,`<b>號外：${ERA[e].h}</b>`,null,{ms:3000});}
+async function turnStart(p){
+  if(G.audit===p.id){G.audit=-1;const v=Math.round(netWorth(p)*0.06);if(v>0){await talk(null,`<b>國稅局稽查首富！</b>${esc(p.name)}被追繳稅款 <b>${fm(v)} 萬</b>。`,null,{ms:1800});addNews(`國稅局稽查首富${p.name}，追繳 ${fm(v)} 萬`);if(!(await pay(p,v,'pot','補稅')))return;}}
+  const debt=debtOf(p);if(debt>0){const it=Math.max(1,Math.round(debt*G.rate));await talk(null,`${esc(p.name)}繳房貸利息 <b>${fm(it)} 萬</b>（利率 ${(G.rate*100).toFixed(1)}%）。`,null,{ms:1200});if(!(await pay(p,it,null,'房貸利息')))return;}
+  p.biz=p.biz||[];p.loans=p.loans||[];
+  for(const b of p.biz.slice()){
+    if(b.due){if(b.due<=G.round){p.biz.splice(p.biz.indexOf(b),1);const v=Math.max(0,Math.round(b.cost*Math.pow(G.idx/b.idx0,4)*1.25));
+        if(v)gain(p,v);addNews(`${p.name}的紅單轉手，${v>=b.cost?'賺':'賠'}了 ${fm(Math.abs(v-b.cost))} 萬`);await talk(p,`預售屋紅單轉手：${fm(b.cost)} 萬換回 <b>${fm(v)} 萬</b>${v>b.cost?'，賺到了！':'，虧了……'}`,null,{ms:1600});}continue;}
+    if(b.paid===G.round)continue;b.paid=G.round;
+    if(b.risk&&rnd()<b.risk){p.biz.splice(p.biz.indexOf(b),1);addNews(`${p.name}的${b.n.replace(' 分紅','')}被臨檢，勒令歇業`);await talk(null,`警察臨檢！${esc(p.name)}合夥的 KTV 被勒令歇業，分紅沒了。`,null,{ms:1600});continue;}
+    gain(p,b.inc);toast(`${p.name}領到${b.n} ${b.inc} 萬`);b.left--;if(b.left<=0){p.biz.splice(p.biz.indexOf(b),1);addNews(`${p.name}的${b.n}到期`);}}
+  for(const l of p.loans.slice()){if(l.due<=G.round){p.loans.splice(p.loans.indexOf(l),1);await talk(null,`地下錢莊上門討債：${esc(p.name)}要還 <b>${fm(l.amt)} 萬</b>。`,null,{ms:1600});if(!(await pay(p,l.amt,null,'還地下錢莊')))return;}}
+}
+async function offerBiz(p,cost,mk,aiPref){
+  let yes;if(isAI(p))yes=!!aiPref[p.ai]&&p.cash-cost>250;
+  else yes=(await ask(p,null,`要出 <b>${fm(cost)} 萬</b>嗎？`,[{t:`出 ${fm(cost)} 萬`,pri:true,dis:p.cash<cost},{t:'婉拒'}],{def:1}))===0;
+  if(!yes||p.cash<cost){await talk(p,'這次就算了。',null,{ms:900});return false;}
+  p.cash-=cost;fly(p,-cost);snd('pay');if(mk){p.biz.push(mk());addNews(`${p.name}投資了${mk().n.replace(' 分紅','')}`);}refresh();if(isAI(p)&&mk)await talk(p,'這筆生意我做了！',null,{ms:1000});return true;}
+async function mrtRide(p,i,dice){if(p.cash<60)return;const dests=G.mrt.filter(j=>j!==i);let dest=-1;
+  if(isAI(p)){const c=dests.filter(j=>G.tiles[j].o<0&&aiWantBuy(p,j));dest=c.length&&rnd()<0.7?c[0]:-1;}
+  else{const o={sel:dests,sk:'tile',def:1};const k=await ask(p,null,`<b>${esc(T[i].n)}捷運站</b>：要花 20 萬搭捷運嗎？往前坐到選的站，經過起點照樣領薪水。`,[{t:'搭捷運',pri:true},{t:'不用了'}],o);if(k===0&&dests.includes(o.v))dest=o.v;}
+  if(dest<0)return;if(!(await pay(p,20,null,'捷運票')))return;
+  await talk(p,`搭捷運到<b>${esc(T[dest].n)}</b>！`,null,{ms:1000});const passed=dest<p.pos;await jumpTo(p,dest,2,0.9);if(passed)passGo(p);await landOn(p,dice,{noRide:true});}
+const levels=p=>G.tiles.reduce((a,s)=>a+(s.o===p.id?s.l:0),0);
+const nTiles=p=>G.tiles.filter(s=>s.o===p.id).length;
+const nGroups=p=>Object.keys(GROUPS).filter(g=>ownsGroup(p.id,g)).length;
+const JOB={
+  group:{t:a=>`集滿${GROUPS[a]?GROUPS[a].name:''}區`,ok:(p,a)=>!!GROUPS[a]&&ownsGroup(p.id,a),rw:300,arg:al=>{const c=Object.keys(GROUPS).filter(g=>!al.some(q=>ownsGroup(q.id,g))&&groupIdx(g).some(i=>G.tiles[i].o>=0||rnd()<0.5));return c.length?pick(c):null;}},
+  build:{t:a=>`名下房子累計 ${a} 層`,ok:(p,a)=>levels(p)>=a,rw:300,arg:al=>Math.max(4,...al.map(levels))+4},
+  tower:{t:()=>'蓋出一棟商業大樓',ok:p=>G.tiles.some(s=>s.o===p.id&&s.l>=5),rw:400},
+  transit:{t:()=>'擁有 3 個車站港口或機場',ok:p=>countType(p.id,'rail')+countType(p.id,'air')>=3,rw:300},
+  util:{t:()=>'擁有 2 家公用事業',ok:p=>countType(p.id,'util')>=2,rw:250},
+  cash:{t:a=>`現金達到 ${fm(a)} 萬`,ok:(p,a)=>p.cash>=a,rw:200,arg:al=>Math.round((Math.max(...al.map(q=>q.cash))+700)/100)*100},
+  land:{t:a=>`名下擁有 ${a} 塊地`,ok:(p,a)=>nTiles(p)>=a,rw:250,arg:al=>Math.max(5,...al.map(nTiles))+2},
+  two:{t:()=>'同時集滿兩個區',ok:p=>nGroups(p)>=2,rw:500},
+  mrt:{era:1,t:()=>'擁有一個捷運站',ok:p=>(G.mrt||[]).some(i=>G.tiles[i].o===p.id),rw:300},
+  landmark:{era:2,t:()=>'蓋出一棟地標大樓',ok:p=>G.tiles.some(s=>s.o===p.id&&s.l>=6),rw:600}};
+const jobText=j=>JOB[j.k]?JOB[j.k].t(j.a):'';
+function refreshJobs(){
+  G.jobs=(G.jobs||[]).filter(j=>JOB[j.k]&&j.u>=G.round);const al=G.players.filter(q=>!q.out);let guard=0;
+  while(G.jobs.length<2&&guard++<40){
+    const keys=Object.keys(JOB).filter(k=>(JOB[k].era||0)<=G.era&&!G.jobs.some(j=>j.k===k));if(!keys.length)break;
+    const fresh=keys.filter(k=>(JOB[k].era||0)===G.era&&G.era>0);const k=fresh.length&&rnd()<0.8?fresh[0]:pick(keys);
+    const tpl=JOB[k],a=tpl.arg?tpl.arg(al):0;if(a==null||al.some(q=>tpl.ok(q,a)))continue;
+    const j={k,a,rw:Math.round(tpl.rw*(1+0.5*G.era)),u:G.round+6};G.jobs.push(j);addNews(`市政府委託：${jobText(j)}，獎金 ${fm(j.rw)} 萬`);}
+  renderJobs();}
+async function checkJobs(){let got=false;const n=G.players.length;
+  for(const j of G.jobs.slice()){const tpl=JOB[j.k];if(!tpl)continue;
+    for(let d=0;d<n;d++){const p=G.players[(G.cur+d)%n];if(p.out||!tpl.ok(p,j.a))continue;
+      G.jobs=G.jobs.filter(x=>x!==j);got=true;gain(p,j.rw);snd('build');addNews(`${p.name}完成市政府委託「${jobText(j)}」，領獎金 ${fm(j.rw)} 萬`);
+      await talk(p,`完成市政府委託「<b>${esc(jobText(j))}</b>」！獎金 <b>${fm(j.rw)} 萬</b>。`,null,{ms:1900});break;}}
+  if(got)refreshJobs();renderJobs();}
+function renderJobs(){const b=$('#jobs');const js=G&&!G.over&&G.jobs?G.jobs:[];$('#jobN').textContent=js.length;$('#jobN').hidden=!js.length;
+  if(!js.length){b.hidden=true;return;}
+  b.innerHTML=`<h4><span>市政府委託</span><span class="note">先完成先領</span></h4>`+js.map(j=>`<div class="jb">${esc(jobText(j))}<br><b>${fm(j.rw)} 萬</b> <small>· 剩 ${Math.max(1,j.u-G.round+1)} 回合</small></div>`).join('');b.hidden=false;}
+function bizHTML(p){const bz=(p.biz||[]).map(b=>b.due?`${esc(b.n)}：第 ${b.due} 回合轉手（買進時指數 ${(+b.idx0||0).toFixed(0)}）`:`${esc(b.n)}：每回合 ${fm(b.inc)} 萬，還有 ${b.left} 回合`);
+  const ln=(p.loans||[]).map(l=>`<span class="up">地下錢莊：第 ${l.due} 回合要還 ${fm(l.amt)} 萬</span>`);const all=bz.concat(ln);
+  return all.length?`<div class="bizl"><b>事業與借款</b><br>${all.join('<br>')}</div>`:'';}
+function jobsModal(){if(!G)return;const p=meP();const js=G.jobs||[];
+  openModal(`<div class="bh"><h3>市政府委託</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb">
+    ${js.length?js.map(j=>`<div class="seat" style="grid-template-columns:minmax(0,1fr) auto"><div><b>${esc(jobText(j))}</b><div class="note">剩 ${Math.max(1,j.u-G.round+1)} 回合</div></div><b style="color:var(--accent)">${fm(j.rw)} 萬</b></div>`).join(''):'<p class="note">目前沒有委託。</p>'}
+    <p class="note">誰先達成條件，回合結束時就領獎金；過期或被領走後，市政府會發新的委託。${G.era?`現在是<b>${ERA[G.era].t}</b>。`:''}</p>${p?bizHTML(p):''}</div>`,'sm');$('#mx').onclick=closeModal;}
+
+/* ---------- 時事年表（1985 → 2025） ---------- */
+function idxShift(r){G.idxPrev=G.idx;G.idx=clamp(G.idx*(1+r),60,300);T.forEach((t,i)=>BUYABLE(t)&&drawTile(i));}
+const aliveP=()=>G.players.filter(q=>!q.out);
+const TL=[
+ {y:1987,h:'台股衝破萬點，熱錢湧進房市',d:['房市指數上漲 8%。','股市大熱，證券號子比較好賺。'],f:async()=>{idxShift(.08);}},
+ {y:1990,h:'台股從萬點崩跌，利率攀升',d:['房市指數下跌 12%。','房貸利率升到 9%。'],f:async()=>{idxShift(-.12);G.rate=.09;}},
+ {y:1996,era:1},
+ {y:1999,h:'九二一大地震',d:['每位玩家最高的一棟房子震壞一層。','政府發放重建紓困金，每人 100 萬。','房市指數下跌 6%。'],f:async()=>{for(const p of aliveP()){const b=range(NT).filter(i=>G.tiles[i].o===p.id&&G.tiles[i].l>0).sort((a,c)=>G.tiles[c].l-G.tiles[a].l)[0];if(b!=null){G.tiles[b].l--;setBuilding(b);drawTile(b);}gain(p,100);}idxShift(-.06);}},
+ {y:2001,h:'網路泡沫破裂，央行連續降息；科技廠進駐內湖',d:['房貸利率降到 5%。','內湖南港地價上漲 20%。'],f:async()=>{G.rate=.05;G.gm.purple=+((G.gm.purple||1)*1.2).toFixed(3);T.forEach((t,i)=>t.g==='purple'&&drawTile(i));}},
+ {y:2003,h:'SARS 疫情爆發',d:['這一回合所有過路費打七折。','機場停飛：不能搭飛機，機場也收不到過路費。','房市指數下跌 5%。'],f:async()=>{addFx('epi',null,G.round,0.7);idxShift(-.05);}},
+ {y:2004,era:2},
+ {y:2007,h:'高鐵通車，南港內湖成為新門戶',d:['內湖南港這一回合和下一回合過路費加倍。','內湖南港地價上漲 10%。'],f:async()=>{G.gm.purple=+((G.gm.purple||1)*1.1).toFixed(3);addFx('fest','purple',G.round+1);}},
+ {y:2008,h:'全球金融海嘯',d:['房市指數重挫 15%。','央行急降息，房貸利率降到 2%。','股市崩盤，每位玩家的現金縮水 5%。'],f:async()=>{idxShift(-.15);G.rate=.02;for(const p of aliveP()){const v=Math.round(Math.max(0,p.cash)*0.05);if(v){p.cash-=v;fly(p,-v);}}}},
+ {y:2011,h:'奢侈稅上路，政府打房',d:['之後把地賣回銀行只能拿市價七成。','房市指數下跌 4%。'],f:async()=>{G.sellR=0.7;idxShift(-.04);}},
+ {y:2014,h:'低利率推升房價，無殼蝸牛再上街',d:['房市指數上漲 6%。','現金最少的玩家領青年首購補貼 200 萬。'],f:async()=>{idxShift(.06);const q=aliveP().sort((a,b)=>a.cash-b.cash)[0];if(q)gain(q,200);}},
+ {y:2016,h:'房地合一稅上路',d:['每位玩家依名下土地市值繳 3% 的稅。','房市指數下跌 5%。'],f:async()=>{idxShift(-.05);for(const p of aliveP()){const v=Math.round(T.reduce((a,x,j)=>a+(G.tiles[j].o===p.id?priceOf(j):0),0)*0.03);if(v)await pay(p,v,'pot','房地合一稅');}}},
+ {y:2020,h:'COVID-19 疫情爆發',d:['這一回合和下一回合所有過路費打五折。','機場停飛：不能搭飛機，機場也收不到過路費。','央行降息，房貸利率降到 1.5%；房市指數下跌 8%。'],f:async()=>{addFx('epi',null,G.round+1,0.5);G.rate=.015;idxShift(-.08);}},
+ {y:2021,h:'紓困振興：政府發錢，資金氾濫推升房價',d:['每位玩家領 300 萬紓困金。','疫後房價狂飆：房市指數上漲 15%。'],f:async()=>{for(const p of aliveP())gain(p,300);idxShift(.15);}},
+ {y:2022,h:'美國暴力升息，國內缺工缺料',d:['房貸利率升到 3%。','蓋房子的造價上漲 30%。','房市指數下跌 4%。'],f:async()=>{G.rate=.03;G.costMul=+((G.costMul||1)*1.3).toFixed(2);idxShift(-.04);}},
+ {y:2023,h:'平均地權條例修法，預售屋禁止換約',d:['手上的預售屋紅單只能按原價退還。','機會卡不會再出現預售屋紅單。','房市指數下跌 3%。'],f:async()=>{G.noRed=true;for(const p of aliveP()){for(const b of (p.biz||[]).slice())if(b.due){p.biz.splice(p.biz.indexOf(b),1);gain(p,b.cost);}}idxShift(-.03);}}];
+function newsHTML(k){const e=TL[k];return`<div class="bb news"><div class="mast"><b>時事快報</b><span class="note">城中日報 · ${e.y} 年</span></div><h2>${e.h}</h2><ul class="era">${e.d.map(x=>`<li>${x}</li>`).join('')}</ul></div><div class="bf"><button class="btn pri" type="button" id="eraOk">知道了</button></div>`;}
+async function runEvent(k){const e=TL[k];if(!e)return;
+  if(e.era){if(e.era>G.era){G.era=e.era;if(!G.mrt.length)G.mrt=MRT_T.slice();await eraAnnounce(e.era);}return;}
+  hideTalk();snd('card');addNews(`${e.y} 年：${e.h}`);push(true);
+  if(G.players.some(isLocal))await new Promise(res=>{openModal(newsHTML(k));$('#modal').dataset.lock='1';let tm=0;const done=()=>{clearTimeout(tm);$('#modal').dataset.lock='';closeModal();res();};$('#eraOk').onclick=done;if(G.net)tm=setTimeout(done,15000);});
+  else await talk(null,`<b>時事快報：${e.h}</b>`,null,{ms:2600});
+  await e.f();G.hist.push(+G.idx.toFixed(1));refresh();T.forEach((t,i)=>drawTile(i));push(true);}
+/* ---------- 圓環迴轉 ---------- */
+function dirScore(p,d){const P=[0,0,1,2,3,4,5,6,5,4,3,2,1];let s=0;
+  for(let k=2;k<=12;k++){const j=((p.pos+d*k)%N+N)%N,t=T[j],st=G.tiles[j];let v=0;
+    if(BUYABLE(t)){if(st.o<0)v=aiWantBuy(p,j)?priceOf(j)*0.3:0;else if(st.o!==p.id&&!st.m)v=-rentOf(j,7);}
+    else if(t.t==='gojail')v=-150;else if(t.t==='tax')v=-100;else if(t.t==='park')v=G.pot*0.8;
+    s+=v*P[k]/36;}return s;}
+async function roundabout(p){const d=p.dir||1;let flip;
+  if(isAI(p))flip=dirScore(p,-d)>dirScore(p,d)+15;
+  else flip=(await ask(p,null,`${esc(p.name)}開進<b>${esc(T[p.pos].n)}</b>，現在是<b>${d<0?'逆向（倒著走）':'順向'}</b>。要迴轉嗎？`,[{t:d<0?'迴轉回順向':'迴轉，改成逆向',pri:true},{t:'維持原方向'}],{def:1}))===0;
+  if(!flip){await talk(p,'照原路走。',null,{ms:800});return;}
+  p.dir=-d;placeTokens();snd('step');addNews(`${p.name}在${T[p.pos].n}迴轉，改成${p.dir<0?'逆向':'順向'}行駛`);refresh();
+  await talk(p,`在${esc(T[p.pos].n)}迴轉！之後${p.dir<0?'<b>倒著走</b>':'恢復順向'}。`,null,{ms:1300});}
+
+/* ---------- 回合 ---------- */
+async function sendJail(p){snd('jail');p.jail=1;G.dbl=0;await jumpTo(p,JAIL);toast(`${p.name}被送進看守所`);addNews(`${p.name}被請進看守所喝咖啡`);refresh();}
+async function landOn(p,dice,o={}){
+  const i=p.pos,t=T[i],st=G.tiles[i];
+  if(BUYABLE(t)){
+    if(st.o<0)await offerBuy(p,i);
+    else if(st.o!==p.id){const own=G.players[st.o];
+      if(st.m)await talk(null,`${esc(t.n)}正在抵押中，${esc(own.name)}收不到過路費。`,null,{ms:1400});
+      else{const amt=rentOf(i,dice),fx=fxOf(i);
+        if(amt<=0)await talk(null,`${esc(t.n)}${fx.length?FX_N[fx[0].k]:''}，這次不用付過路費。`,null,{ms:1400});
+        else{await talk(own,`這裡是我的${esc(t.n)}${st.l?`（${LV[st.l]}）`:''}，過路費 <b>${fm(amt)} 萬</b>${fx.length?`（${FX_N[fx[0].k]}）`:''}，謝謝！`,null,{ms:1700});await pay(p,amt,own,`過路費：${t.n}`);}}}
+    else if(t.t==='prop')await upgradeHere(p,i);
+    else await talk(p,`回到自己的${esc(t.n)}。`,null,{ms:1000});
+    if(t.t==='air'&&!o.noFly&&!p.out&&!G.over&&!p.jail)await airport(p,i,dice);
+    if(G.era>=1&&G.mrt.includes(i)&&!o.noRide&&!p.out&&!G.over&&!p.jail)await mrtRide(p,i,dice);}
+  else if(t.t==='chance'||t.t==='fate')await drawCard(p,t.t,dice);
+  else if(t.t==='tax'){
+    if(t.k==='land'){const v=Math.round(T.reduce((a,x,j)=>a+(G.tiles[j].o===p.id?priceOf(j):0),0)*0.05);
+      if(!v)await talk(p,'名下沒有土地，土地增值稅免繳。',null,{ms:1100});else{await talk(null,`土地增值稅：名下土地市值的 5%，<b>${fm(v)} 萬</b>。`,null,{ms:1500});await pay(p,v,'pot','土地增值稅');}}
+    else{const ten=Math.round(netWorth(p)*0.1);let k=ten<200?1:0;if(!isAI(p))k=await ask(p,null,`綜合所得稅：付 200 萬，或是總資產的 10%（${fm(ten)} 萬）。`,[{t:'付 200 萬'},{t:`付 ${fm(ten)} 萬`}],{def:ten<200?1:0});await pay(p,k?ten:200,'pot','所得稅');}}
+  else if(t.t==='gojail'){await talk(null,`<b>警察臨檢！</b>${esc(p.name)}被請回看守所。`,null,{ms:1500});await sendJail(p);}
+  else if(t.t==='park'){if(G.pot>0){const v=G.pot;G.pot=0;drawTile(PARK);await talk(p,`在廟口夜市撿到紅包 <b>${fm(v)} 萬</b>！`,null,{ms:1500});gain(p,v);}else await talk(p,'在廟口夜市吃碗蚵仔麵線，休息一下。',null,{ms:1200});}
+  else if(t.t==='jail')await talk(p,'經過看守所，只是來探監。',null,{ms:1000});
+  else if(t.t==='auction')await auctionHall(p);
+  else if(t.t==='build')await buildCo(p);
+  else if(t.t==='stock')await stockEx(p);
+  else if(t.t==='round')await roundabout(p);
+  else if(t.t==='lantern')await lanternSq(p);
+  else if(t.t==='view'){p.pick=1;refresh();await talk(p,'坐纜車上觀景台，整個台北盆地一覽無遺：<b>下一次擲骰可以自己決定點數</b>（2～12）。',null,{ms:1900});}
+}
+async function lanternSq(p){let yes;
+  if(isAI(p))yes=p.cash>250;else yes=(await ask(p,null,'天燈廣場：要花 <b>30 萬</b>放一盞天燈許願嗎？',[{t:'放天燈（30 萬）',pri:true,dis:p.cash<30},{t:'看看就好'}],{def:1}))===0;
+  if(!yes||p.cash<30){await talk(p,'看大家放天燈就好。',null,{ms:900});return;}
+  p.cash-=30;fly(p,-30);refresh();launchLantern();snd('card');const r=rnd();
+  if(r<0.35){await talk(p,'天燈飛得又高又穩：<b>財運亨通</b>！',null,{ms:1400});gain(p,150);}
+  else if(r<0.55){await talk(p,'許願<b>事業順利</b>：免費加蓋一層！',null,{ms:1300});await freeBuild(p,false);}
+  else if(r<0.72){p.jailCards++;await talk(p,'許願<b>出入平安</b>：獲得一張出獄許可證。',null,{ms:1400});}
+  else if(r<0.88){p.pick=1;refresh();await talk(p,'許願<b>心想事成</b>：下一次擲骰可以自己決定點數！',null,{ms:1500});}
+  else await talk(p,'天燈飄到一半就落下來了……什麼事都沒發生。',null,{ms:1400});}
+async function upgradeHere(p,i){const t=T[i],st=G.tiles[i];
+  if(st.m){await talk(p,`${esc(t.n)}還在抵押中，要先贖回才能加蓋。`,null,{ms:1300});return;}
+  if(st.l>=maxLv()){await talk(p,`${esc(t.n)}已經是${LV[st.l]}，${st.l<6?'泡沫時代才能再升級成地標大樓':'蓋到頂了'}。`,null,{ms:1300});return;}
+  const cost=buildCost(i),nl=st.l+1,now=rentOf(i,7);const nxt=Math.round(rentLv(t,nl)*G.idx/100*(G.gm[t.g]||1)*(ownsGroup(p.id,t.g)?GROUP_BONUS:1)*(G.era>=1&&G.mrt.includes(i)?1.5:1)*fxMul(i));
+  let go;if(isAI(p)){const bres={builder:150,saver:420,flipper:260}[p.ai]||250;go=p.cash-cost>=bres;}
+  else go=(await ask(p,null,`回到自己的<b>${esc(t.n)}</b>（${LV[st.l]}）。要花 <b>${fm(cost)} 萬</b>加蓋成<b>${LV[nl]}</b>嗎？過路費 ${fm(now)} → <b>${fm(nxt)} 萬</b>。`,[{t:`加蓋（−${fm(cost)} 萬）`,pri:true,dis:p.cash<cost},{t:'先不蓋'}],{def:1}))===0;
+  if(!go||p.cash<cost){await talk(p,isAI(p)?'先存點錢，下次再蓋。':'先不蓋。',null,{ms:900});return;}
+  doBuild(p,i,true);fly(p,-cost);await talk(p,`${esc(t.n)}蓋成<b>${LV[st.l]}</b>了！`,null,{ms:1200});}
+async function offerBuy(p,i){
+  const t=T[i],price=priceOf(i);let buy=false;
+  if(!isAI(p)){
+    for(;;){const ch=[{t:p.cash>=price?`買下（${fm(price)} 萬）`:'錢不夠',pri:true,dis:p.cash<price},{t:'不買'}];if(isLocal(p))ch.push({t:'看權狀'});
+      const k=await ask(p,null,`<b>${esc(t.n)}</b>還沒有人買。地價 <b>${fm(price)} 萬</b>${t.t==='prop'?`，過路費 ${fm(Math.round(t.r[0]*G.idx/100*(G.gm[t.g]||1)))} 萬起`:''}。要買嗎？`,ch,{def:1});
+      if(k===2){await showDeed(i,true);continue;}buy=k===0;break;}}
+  else{buy=aiWantBuy(p,i);if(!buy)await talk(p,`${esc(t.n)}啊……先不買。`,null,{ms:900});}
+  if(buy&&p.cash>=price){buyTile(p,i,price);if(isAI(p))await talk(p,`${esc(t.n)}我買了！`,null,{ms:1100});else toast(`${p.name}買下${t.n}`);return;}
+}
+async function jailPhase(p){
+  if(!isAI(p)){const opts=[{t:`付 ${BAIL} 萬保釋`,dis:p.cash<BAIL},{t:'擲出對子就出去',pri:true}];if(p.jailCards)opts.push({t:'用出獄許可證'});
+    const k=await ask(p,null,`${esc(p.name)}在看守所（第 ${p.jail} 天）。怎麼出去？`,opts,{def:p.jailCards?2:1});
+    if(k===0){await pay(p,BAIL,'pot','保釋金');p.jail=0;placeTokens();push();return'free';}
+    if(k===2){p.jailCards--;p.jail=0;placeTokens();push();toast('用了出獄許可證');return'free';}
+    if(!isAI(p))await humanWait(p,'roll');}
+  else{if(p.jailCards){p.jailCards--;p.jail=0;placeTokens();await talk(p,'我有出獄許可證。',null,{ms:1000});return'free';}
+    if(p.cash>400&&(!G.max||G.round<G.max*0.7)){await pay(p,BAIL,'pot','保釋金');p.jail=0;placeTokens();await talk(p,'交保出去！',null,{ms:900});return'free';}}
+  const [a,b]=await rollDice();
+  if(a===b){p.jail=0;await talk(p,`擲出對子 ${a}、${b}，出獄！`,null,{ms:1100});hideDice();placeTokens();await moveSteps(p,(a+b)*(p.dir||1));await landOn(p,a+b);return'moved';}
+  p.jail++;if(p.jail>3){await talk(p,`第三天還是沒擲出對子，只好付 ${BAIL} 萬保釋。`,null,{ms:1300});const ok=await pay(p,BAIL,'pot','保釋金');if(!ok)return'stay';p.jail=0;hideDice();placeTokens();await moveSteps(p,(a+b)*(p.dir||1));await landOn(p,a+b);return'moved';}
+  await talk(p,`${a}、${b}，沒有對子，繼續待著。`,null,{ms:1100});hideDice();push();return'stay';
+}
+async function playTurn(p){
+  G.dbl=0;refresh();const tk=tokens[p.id];focusOn(tk.position,30);
+  await turnStart(p);if(p.out||G.over)return;
+  if(!isAI(p))toast(`輪到 ${p.name}`);
+  let goRoll=true;
+  if(p.jail){const r=await jailPhase(p);if(G.over||p.out)return;goRoll=r==='free';}
+  while(goRoll&&!p.out&&!G.over){
+    goRoll=false;
+    if(!isAI(p))await humanWait(p,'roll',G.dbl?'對子，再擲一次！':'輪到我了，按「擲骰子」。');
+    else await sleep(500/spd());
+    let a,b,picked=false;
+    if(p.pick){p.pick=0;picked=true;refresh();let v;
+      if(isAI(p))v=aiPickNum(p);
+      else{const o={sel:range(11).map(k=>k+2),sk:'num',def:0,selDef:7};await ask(p,null,'自選點數：這次要走幾步？',[{t:'就走這麼多',pri:true}],o);v=o.v!=null?clamp(o.v|0,2,12):7;}
+      a=Math.min(6,Math.max(1,Math.ceil(v/2)+(v>2&&v<12&&v%2===0?1:0)));b=v-a;if(b>6){b=6;a=v-6;}if(b<1){b=1;a=v-1;}
+      bcast({k:'d',a,b});await rollDice([a,b]);}
+    else [a,b]=await rollDice();
+    const dbl=a===b&&!picked;
+    await talk(p,`${picked?'自選':'擲出'} <b>${a}</b>、<b>${b}</b>，${(p.dir||1)<0?'倒退':'走'} ${a+b} 步${dbl?'（對子！）':''}`,null,{ms:900});
+    if(dbl&&++G.dbl>=3){await talk(null,`連續三次對子，太囂張了！${esc(p.name)}被警察盯上。`,null,{ms:1500});hideDice();await sendJail(p);break;}
+    hideDice();await moveSteps(p,(a+b)*(p.dir||1));await landOn(p,a+b);
+    if(dbl&&!p.out&&!p.jail&&!G.over){goRoll=true;toast('擲出對子，再擲一次！');}
+  }
+  hideTalk();if(p.out||G.over)return;
+  if(!isAI(p))await humanWait(p,'end');else await aiManage(p);
+}
+function nextPlayer(){const n=G.players.length;let k=G.cur;do{k=(k+1)%n;}while(G.players[k].out&&k!==G.cur);if(k<=G.cur)roundEnd();G.cur=k;}
+const ROUND_NEWS=[
+{ph:'boom',t:'預售屋排隊抽籤，一屋難求',r:.04},{ph:'boom',t:'信義計畫區外資進駐',g:'green',m:1.15},
+ {ph:'boom',t:'東區百貨開幕，頂好商圈人擠人',g:'yellow',m:1.12},{ph:'boom',t:'中山北路商機熱絡',g:'red',m:1.1},{ph:'boom',t:'陽明山別墅成為富豪新寵',g:'navy',m:1.1},
+ {ph:'boom',t:'開放出國觀光，機場人潮洶湧',fx:'tour'},{ph:'boom',t:'北投溫泉旅館重新開張',g:'teal',m:1.12},
+ {ph:'any',t:'迪化街年貨大街開張',g:'lb',fx:'fest'},{ph:'any',t:'龍山寺香火鼎盛，華西街觀光客增加',g:'brown',m:1.12},{ph:'any',t:'捷運路網規劃公布，士林天母看漲',g:'orange',m:1.1},
+ {ph:'any',t:'颱風過境，萬華老屋受損',g:'brown',m:.94},{ph:'any',t:'中華商場傳出拆遷計畫',g:'pink',m:.9},{ph:'any',t:'西門町電影街人潮回流',g:'pink',m:1.1},
+ {ph:'any',t:'颱風豪雨，北投淹水',g:'teal',fx:'flood'},{ph:'any',t:'客運司機罷工',fx:'strike'},{ph:'any',t:'中山北路廟會遶境',g:'red',fx:'fest'},{ph:'any',t:'地震！老房子受損',quake:true},
+ {ph:'peak',t:'財政部調高土地增值稅',r:-.04},{ph:'peak',t:'無殼蝸牛夜宿忠孝東路，抗議房價太高',r:-.05,g:'yellow',m:.95},
+{ph:'bust',t:'央行緊縮房貸，建商推案縮手',r:-.06},{ph:'bust',t:'梅雨季，大稻埕積水',g:'lb',fx:'flood'}];
+function roundEnd(){
+  G.round++;const ph=phase();let r=.03+(rnd()-.5)*.05*(G.era>=2?1.8:1); // 長期向上，時事負責上下震盪
+  G.fx=G.fx.filter(f=>f.u>=G.round);
+  const yr=yearNum(G.round);TL.forEach((e,k)=>{if(e.y<=yr&&!G.evDone.includes(k)){G.evDone.push(k);G.evPend.push(k);}});
+  for(const k in G.prot)if(G.prot[k]<G.round)delete G.prot[k];
+  if(G.era>=1&&rnd()<0.35){const al=G.players.filter(q=>!q.out).sort((a,b)=>netWorth(b)-netWorth(a));if(al.length>1)G.audit=al[0].id;}
+  refreshJobs();
+  let head='';if(rnd()<.45){const pool=ROUND_NEWS.filter(n=>n.ph===ph||n.ph==='any');const n=pick(pool);head=n.t;if(n.r)r+=n.r;if(n.g&&n.m)G.gm[n.g]=+clamp((G.gm[n.g]||1)*n.m,.6,2.2).toFixed(3);
+    if(n.fx)G.fx.push(n.g?{k:n.fx,g:n.g,u:G.round}:{k:n.fx,u:G.round});
+    if(n.quake){const b=T.map((t,i)=>i).filter(i=>G.tiles[i].l>0);if(b.length){const i=pick(b);G.tiles[i].l--;setBuilding(i);head+=`，${T[i].n}的房子震壞一層`;}else head+='，所幸沒有災情';}}
+  G.idxPrev=G.idx;G.idx=clamp(G.idx*(1+r),60,260);G.hist.push(+G.idx.toFixed(1));if(G.hist.length>80)G.hist.shift();
+  addNews(`${yearOf(G.round)}：${head?head+'，':''}房市指數 ${r>=0?'▲':'▼'}${Math.abs(r*100).toFixed(1)}%`);
+  T.forEach((t,i)=>BUYABLE(t)&&drawTile(i));
+  if(G.max&&G.round>G.max)G.over=true;
+}
+async function gameLoop(){
+  while(!G.over){
+    const p=G.players[G.cur];
+    if(!p.out){await playTurn(p);if(!G.over)await checkJobs();}
+    if(G.over)break;
+    setBtns({});nextPlayer();refresh();while(G.evPend&&G.evPend.length&&!G.over)await runEvent(G.evPend.shift());save();
+  }
+  setBtns({});hideTalk();if(!G.net)LS.del(SAVE_KEY);G.wait=G.ask=G.raise=G.auc=null;renderAuc();push(true);endGame();
+}
+
+/* ---------- 電腦玩家 ---------- */
+const RES={builder:120,saver:320,flipper:150};
+function aiWantBuy(p,i,price){const t=T[i];price=price==null?priceOf(i):price;if(p.cash<price)return false;let res=RES[p.ai]||150;
+  const others=t.g?groupIdx(t.g).filter(j=>j!==i):[];const completes=t.g&&others.every(j=>G.tiles[j].o===p.id);const blocks=t.g&&others.some(j=>G.tiles[j].o>=0&&G.tiles[j].o!==p.id&&others.every(k=>G.tiles[k].o===G.tiles[j].o));
+  if(completes||blocks)res*=0.4;
+  if(p.ai==='flipper'){if(G.idx<115)res=60;if(G.idx>175&&!completes)return false;}
+  if(p.ai==='saver'&&price>260&&!completes)return false;
+  return p.cash-price>=res;}
+async function aiManage(p){
+  let acted=false;
+  for(const i of range(NT)){const st=G.tiles[i];if(st.o===p.id&&st.m&&p.cash-redeemCost(i)>(RES[p.ai]||150)*2){doRedeem(p,i);acted=true;}if(st.o===p.id&&st.d&&p.cash-st.d>(RES[p.ai]||150)*3){doRepay(p,i);acted=true;}}
+  const bres={builder:150,saver:420,flipper:260}[p.ai]||250;
+  const groups=Object.keys(GROUPS).filter(g=>ownsGroup(p.id,g)).sort((a,b)=>GROUPS[b].hc-GROUPS[a].hc);
+  for(const g of []){let guard=0;while(guard++<16&&canBuildMore(p)){const cand=groupIdx(g).filter(i=>canBuild(p,i));if(!cand.length)break;const i=cand[0];if(p.cash-buildCost(i)<bres)break;doBuild(p,i,true);acted=true;await sleep(260/spd());}}
+  if(acted){await talk(p,pick(['蓋起來！地就是要蓋房子才值錢。','房子蓋好了，過路費要漲了。','又多了幾間，下一站收租。']),null,{ms:1300});}
+  if(p.ai==='flipper'&&G.idx>=150){const sells=range(NT).filter(i=>G.tiles[i].o===p.id&&canSellLand(p,i)&&!(T[i].g&&ownsGroup(p.id,T[i].g))&&!G.tiles[i].m);if(sells.length){const i=sells[0];const v=sellVal(i);doSellLand(p,i);await talk(p,`指數這麼高，${esc(T[i].n)}先賣掉，入袋 ${fm(v)} 萬。`,null,{ms:1600});}}
+  if(rnd()<0.3&&!G.over)await aiTakeover(p);
+  if(rnd()<0.35&&!G.over)await aiOffer(p);
+}
+async function aiTakeover(p){
+  for(const g of Object.keys(GROUPS)){const gi=groupIdx(g);const mine=gi.filter(i=>G.tiles[i].o===p.id);if(mine.length!==gi.length-1)continue;
+    const i=gi.find(j=>G.tiles[j].o!==p.id);if(G.tiles[i].o<0||!canTakeover(p,i))continue;const price=tkPrice(p,i);if(p.cash-price*1.1<(RES[p.ai]||150)*1.5)continue;
+    await takeover(p,i);return;}}
+async function aiOffer(p){
+  for(const g of Object.keys(GROUPS)){const gi=groupIdx(g);const mine=gi.filter(i=>G.tiles[i].o===p.id);const miss=gi.filter(i=>G.tiles[i].o!==p.id);
+    if(!mine.length||miss.length!==1)continue;const i=miss[0],st=G.tiles[i];if(st.o<0||groupBuilt(i))continue;const owner=G.players[st.o];if(isAI(owner)||owner.out)continue;
+    const price=Math.round(priceOf(i)*rr(1.4,1.8));if(p.cash<price+100)continue;
+    const k=await ask(owner,p,`${esc(owner.name)}，你的<b>${esc(T[i].n)}</b>賣我吧？我出 <b>${fm(price)} 萬</b>（市價 ${fm(priceOf(i))} 萬）。`,[{t:'成交',pri:true},{t:'不賣'}],{def:1});
+    if(k===0&&G.tiles[i].o===owner.id){transfer(i,owner,p,price);toast(`${T[i].n}賣給了${p.name}`);}else await talk(p,'好吧，改天再談。',null,{ms:900});return;}
+}
+function aiRaise(p,amt){let guard=0;
+  while(p.cash<amt&&guard++<60){
+    const ln=range(NT).filter(i=>canLoan(p,i)).sort((a,c)=>loanMax(c)-loanMax(a))[0];if(ln!=null){doLoan(p,ln);continue;}
+    const b=range(NT).filter(i=>canSellB(p,i)).sort((a,c)=>G.tiles[c].l-G.tiles[a].l)[0];if(b!=null){doSellB(p,b);continue;}
+    const m=range(NT).filter(i=>canMort(p,i)).sort((a,c)=>(T[a].g&&ownsGroup(p.id,T[a].g)?1:0)-(T[c].g&&ownsGroup(p.id,T[c].g)?1:0))[0];if(m!=null){doMort(p,m);continue;}
+    const s=range(NT).filter(i=>canSellLand(p,i)&&sellVal(i)>0)[0];if(s!=null){doSellLand(p,s);continue;}
+    break;}
+  if(p.cash>=amt)addNews(`${p.name}調頭寸，賣房抵押湊錢`);return p.cash>=amt;}
+
+/* ---------- 視窗 ---------- */
+let mgOpen=false;
+function openModal(html,size){const b=$('#box');b.className='box paper'+(size?' '+size:'');b.innerHTML=html;$('#modal').hidden=false;}
+function closeModal(){$('#modal').hidden=true;mgOpen=false;}
+function deedHTML(i){const t=T[i],st=G.tiles[i],own=st.o>=0?G.players[st.o]:null;const col=tileCol(i);
+  let rows='';const k=G.idx/100*(t.g?(G.gm[t.g]||1):1);
+  if(t.t==='prop'){rows=range(G.era>=2?7:6).map(l=>`<div class="row ${own&&st.l===l?'cur':''}"><span>${l===0?'空地':LV[l]}</span><b>${fm(Math.round(rentLv(t,l)*k))} 萬</b></div>`).join('')+`<div class="row"><span>集滿${GROUPS[t.g].name}整區</span><b>過路費 ×${GROUP_BONUS}</b></div><div class="row"><span>停在這裡加蓋一層${G.era>=2?'（地標 3 倍）':''}</span><b>${fm(Math.round(GROUPS[t.g].hc*(G.costMul||1)))} 萬</b></div>`+(G.era>=1&&G.mrt.includes(i)?`<div class="row cur"><span>捷運站</span><b>過路費 ×1.5</b></div>`:'');}
+  else if(t.t==='rail')rows=RAIL_R.map((v,n)=>`<div class="row"><span>擁有 ${n+1} 個車站港口</span><b>${fm(Math.round(v*G.idx/100))} 萬</b></div>`).join('');
+  else if(t.t==='air')rows=AIR_R.map((v,n)=>`<div class="row"><span>擁有 ${n+1} 座機場</span><b>${fm(Math.round(v*G.idx/100))} 萬</b></div>`).join('')+`<div class="row"><span>停在機場可以搭飛機（票價）</span><b>${fm(Math.round(80*G.idx/100))} 萬</b></div>`;
+  else rows=UTIL_X.map((v,n)=>`<div class="row"><span>擁有 ${n+1} 家</span><b>骰子點數 × ${v} 萬</b></div>`).join('');
+  const fx=fxOf(i);
+  return`<div class="deed"><div class="dh" style="background:${col}"><small>土 地 所 有 權 狀</small><b>${esc(t.n)}</b><small>${t.d?esc(t.d)+' · '+GROUPS[t.g].name+'區':TYPE_N[t.t]}</small></div><div class="db">
+    <div class="row"><span>目前地價（指數 ${G.idx.toFixed(0)}）</span><b>${fm(priceOf(i))} 萬</b></div>${fx.length?`<div class="row cur"><span>本回合事件</span><b>${fx.map(f=>FX_N[f.k]).join('、')}</b></div>`:''}${rows}
+    <div class="row"><span>抵押可借 / 贖回（空地）</span><b>${fm(mortVal(i))} / ${fm(redeemCost(i))} 萬</b></div>${t.t==='prop'?`<div class="row"><span>房屋貸款（有建物，利率 ${(G.rate*100).toFixed(1)}%）</span><b>${st.d?'已貸 '+fm(st.d):'可借 '+fm(loanMax(i))} 萬</b></div>`:''}<div class="row"><span>賣回銀行（市價${G.sellR<0.8?'七':'八'}成）</span><b>${fm(Math.round(priceOf(i)*(G.sellR||0.8)))} 萬</b></div>${(G.prot[i]||0)>=G.round?`<div class="row cur"><span>併購保護期</span><b>到第 ${G.prot[i]} 回合</b></div>`:''}
+    <div class="own">${own?`<span class="gdot" style="background:${own.col}"></span>業主：<b>${esc(own.name)}</b>${st.l?` · ${LV[st.l]}`:''}${st.m?' <span class="stamp">抵押中</span>':''}`:`<span class="note">還沒有人買${G.fore.includes(i)?'（法拍物件）':''}</span>`}</div></div></div>`;}
+function showDeed(i,wait){const t=T[i];
+  if(!BUYABLE(t)){const D={go:`經過或停在起點，領薪水 ${salary()} 萬（順向、逆向都算）。`,jail:'被警察臨檢或擲出三次對子會被關進來。出獄：付 50 萬、用出獄許可證，或擲出對子。路過只是探監。',park:'所得稅、罰款、保釋金、併購手續費都會存進廟口的紅包裡，停在這裡就能全部拿走。',gojail:'停在這格，直接進看守所，不能經過起點領薪水。',
+      lantern:'天燈廣場（平溪支線）：花 30 萬放天燈許願，可能財運亨通、免費加蓋、拿到出獄許可證，或下一次擲骰自選點數。',view:'纜車觀景台（貓空纜車線）：停在這裡，下一次擲骰可以自己決定要走幾步。',round:'圓環：停在這裡可以選擇迴轉，之後改成倒著走；再停到圓環可以轉回來。倒著走經過起點一樣領薪水。',chance:'抽一張機會卡：獎券、搭飛機、建照、併購許可……多半是好運。',fate:'抽一張命運卡：政策、稅金、地震、淹水、罷工和意外。',tax:t.k==='land'?'土地增值稅：繳名下所有土地市值的 5%。':'付 200 萬，或是總資產的 10%，自己選。',
+      auction:'法拍中心：拍賣被銀行收回的地（破產玩家的地），底價市價五折，所有玩家一起喊價。沒有法拍物件時領 30 萬出席費。',build:'建設公司：可以半價在你的任一塊地上加蓋一層；名下沒有地的話，可以九折買一塊沒人買的地。',stock:'證券號子：投資 100 或 200 萬買股票。股市熱的時候容易賺，崩盤時容易賠。'}[t.t];
+    openModal(`<div class="bh"><h3>${esc(t.n)}</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb"><p style="font-size:16px;line-height:1.7;margin:0">${D}</p></div>`,'sm');$('#mx').onclick=closeModal;return Promise.resolve();}
+  return new Promise(res=>{openModal(`<div class="bh"><h3>權狀</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb">${deedHTML(i)}</div>`,'sm');$('#mx').onclick=()=>{closeModal();res();};});}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal'&&!$('#modal').dataset.lock){const x=$('#mx');x&&x.click();}});
+
+/* ---------- 管理地產（含籌錢、收購、併購、拍賣、房市） ---------- */
+let mgTab='mine',raiseCtx=null,mgKey='';
+function meP(){if(!G)return null;if(NET.role==='guest')return NET.seat>=0?G.players[NET.seat]:null;if(raiseCtx){const q=G.players[raiseCtx.pid];if(isLocal(q))return q;}return curP();}
+function myRaise(){if(!G)return null;if(NET.role==='guest')return G.raise&&G.raise.pid===NET.seat?G.raise:null;return raiseCtx&&isLocal(G.players[raiseCtx.pid])?raiseCtx:null;}
+function canManage(){if(!G||G.over)return false;const p=meP();if(!p||p.out)return false;if(myRaise())return true;if(NET.role==='guest')return !!(G.wait&&G.wait.pid===p.id&&!G.ask&&!G.auc);return isLocal(p)&&!!(waitBtn&&waitBtn.local)&&!busy;}
+function openManage(tab){if(!canManage())return;if(tab)mgTab=tab;renderManage();}
+function marketHTML(){const h=G.hist,mx=Math.max(...h)*1.05,mn=Math.min(...h)*0.95,W=600,H=90;const pts=h.map((v,k)=>`${(k/(Math.max(1,h.length-1)))*W},${H-(v-mn)/(mx-mn||1)*H}`).join(' ');
+  const fx=G.fx.length?G.fx.map(f=>`<span class="fxl">${f.g?GROUPS[f.g].name:f.k==='strike'?'車站港口':f.k==='epi'?'全台':'機場'}・${f.k==='epi'?`疫情 ×${f.m||0.5}`:FX_N[f.k]}</span>`).join(''):'<span class="note">沒有</span>';
+  const fo=G.fore.filter(j=>G.tiles[j].o<0);
+  return`<p style="margin:0 0 4px">房市指數 <b style="font-family:var(--f-led);font-size:28px;color:var(--accent)">${G.idx.toFixed(1)}</b>　地價、過路費都跟著指數走。</p><svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="房市指數走勢"><polyline points="${pts}" fill="none" stroke="#c8402f" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>
+    <p style="margin:8px 0 2px"><b>${yearOf(Math.min(G.round,G.max||G.round))}</b>　${G.era?ERA[G.era].t:'開發初期'}　<b>起點薪水</b> ${salary()} 萬　<b>房貸利率</b> ${(G.rate*100).toFixed(1)}%　<b>造價</b> ×${(G.costMul||1).toFixed(2)}　<b>賣回銀行</b> ${Math.round((G.sellR||0.8)*100)}%</p><p style="margin:2px 0"><b>本回合事件</b>　${fx}</p><p style="margin:2px 0 8px"><b>法拍物件</b>　${fo.length?fo.map(j=>esc(T[j].n)).join('、'):'<span class="note">沒有</span>'}</p>
+    <table class="q"><tr><th>區域</th><th>地價倍數</th><th>最便宜一塊</th></tr>${Object.keys(GROUPS).map(g=>{const gi=groupIdx(g);return`<tr><td><span class="gdot" style="background:${GROUPS[g].col}"></span>${GROUPS[g].name}</td><td>${(G.gm[g]||1).toFixed(2)}×</td><td>${fm(Math.min(...gi.map(priceOf)))} 萬</td></tr>`;}).join('')}</table>
+    <h4 style="margin:12px 0 4px">最近的新聞</h4>${G.news.map(s=>`<p class="note" style="margin:2px 0">・${esc(s)}</p>`).join('')}`;}
+function renderManage(){
+  const p=meP();if(!p){closeModal();return;}const rc=myRaise();const need=rc?rc.amt-p.cash:0;
+  let body=`<div class="tabs"><button class="tab ${mgTab==='mine'?'on':''}" data-t="mine" type="button">我的地產</button><button class="tab ${mgTab==='buy'?'on':''}" data-t="buy" type="button" ${rc?'disabled':''}>收購・併購</button><button class="tab ${mgTab==='mkt'?'on':''}" data-t="mkt" type="button">房市行情</button></div>`;
+  if(rc)body+=`<div class="need">要付 <b>${fm(rc.amt)} 萬</b>（${esc(rc.why)}），現金 ${fm(p.cash)} 萬，${need>0?`還差 <b>${fm(need)} 萬</b>。申請房貸、拆房子、抵押或賣地湊錢。`:'錢夠了，可以付款。'}</div>`;
+  const tab=rc&&mgTab==='buy'?'mine':mgTab;
+  if(tab==='mine'){const mine=range(NT).filter(i=>G.tiles[i].o===p.id);body+=bizHTML(p);
+    if(!mine.length)body+='<p class="note">你還沒有任何地產。停在沒人買的格子就可以買，也可以參加競標。</p>';
+    else{body+='<div class="tw"><table class="q"><tr><th>地產</th><th>現況</th><th>地價</th><th>過路費</th><th>操作</th></tr>';
+      mine.forEach(i=>{const t=T[i],st=G.tiles[i];
+        const a=[];if(false)a.push(`<button class="btn sm pri" data-a="b" data-i="${i}" type="button" ${p.cash<buildCost(i)||rc||!canBuildMore(p)?'disabled':''}>${st.l===5?'升級地標':'加蓋'} −${buildCost(i)}</button>`);
+        if(canSellB(p,i))a.push(`<button class="btn sm" data-a="sb" data-i="${i}" type="button">拆賣 +${GROUPS[t.g].hc*(st.l===6?3:1)/2}</button>`);
+        if(canMort(p,i))a.push(`<button class="btn sm" data-a="m" data-i="${i}" type="button">抵押 +${mortVal(i)}</button>`);
+        if(canLoan(p,i))a.push(`<button class="btn sm" data-a="ln" data-i="${i}" type="button">房貸 +${fm(loanMax(i))}</button>`);
+        if(st.d)a.push(`<button class="btn sm" data-a="rp" data-i="${i}" type="button" ${p.cash<st.d||rc?'disabled':''}>還房貸 −${fm(st.d)}</button>`);
+        if(st.m)a.push(`<button class="btn sm" data-a="r" data-i="${i}" type="button" ${p.cash<redeemCost(i)||rc?'disabled':''}>贖回 −${redeemCost(i)}</button>`);
+        if(canSellLand(p,i)&&sellVal(i)>0)a.push(`<button class="btn sm" data-a="s" data-i="${i}" type="button">賣回銀行 +${fm(sellVal(i))}</button>`);
+        if(!rc&&canAuctionOwn(p,i))a.push(`<button class="btn sm" data-a="au" data-i="${i}" type="button">公開拍賣</button>`);
+        body+=`<tr><td><span class="gdot" style="background:${tileCol(i)}"></span>${esc(t.n)}<span class="sec">${t.g?GROUPS[t.g].name+(ownsGroup(p.id,t.g)?' · 已集滿':''):TYPE_N[t.t]}${G.mrt.includes(i)&&G.era?' · 捷運站':''}</span></td><td>${st.m?'<span class="up">抵押中</span>':t.t==='prop'?LV[st.l]:'—'}${st.d?`<span class="sec up">房貸 ${fm(st.d)}</span>`:''}</td><td>${fm(priceOf(i))}</td><td>${st.m?'—':fm(rentOf(i,7))}${t.t==='util'?'<span class="sec">以 7 點計</span>':''}</td><td><div class="acts">${a.join('')||'<span class="note">—</span>'}</div></td></tr>`;});
+      body+=`</table></div><p class="note"><b>加蓋</b>：停在自己的地上，就可以當場加蓋一層（每次一層）。集滿一整區，整區過路費 ×${GROUP_BONUS}。<br>空地可以<b>抵押</b>（抵押中收不到過路費）；有房子的地可以申請<b>房貸</b>，最多借地價加建物造價的五成，照樣收過路費，但每回合要按利率（現在 ${(G.rate*100).toFixed(1)}%）付息。<br>賣回銀行拿市價${(G.sellR||0.8)<0.8?'七':'八'}成（要先扣掉房貸）；「公開拍賣」由其他玩家喊價，底價市價六成。</p>`;}}
+  else if(tab==='buy'){const list=range(NT).filter(i=>{const st=G.tiles[i];return st.o>=0&&st.o!==p.id&&!G.players[st.o].out;});
+    const used=G.tk[p.id]===G.round;
+    if(!list.length)body+='<p class="note">目前別人手上沒有地。</p>';
+    else{body+=`<div class="tw"><table class="q"><tr><th>地產</th><th>業主</th><th>市價</th><th>協商收購（萬）</th><th>強制併購</th></tr>`;
+      list.forEach(i=>{const t=T[i],st=G.tiles[i],o=G.players[st.o];const sug=Math.round(priceOf(i)*1.3);
+        const offer=groupBuilt(i)?'<span class="note">有建築</span>':`<div class="offer" style="justify-content:flex-end"><input type="number" min="1" step="10" value="${sug}" id="of${i}" aria-label="出價"><button class="btn sm pri" data-a="o" data-i="${i}" type="button">出價</button></div>`;
+        const tk=(G.prot[i]||0)>=G.round?'<span class="note">保護期</span>':canTakeover(p,i)?`<button class="btn sm" data-a="tk" data-i="${i}" type="button" ${p.cash<tkPrice(p,i)*1.1?'disabled':''}>併購 ${fm(tkPrice(p,i))}</button>`:'<span class="note">—</span>';
+        body+=`<tr><td><span class="gdot" style="background:${tileCol(i)}"></span>${esc(t.n)}<span class="sec">${st.l?LV[st.l]:''}${st.m?' 抵押中':''}</span></td><td>${esc(o.name)}</td><td>${fm(priceOf(i))}</td><td>${offer}</td><td>${tk}</td></tr>`;});
+      body+=`</table></div><p class="note"><b>協商收購</b>：對方同意才成交，電腦玩家通常要市價 1.3 倍以上。<br><b>強制併購</b>：同一區（或同類交通、公用事業）你已經有一塊，就能用市價 1.5 倍＋建築造價強行買下，另付一成手續費；對方可以花出價的三成「反併購」擋下，擋下時你要付 5% 律師費。每回合限一次${used?'（本回合已用過）':''}；剛被併購的地有 2 回合保護期。${p.mCards?`<br>你有 ${p.mCards} 張併購許可：只要 1.1 倍，對方不能反併購。`:''}</p>`;}}
+  else body+=marketHTML();
+  const foot=rc?`<button class="btn" type="button" id="mBk">宣告破產</button><button class="btn pri" type="button" id="mPay" ${p.cash<rc.amt?'disabled':''}>付款 ${fm(rc.amt)} 萬</button>`:`<button class="btn pri" type="button" id="mx2">完成</button>`;
+  openModal(`<div class="bh"><h3>${rc?'籌錢付款':'管理地產'} · 現金 ${fm(p.cash)} 萬</h3>${rc?'':'<button class="x" type="button" id="mx" aria-label="關閉">×</button>'}</div><div class="bb">${body}</div><div class="bf">${foot}</div>`);
+  mgOpen=true;$('#modal').dataset.lock=rc?'1':'';
+  $('#box').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{mgTab=b.dataset.t;renderManage();});
+  $('#box').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>mgAct(b.dataset.a,+b.dataset.i));
+  if($('#mx'))$('#mx').onclick=closeModal;if($('#mx2'))$('#mx2').onclick=closeModal;
+  if(rc){const fin=ok=>{$('#modal').dataset.lock='';closeModal();if(NET.role==='guest'){NET.raiseSent=Date.now();sendIntent({a:ok?'pay':'bk'});return;}const r=raiseCtx;raiseCtx=null;G.raise=null;r.res(ok);};
+    $('#mPay').onclick=()=>fin(true);$('#mBk').onclick=()=>fin(false);}
+}
+async function mgAct(a,i){const p=meP();if(!p)return;
+  if(NET.role==='guest'){const d={a,i};if(a==='o'){const v=Math.round(+$('#of'+i).value||0);if(v<=0||v>p.cash){toast(v>p.cash?'現金不夠':'請輸入出價',true);return;}d.v=v;}
+    if(a==='o'||a==='tk'||a==='au')closeModal();sendIntent(d);return;}
+  if(a==='ln'){if(canLoan(p,i))doLoan(p,i);}else if(a==='rp'){if(!myRaise())doRepay(p,i);}else if(a==='sb')doSellB(p,i);else if(a==='m')doMort(p,i);else if(a==='r')doRedeem(p,i);else if(a==='s')doSellLand(p,i);
+  else if(a==='o'||a==='tk'||a==='au'){let v=0;if(a==='o'){v=Math.round(+$('#of'+i).value||0);if(v<=0||v>p.cash){toast(v>p.cash?'現金不夠':'請輸入出價',true);return;}}
+    closeModal();const owner=G.players[G.tiles[i].o];
+    await busyRun(()=>a==='o'?tradeOffer(p,owner,i,v):a==='tk'?takeover(p,i):auction(i,r10(priceOf(i)*0.6),p,'公開拍賣'));
+    if(canManage())renderManage();return;}
+  renderManage();}
+async function tradeOffer(p,owner,i,v){
+  const t=T[i];let ok;
+  if(!isAI(owner)){const k=await ask(owner,owner,`${esc(p.name)}想用 <b>${fm(v)} 萬</b>買你的<b>${esc(t.n)}</b>（市價 ${fm(priceOf(i))} 萬）。${esc(owner.name)}，你同意嗎？`,[{t:'同意',pri:true},{t:'不同意'}],{def:1});ok=k===0;if(!ok)await talk(owner,'不賣。',null,{ms:900});}
+  else{let need=priceOf(i)*1.3;if(t.g){const gi=groupIdx(t.g);const theirs=gi.filter(j=>G.tiles[j].o===owner.id).length;if(theirs===gi.length)need=priceOf(i)*3;else if(theirs===gi.length-1)need*=1.4;if(gi.filter(j=>G.tiles[j].o===p.id).length===gi.length-1)need*=1.3;}
+    if(owner.ai==='flipper'&&G.idx>150)need*=0.9;if(owner.ai==='saver')need*=1.1;need=Math.round(need);
+    ok=v>=need;await talk(owner,ok?`${fm(v)} 萬？成交！`:`${fm(v)} 萬太少了，至少要 <b>${fm(need)} 萬</b>才考慮。`,null,{ms:1800});}
+  if(ok&&G.tiles[i].o===owner.id&&p.cash>=v){transfer(i,owner,p,v);toast(`${p.name}買下${t.n}`);}}
+function raiseHuman(p,amt,why){
+  if(liquid(p)<amt)return ask(p,null,`${esc(p.name)}要付 ${fm(amt)} 萬（${esc(why)}），但把所有地產賣掉也湊不出來……`,[{t:'宣告破產'}],{def:0}).then(()=>false);
+  return new Promise(res=>{raiseCtx={pid:p.id,amt,why,res};G.raise={pid:p.id,amt,why:String(why)};if(isLocal(p)){mgTab='mine';renderManage();}refresh();push(true);});}
+
+/* ---------- 結局 ---------- */
+function endGame(){
+  const rank=G.players.slice().sort((a,b)=>(a.out-b.out)||netWorth(b)-netWorth(a));const w=rank[0];
+  const titles=['地產大亨','包租公','小地主','無殼蝸牛'];
+  const btns=NET.role==='guest'?`<button class="btn pri" type="button" id="eT">離開房間</button>`:NET.role==='host'?`<button class="btn" type="button" id="eT">解散房間</button><button class="btn pri" type="button" id="eN">同一房間再來一局</button>`:`<button class="btn" type="button" id="eT">回到標題</button><button class="btn pri" type="button" id="eN">再玩一局</button>`;
+  openModal(`<div class="bb news"><div class="mast"><b>號外</b><span class="note">城中日報 · ${yearOf(Math.min(G.round,G.max||G.round))}</span></div>
+    <h2>${esc(w.name)}稱霸台北房地產，成為地產大亨</h2>
+    <div class="tw"><table class="q lt"><tr><th>名次</th><th>玩家</th><th>總資產</th><th>地產</th><th>稱號</th></tr>${rank.map((p,k)=>`<tr><td>${k+1}</td><td><span class="gdot" style="background:${p.col}"></span>${esc(p.name)}</td><td>${p.out?'破產':fm(netWorth(p))+' 萬'}</td><td>${G.tiles.filter(s=>s.o===p.id).length} 塊</td><td>${p.out?'無殼蝸牛':titles[Math.min(k,3)]}</td></tr>`).join('')}</table></div>
+    <p class="note" style="margin-top:10px">最後房市指數 ${G.idx.toFixed(1)}。${G.idx>140?'泡沫還在，地主們笑開懷。':G.idx<100?'泡沫破了，手上現金多的人才是贏家。':'房市持平，收租才是王道。'}</p></div>
+    <div class="bf">${btns}</div>`);
+  $('#modal').dataset.lock='1';
+  $('#eT').onclick=()=>{$('#modal').dataset.lock='';closeModal();toTitle();};
+  if($('#eN'))$('#eN').onclick=()=>{$('#modal').dataset.lock='';if(NET.role==='host')hostBackToLobby();else setupScreen();};
+}
+
+/* ---------- 存檔 ---------- */
+function save(){if(G&&!G.over&&!G.net)LS.set(SAVE_KEY,G);}
+function restoreVisuals(){applyEraVisuals(false);T.forEach((t,i)=>{drawTile(i);setBuilding(i);});buildTokens();G.players.forEach(p=>{if(p.out){tokens[p.id].visible=false;labels[p.id].style.display='none';}});refresh();renderMarquee();renderAuc();}
+function clearBoard(){tokens.forEach(t=>t&&scene.remove(t));labels.forEach(l=>l.remove());tokens.length=0;labels.length=0;bldMesh.forEach((m,i)=>{if(m){scene.remove(m);bldMesh[i]=null;}});
+  const g=G;G=null;applyEraVisuals(false);renderJobs();T.forEach((t,i)=>drawTile(i));drawLED();hideDice();hideTalk();setBtns({});$('#auc').hidden=true;$('#stat').hidden=true;return g;}
+
+/* ---------- 開新局 ---------- */
+let cfgSeats=null,cfgRounds=20;
+function setupScreen(){
+  cfgSeats=cfgSeats||SEATS.map((s,k)=>({...s,on:true,human:k===0}));
+  const seatRow=(s,k)=>`<div class="seat"><canvas width="96" height="96" data-face="${s.human?HUMAN_LOOK[k]:s.look}"></canvas><div><input type="text" maxlength="6" value="${esc(s.name)}" data-k="${k}" aria-label="玩家 ${k+1} 名字"><div class="note" style="margin-top:2px">${s.vn}${s.human?'':' · '+AI_DESC[s.ai]}</div></div>
+    <div class="seg" data-k="${k}">${k===0?'':`<button type="button" data-v="off" class="${!s.on?'on':''}">不參加</button>`}<button type="button" data-v="ai" class="${s.on&&!s.human?'on':''}" ${k===0?'hidden':''}>電腦</button><button type="button" data-v="hu" class="${s.on&&s.human?'on':''}">真人</button></div></div>`;
+  const render=()=>{openModal(`<div class="bh"><h3>開新局</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb">${cfgSeats.map(seatRow).join('')}
+    <p style="margin:10px 0 6px"><b>遊戲長度</b></p><div class="seg" id="segR" style="display:inline-flex">${[[12,'12 回合'],[20,'20 回合'],[0,'不限，破產為止']].map(([v,l])=>`<button type="button" data-v="${v}" class="${cfgRounds===v?'on':''}">${l}</button>`).join('')}</div>
+    <p class="note" style="margin-top:10px">每人起始資金 ${fm(START)} 萬。整局從 1985 年走到 2025 年，一路會遇上股市萬點、九二一、SARS、金融海嘯、疫情紓困等真實時事。回合用完時，總資產最多的人獲勝。這裡的多位真人玩家輪流用同一台裝置；要各自用自己的裝置，請回標題選「代碼連線 PK」。</p></div>
+    <div class="bf"><button class="btn pri" type="button" id="sGo">開始</button></div>`);
+    $('#box').querySelectorAll('[data-face]').forEach(c=>drawFace(c,c.dataset.face));
+    $('#box').querySelectorAll('input[data-k]').forEach(inp=>inp.oninput=()=>{cfgSeats[+inp.dataset.k].name=inp.value.trim()||SEATS[+inp.dataset.k].name;});
+    $('#box').querySelectorAll('.seat .seg').forEach(sg=>sg.onclick=e=>{const b=e.target.closest('button');if(!b)return;const s=cfgSeats[+sg.dataset.k];s.on=b.dataset.v!=='off';s.human=b.dataset.v==='hu';render();});
+    $('#segR').onclick=e=>{const b=e.target.closest('button');if(!b)return;cfgRounds=+b.dataset.v;render();};
+    $('#mx').onclick=closeModal;
+    $('#sGo').onclick=()=>{const on=cfgSeats.filter(s=>s.on);if(on.length<2){toast('至少要兩位玩家',true);return;}if(!on.some(s=>s.human)){toast('至少要一位真人玩家',true);return;}closeModal();if(G)clearBoard();startGame({seats:cfgSeats.map((s,k)=>({...s,look:s.human?HUMAN_LOOK[k]:s.look})),rounds:cfgRounds});};};
+  render();
+}
+function startGame(cfg){newGame(cfg);enterGame();}
+function enterGame(){
+  $('#title').hidden=true;$('#hud').hidden=false;camS.auto=0;camS.pitch=0.92;camS.dist=30;overview=false;$('#bView').classList.remove('on');
+  Object.assign(G,{wait:null,ask:null,raise:null,auc:null,fx:G.fx||[],fore:G.fore||[],tk:G.tk||{},wseq:G.wseq||0,askId:G.askId||0,era:G.era||0,mrt:G.mrt||[],jobs:G.jobs||[],audit:G.audit==null?-1:G.audit,eraPend:0,rate:G.rate||0.06,costMul:G.costMul||1,sellR:G.sellR||0.8,bt:G.bt||{},prot:G.prot||{},evDone:G.evDone||[],evPend:G.evPend||[],noRed:!!G.noRed});
+  G.players.forEach(p=>{p.biz=p.biz||[];p.loans=p.loans||[];p.dir=p.dir||1;});if(!G.jobs.length)refreshJobs();
+  T.forEach((t,i)=>{G.tiles[i]=G.tiles[i]||{o:-1,l:0,m:false};});restoreVisuals();renderNetChip();save();push(true);
+  gameLoop().catch(err=>{console.error(err);toast('發生錯誤：'+err.message,true);});
+}
+function toTitle(){if(NET.role)netLeave();clearBoard();$('#hud').hidden=true;$('#title').hidden=false;camS.auto=0.08;camS.goal.set(0,0.8,0);camS.dist=46;camS.pitch=0.7;
+  $('#bCont').hidden=!LS.get(SAVE_KEY);renderNetChip();}
+function help(){openModal(`<div class="bh"><h3>怎麼玩</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb note" style="font-size:15px;color:var(--ink)">
+  <p><b>目標</b>：回合結束時總資產最多，或讓其他人都破產。</p>
+  <p><b>每回合</b>：擲兩顆骰子走。停在沒人買的地可以買下；不買就留著，之後停到的人才能買。停在別人的地要付過路費。擲出對子再擲一次，連續三次對子會被送進看守所。經過起點領薪水。</p>
+  <p><b>棋盤</b>：56 格主線加 2 條支線、13 個區，外加 4 個車站港口（含南港高鐵站）、2 座機場、3 家公用事業。停在機場可以付票價搭飛機；停在<b>建成圓環、敦化圓環</b>可以迴轉，改成倒著走。</p>
+  <p><b>支線</b>：兩條支線斜穿中間的公園。<b>平溪支線</b>從南邊的命運格岔出去，接回士林夜市，比主線近 7 步，沿線有菁桐老街、十分瀑布、猴硐貓村和天燈廣場。<b>貓空纜車線</b>從頂好商圈岔出去，接回基隆港，可以避開警察臨檢，沿線有貓空茶園、指南宮、樟山寺和纜車觀景台（下一次擲骰自選點數）。經過岔路口時可以選要不要轉進去；倒著走也能從另一頭進出。</p>
+  <p><b>時事年表</b>：整局從 1985 年走到 2025 年，會依年份遇到真實時事：股市萬點與崩盤、九二一、SARS、高鐵通車、金融海嘯、奢侈稅、房地合一、COVID 疫情、紓困振興、升息缺料、平均地權修法。它們會改變房價、利率、造價和賣地收入。</p>
+  <p><b>併購限制</b>：每人每回合最多併購 1 次；剛被併購的地有 2 回合保護期。</p>
+  <p><b>房貸</b>：有房子的地可以向銀行貸款，最多借地價加建物造價的五成，照樣收過路費，每回合按當時利率付息。</p>
+  <p><b>特殊格</b>：法拍中心拍賣破產者的地；建設公司可以半價加蓋或九折買地；證券號子可以買股票賭一把；土地增值稅收名下土地市值 5%。</p>
+  <p><b>蓋房子</b>：停在自己的地上，可以當場加蓋一層：平房 → 透天厝 → 公寓 → 電梯大樓 → 商業大樓（泡沫時代還能升級成地標大樓）。不用集滿整區也能蓋。</p>
+  <p><b>集滿整區</b>：同一區的地都是你的，整區過路費 ×1.4。</p>
+  <p><b>收購與併購</b>：在「管理 → 收購・併購」可以出價協商；如果同區你已經有一塊，也可以用市價 1.5 倍強制併購，對方可以花三成反併購。</p>
+  <p><b>房市與事件</b>：每一季隨新聞漲跌。廟會讓一區過路費加倍、淹水減半、罷工讓車站停收、觀光熱讓機場加倍，地震會震壞房子。</p>
+  <p><b>三個時代</b>：1996 年進入<b>捷運時代</b>（四個捷運站、過路費 1.5 倍、可以搭捷運，薪水 250 萬，國稅局稽查首富，最窮的人領紓困金）；2004 年進入<b>泡沫時代</b>（商業大樓可以升級成地標大樓，薪水 300 萬，房市波動加劇）。</p>
+  <p><b>市政府委託</b>：隨時有兩個公開任務（集滿某區、蓋商業大樓、擁有捷運站……），誰先達成誰領獎金。</p>
+  <p><b>商機卡</b>：合夥開 KTV、地下錢莊、預售屋紅單、參選議員，選了之後幾回合會分紅、轉手或討債。</p>
+  <p><b>缺錢時</b>：拆賣房子（半價）、抵押土地，或把地賣回銀行、公開拍賣。湊不出錢就破產，地產進法拍中心。</p>
+  <p><b>代碼連線 PK</b>：在 claude.ai 上開啟這個頁面，一人建立房間，把五碼代碼給朋友輸入，各自用自己的裝置玩。朋友需要被分享這個頁面並有「可以互動」以上的權限；只有檢視權限的人可以觀戰。</p>
+  <p><b>操作</b>：拖曳轉動視角、滾輪或雙指縮放，點格子看權狀。空白鍵可以擲骰子、結束回合、跳過對話。</p></div>`);$('#mx').onclick=closeModal;}
+function marketModal(){if(!G)return;openModal(`<div class="bh"><h3>房市行情</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb">${marketHTML()}</div>`);$('#mx').onclick=closeModal;}
+$('#bNew').onclick=()=>{snd('card');setupScreen();};
+$('#bNet').onclick=()=>{snd('card');netMenu();};
+$('#bCont').onclick=()=>{const s=LS.get(SAVE_KEY);if(!s||s.v!==4)return;G=s;G.net=false;G.players.forEach(p=>{p.net=false;p.bot=false;p.offline=false;});enterGame();};
+$('#bHelpT').onclick=help;$('#bHelp').onclick=help;
+$('#bView').onclick=()=>setOverview(!overview);
+$('#bMarket').onclick=()=>{if(canManage())return openManage('mkt');marketModal();};
+$('#bSpeed').onclick=()=>{speedI=(speedI+1)%SPEEDS.length;$('#spdTxt').textContent=SPEEDS[speedI]+'x';};
+$('#bSnd').onclick=()=>{sndOn=!sndOn;$('#bSnd').classList.toggle('off',!sndOn);};
+$('#bNetChip').onclick=()=>netInfo();
+$('#bJobs').onclick=()=>jobsModal();
+
+/* ---------- 代碼連線（房主跑遊戲，其他人收狀態、送操作） ---------- */
+const NET={api:undefined,role:null,room:null,code:'',myPeer:'',seat:-1,seq:0,epoch:'',lastSeq:0,lastE:'',lastAt:0,pt:0,hb:0,hostPeer:'',phase:'',lobby:null,lobbyView:null,nick:'',cands:new Map(),offT:{},unsub:[],
+  askRes:null,askDef:null,askShown:0,askSent:0,sentAt:0,sentW:0,raiseSent:0,talkT:0,diceT:0,spectate:false};
+const CODE_CH='abcdefghjkmnpqrstuvwxyz23456789';
+const cleanNick=s=>String(s==null?'':s).replace(/[<>&"'`\\\s]/g,'').slice(0,6)||'玩家';
+const byteLen=s=>new TextEncoder().encode(s).length;
+async function roomApi(){if(NET.api!==undefined)return NET.api;try{NET.api=(window.claude&&typeof window.claude.use==='function')?await window.claude.use('room'):null;}catch(e){NET.api=null;}return NET.api;}
+function bcast(d){if(NET.role!=='host'||!NET.room)return;NET.room.emit('lt',d).catch(()=>{});}
+function sendIntent(d){if(NET.role!=='guest'||!NET.room)return;NET.room.emit('lt',Object.assign({},d,{k:'i'})).catch(e=>{if(e&&e.code==='not_permitted'){NET.spectate=true;toast('你的權限只能觀戰，不能操作',true);}});}
+function pack(){
+  const d={k:'s',e:NET.epoch,s:++NET.seq,
+    P:G.players.map(p=>[p.name,p.look,p.col,p.veh,p.cash,p.pos,p.jail,p.jailCards,p.mCards,(p.out?1:0)|(p.human?2:0)|(p.net?4:0)|(p.bot?8:0)|(p.offline?16:0),p.ai||'',(p.biz||[]).map(b=>[b.n,b.inc||0,b.left||0,b.due||0,b.cost||0,Math.round(b.idx0||0)]),(p.loans||[]).map(l=>[l.amt,l.due]),p.dir||1,p.pick?1:0]),
+    sp:G.players.map(p=>p.peer||''),T:G.tiles.map(s=>(s.o+1)*16+s.l*2+(s.m?1:0)),c:G.cur,r:G.round,mx:G.max,ix:+G.idx.toFixed(2),ip:+G.idxPrev.toFixed(2),h:G.hist.slice(-16),
+    gm:Object.fromEntries(Object.entries(G.gm).map(([k,v])=>[k,+(+v).toFixed(3)])),pot:G.pot,n:G.news.slice(0,4),fx:G.fx,fo:G.fore,tk:G.tk,o:G.over?1:0,w:G.wait,a:G.ask,rs:G.raise,au:G.auc,era:G.era,mrt:G.mrt,jb:G.jobs,dl:G.tiles.map((s,i)=>s.d?[i,s.d]:null).filter(Boolean),rt:G.rate,cm:G.costMul,sr:G.sellR,ev:G.evDone,pr:G.prot,bt:G.bt,nr:G.noRed?1:0};
+  if(byteLen(JSON.stringify(d))>3800){d.n=d.n.slice(0,1);d.h=d.h.slice(-6);}
+  if(byteLen(JSON.stringify(d))>3800&&d.a){d.a=Object.assign({},d.a,{x:String(d.a.x).slice(0,100)});}
+  if(byteLen(JSON.stringify(d))>3900){d.n=[];if(d.a&&d.a.s&&d.a.s.length>30)d.a=Object.assign({},d.a,{s:d.a.s.slice(0,30)});}
+  return d;}
+function sendSnap(){if(NET.role!=='host'||!G||NET.phase!=='game')return;bcast(pack());}
+function push(now){if(NET.role!=='host'||!G||NET.phase!=='game')return;if(now){clearTimeout(NET.pt);NET.pt=0;sendSnap();return;}if(NET.pt)return;NET.pt=setTimeout(()=>{NET.pt=0;sendSnap();},200);}
+function unpack(S){
+  const okCol=c=>/^#[0-9a-fA-F]{6}$/.test(c)?c:'#888888',int=(v,a,b)=>{v=Math.round(+v);return Number.isFinite(v)?clamp(v,a,b):a;},str=(s,n)=>String(s==null?'':s).slice(0,n);
+  if(!Array.isArray(S.P)||!S.P.length||!Array.isArray(S.T))return null;
+  const players=S.P.slice(0,4).map((a,k)=>{a=Array.isArray(a)?a:[];const f=a[9]|0;return{id:k,name:cleanNick(a[0]),look:LOOKS[a[1]]?a[1]:'ade',col:okCol(a[2]),veh:['scooter','taxi','truck','bus'].includes(a[3])?a[3]:'scooter',
+    cash:int(a[4],-1e7,1e7),pos:int(a[5],0,NT-1),jail:int(a[6],0,9),jailCards:int(a[7],0,9),mCards:int(a[8],0,9),out:!!(f&1),human:!!(f&2),net:!!(f&4),bot:!!(f&8),offline:!!(f&16),ai:['builder','saver','flipper'].includes(a[10])?a[10]:'builder',peer:str((S.sp||[])[k],64),
+    biz:(Array.isArray(a[11])?a[11]:[]).slice(0,8).map(b=>({n:str(b&&b[0],12),inc:int(b&&b[1],0,9999),left:int(b&&b[2],0,99),due:int(b&&b[3],0,9999),cost:int(b&&b[4],0,99999),idx0:int(b&&b[5],0,999)})),loans:(Array.isArray(a[12])?a[12]:[]).slice(0,8).map(l=>({amt:int(l&&l[0],0,1e6),due:int(l&&l[1],0,9999)})),dir:a[13]===-1?-1:1,pick:a[14]?1:0};});
+  const np=players.length,pid=v=>{v=Math.round(+v);return v>=0&&v<np?v:-1;};
+  const tiles=T.map((t,i)=>{const v=int(S.T[i],0,255);let o=(v>>4)-1;if(o>=np)o=-1;return{o,l:t.t==='prop'?Math.min(6,(v>>1)&7):0,m:!!(v&1)};});
+  const gm={};if(S.gm&&typeof S.gm==='object')for(const k of Object.keys(GROUPS))if(Number.isFinite(+S.gm[k]))gm[k]=clamp(+S.gm[k],0.3,3);
+  const fx=Array.isArray(S.fx)?S.fx.slice(0,12).filter(f=>f&&FX_N[f.k]).map(f=>{const o=f.g&&GROUPS[f.g]?{k:f.k,g:f.g,u:int(f.u,0,9999)}:{k:f.k,u:int(f.u,0,9999)};if(f.m)o.m=clamp(+f.m||0.5,0,2);return o;}):[];
+  if(Array.isArray(S.dl))S.dl.slice(0,NT).forEach(e=>{if(Array.isArray(e)){const i=int(e[0],0,NT-1);if(tiles[i])tiles[i].d=int(e[1],0,1e7);}});
+  const obj=(o,f)=>{const r={};if(o&&typeof o==='object')for(const k of Object.keys(o).slice(0,64))if(/^\d+$/.test(k))r[k]=f(o[k]);return r;};
+  const tk={};if(S.tk&&typeof S.tk==='object')for(let k=0;k<np;k++)if(S.tk[k]!=null)tk[k]=int(S.tk[k],0,9999);
+  let w=null;if(S.w&&pid(S.w.pid)>=0&&(S.w.kind==='roll'||S.w.kind==='end'))w={pid:pid(S.w.pid),kind:S.w.kind,id:int(S.w.id,0,1e9)};
+  let a=null;if(S.a&&pid(S.a.pid)>=0&&Array.isArray(S.a.c))a={id:int(S.a.id,0,1e9),pid:pid(S.a.pid),w:pid(S.a.w),x:str(S.a.x,600),c:S.a.c.slice(0,6).map(c=>({t:str(c&&c.t,60),p:c&&c.p?1:0,d:c&&c.d?1:0})),s:Array.isArray(S.a.s)?S.a.s.slice(0,NT).map(v=>int(v,0,NT-1)):null,sk:['tile','build','buildfree','buy90','num'].includes(S.a.sk)?S.a.sk:''};
+  let rs=null;if(S.rs&&pid(S.rs.pid)>=0)rs={pid:pid(S.rs.pid),amt:int(S.rs.amt,0,1e7),why:str(S.rs.why,40)};
+  let au=null;if(S.au&&S.au.i>=0&&S.au.i<NT)au={i:int(S.au.i,0,NT-1),p:int(S.au.p,0,1e7),l:pid(S.au.l),a:(Array.isArray(S.au.a)?S.au.a:[]).map(pid).filter(v=>v>=0),b:(Array.isArray(S.au.b)?S.au.b:[]).map(pid).filter(v=>v>=0),t:str(S.au.t,12),s:pid(S.au.s)};
+  const idx=clamp(+S.ix||100,30,400);
+  return{v:2,net:true,players,tiles,cur:pid(S.c)<0?0:pid(S.c),round:int(S.r,1,9999),max:int(S.mx,0,999),idx,idxPrev:clamp(+S.ip||idx,30,400),hist:Array.isArray(S.h)&&S.h.length?S.h.map(v=>clamp(+v||100,30,400)):[idx],gm,pot:int(S.pot,0,1e7),
+    rate:clamp(+S.rt||0.06,0,0.3),costMul:clamp(+S.cm||1,0.5,5),sellR:clamp(+S.sr||0.8,0.3,1),evDone:Array.isArray(S.ev)?S.ev.slice(0,40).map(v=>int(v,0,99)):[],evPend:[],noRed:!!S.nr,
+    prot:obj(S.pr,v=>int(v,0,9999)),bt:obj(S.bt,v=>({r:int(v&&v.r,0,9999),n:int(v&&v.n,0,99)})),
+    era:int(S.era,0,2),mrt:Array.isArray(S.mrt)?S.mrt.slice(0,8).map(v=>int(v,0,N-1)):[],jobs:Array.isArray(S.jb)?S.jb.slice(0,4).filter(j=>j&&JOB[j.k]).map(j=>({k:j.k,a:j.k==='group'?(GROUPS[j.a]?j.a:'brown'):int(j.a,0,1e6),rw:int(j.rw,0,1e6),u:int(j.u,0,9999)})):[],audit:-1,
+    news:Array.isArray(S.n)?S.n.slice(0,6).map(s=>str(s,90)):[],fx,fore:Array.isArray(S.fo)?S.fo.map(v=>int(v,0,NT-1)):[],tk,over:!!S.o,wait:w,ask:a,raise:rs,auc:au};}
+
+/* 標題 → 代碼連線選單 */
+async function netMenu(){
+  openModal(`<div class="bh"><h3>代碼連線 PK</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb" id="netBody"><p class="note">正在連線…</p></div>`,'sm');$('#mx').onclick=closeModal;
+  const api=await roomApi();if($('#modal').hidden||!$('#netBody'))return;
+  if(!api){$('#netBody').innerHTML=`<p style="margin-top:0">這個頁面現在用不了即時連線。</p><p class="note">代碼連線要在 claude.ai 上登入後開啟這個 Artifact。朋友要加入，需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以進房觀戰，但不能操作。</p>`;return;}
+  const nick=LS.get('dcdh.nick')||'阿德';
+  $('#netBody').innerHTML=`<div class="row2"><b>你的名字</b><input class="nm" id="nNick" maxlength="6" value="${esc(nick)}" aria-label="你的名字"></div>
+    <div class="row2"><button class="btn pri" id="nHost" type="button">建立房間</button><span class="note">拿到五碼代碼，傳給朋友</span></div>
+    <div class="row2" style="border-top:2px dashed #d8c9a8;padding-top:12px"><input class="codein" id="nCode" maxlength="5" placeholder="代碼" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="房間代碼"><button class="btn pri" id="nJoin" type="button">加入房間</button></div>
+    <p class="note">最多 4 人，可以混電腦玩家。朋友需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以觀戰。房主的頁面負責跑遊戲，遊戲中請不要關掉。</p>`;
+  const nk=()=>{const v=cleanNick($('#nNick').value.trim());LS.set('dcdh.nick',v);return v;};
+  $('#nHost').onclick=()=>netHost(nk());
+  $('#nJoin').onclick=()=>netJoin($('#nCode').value,nk());
+  $('#nCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#nJoin').click();});
+}
+function netListen(){const r=NET.room;
+  NET.unsub.push(r.on('lt',onNetMsg,e=>{toast('連線中斷：'+(e&&e.code||''),true);}));
+  NET.unsub.push(r.onPeers(onNetPeers,()=>{}));
+  const me=r.peers().find(x=>x.sameTab);if(me)NET.myPeer=me.peer;}
+function netLeave(){clearInterval(NET.hb);clearTimeout(NET.pt);NET.unsub.forEach(f=>{try{f();}catch(e){}});NET.unsub=[];if(NET.room)NET.room.leave().catch(()=>{});
+  Object.values(NET.offT).forEach(clearTimeout);
+  Object.assign(NET,{role:null,room:null,code:'',seat:-1,phase:'',lobby:null,lobbyView:null,hostPeer:'',lastSeq:0,lastE:'',lastAt:0,cands:new Map(),offT:{},askRes:null,askDef:null,askShown:0,askSent:0,spectate:false});
+  $('#modal').dataset.lock='';renderNetChip();}
+function renderNetChip(){const b=$('#bNetChip');b.hidden=!NET.role;if(NET.role)$('#netCode').textContent=NET.code.toUpperCase();}
+function netInfo(){if(!NET.role)return;
+  const rows=G?G.players.map(p=>`<tr><td><span class="gdot" style="background:${p.col}"></span>${esc(p.name)}${(NET.role==='guest'&&p.id===NET.seat)||(NET.role==='host'&&p.id===0)?'（你）':''}</td><td>${!p.human?'<span class="pill">電腦</span>':p.bot?'<span class="pill off">斷線・電腦代打</span>':p.offline?'<span class="pill wait">斷線中</span>':p.net?'<span class="pill ok">線上</span>':'<span class="pill ok">房主</span>'}</td></tr>`).join(''):'';
+  openModal(`<div class="bh"><h3>連線房間</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb"><p style="text-align:center;margin:0 0 10px"><span class="code">${NET.code.toUpperCase()}</span></p>
+    <p class="note" style="margin:0 0 8px">${NET.role==='host'?'你是房主，遊戲在你的頁面上進行，請不要關掉。玩家斷線 25 秒後改由電腦代打；他用同一個名字、同一組代碼重新加入就能接回來。':NET.seat>=0?'你在這局有座位。斷線的話，用同一個名字、同一組代碼重新加入就能接回來。':'你正在觀戰。'}</p>
+    ${rows?`<table class="q lt"><tr><th>玩家</th><th>狀態</th></tr>${rows}</table>`:''}</div>
+    <div class="bf"><button class="btn" type="button" id="nLeave">${NET.role==='host'?'解散房間':'離開房間'}</button><button class="btn pri" type="button" id="mx2">關閉</button></div>`,'sm');
+  $('#mx').onclick=closeModal;$('#mx2').onclick=closeModal;$('#nLeave').onclick=()=>{closeModal();toTitle();};}
+
+/* 房主 */
+async function netHost(nick){
+  const api=await roomApi();if(!api)return;
+  let code='';for(let k=0;k<5;k++)code+=CODE_CH[rnd()*CODE_CH.length|0];
+  let room;try{room=await api.join('dcdh-'+code);}catch(e){toast('建立房間失敗：'+(e&&e.code||'請稍後再試'),true);return;}
+  if(G)clearBoard();
+  Object.assign(NET,{role:'host',room,code,phase:'lobby',seat:0,nick,epoch:Math.random().toString(36).slice(2,8),seq:0,cands:new Map()});
+  NET.lobby={rounds:20,seats:[{t:'h',name:nick,peer:''},{t:'n',name:'',peer:''},{t:'a',name:'',peer:''},{t:'o',name:'',peer:''}]};
+  netListen();room.presence({nick,role:'host'}).catch(()=>{});
+  NET.hb=setInterval(()=>{if(NET.phase==='lobby')bcastLobby();else sendSnap();},2500);
+  renderNetChip();hostLobbyUI();bcastLobby();
+}
+function hostAssign(){const L=NET.lobby;if(!L||!NET.room)return;const here=new Set(NET.room.peers().map(x=>x.peer));
+  L.seats.forEach(s=>{if(s.t==='n'&&s.peer&&!here.has(s.peer)){s.peer='';s.name='';}});
+  for(const [peer,nick] of NET.cands){if(!here.has(peer)){NET.cands.delete(peer);continue;}const cur=L.seats.find(s=>s.peer===peer);if(cur){cur.name=nick;continue;}
+    const free=L.seats.find(s=>s.t==='n'&&!s.peer);if(free){free.peer=peer;free.name=nick;}}}
+function bcastLobby(){const L=NET.lobby;if(!L)return;bcast({k:'lb',code:NET.code,r:L.rounds,seats:L.seats.map((s,k)=>({t:s.t,n:k===0?NET.nick:s.t==='a'?SEATS[k].name:s.name,p:s.t==='h'?NET.myPeer:s.peer}))});}
+function hostLobbyUI(){if(NET.role!=='host'||NET.phase!=='lobby')return;const L=NET.lobby;
+  const row=(s,k)=>{const look=s.t==='a'?SEATS[k].look:HUMAN_LOOK[k];
+    const who=k===0?`${esc(NET.nick)}（你，房主）`:s.t==='n'?(s.peer?`${esc(s.name)} <span class="pill ok">已加入</span>`:'<span class="note">等待朋友輸入代碼…</span>'):s.t==='a'?`${esc(SEATS[k].name)} <span class="note">電腦・${AI_DESC[SEATS[k].ai]}</span>`:'<span class="note">不參加</span>';
+    return`<div class="seat"><canvas width="96" height="96" data-face="${look}"></canvas><div><b>${who}</b><div class="note">${SEATS[k].vn}</div></div>${k===0?'<span></span>':`<div class="seg" data-k="${k}"><button type="button" data-v="n" class="${s.t==='n'?'on':''}">線上</button><button type="button" data-v="a" class="${s.t==='a'?'on':''}">電腦</button><button type="button" data-v="o" class="${s.t==='o'?'on':''}">不參加</button></div>`}</div>`;};
+  const spect=[...NET.cands.keys()].filter(p=>!L.seats.some(s=>s.peer===p)).length;
+  openModal(`<div class="bh"><h3>房間代碼</h3></div><div class="bb"><div style="text-align:center;margin:2px 0 10px"><span class="code">${NET.code.toUpperCase()}</span><p class="note" style="margin:6px 0 0">請朋友打開同一個頁面 →「代碼連線 PK」→ 輸入這組代碼</p></div>
+    ${L.seats.map(row).join('')}${spect?`<p class="note">另有 ${spect} 人在房間裡觀戰（座位滿了）。</p>`:''}
+    <p style="margin:10px 0 6px"><b>遊戲長度</b></p><div class="seg" id="segR" style="display:inline-flex">${[[12,'12 回合'],[20,'20 回合'],[0,'不限']].map(([v,l])=>`<button type="button" data-v="${v}" class="${L.rounds===v?'on':''}">${l}</button>`).join('')}</div>
+    <p class="note" style="margin-top:10px">每位線上玩家用自己的裝置操作。你這台是房主，負責跑遊戲，遊戲中請不要關掉頁面。</p></div>
+    <div class="bf"><button class="btn" type="button" id="nLeave">解散房間</button><button class="btn pri" type="button" id="nStart">開始</button></div>`);
+  $('#modal').dataset.lock='1';
+  $('#box').querySelectorAll('[data-face]').forEach(c=>drawFace(c,c.dataset.face));
+  $('#box').querySelectorAll('.seat .seg').forEach(sg=>sg.onclick=e=>{const b=e.target.closest('button');if(!b)return;const s=L.seats[+sg.dataset.k];s.t=b.dataset.v;if(s.t!=='n'){s.peer='';s.name='';}hostAssign();hostLobbyUI();bcastLobby();});
+  $('#segR').onclick=e=>{const b=e.target.closest('button');if(!b)return;L.rounds=+b.dataset.v;hostLobbyUI();bcastLobby();};
+  $('#nLeave').onclick=()=>{$('#modal').dataset.lock='';closeModal();toTitle();};
+  $('#nStart').onclick=()=>{const on=L.seats.filter(s=>s.t!=='o');if(on.length<2){toast('至少要兩位玩家',true);return;}if(L.seats.some(s=>s.t==='n'&&!s.peer)){toast('還有線上座位沒人加入，改成電腦或不參加',true);return;}netStartGame();};
+}
+function netStartGame(){const L=NET.lobby;
+  const seats=L.seats.map((s,k)=>({on:s.t!=='o',name:k===0?NET.nick:s.t==='a'?SEATS[k].name:s.name,look:s.t==='a'?SEATS[k].look:HUMAN_LOOK[k],col:SEATS[k].col,veh:SEATS[k].veh,vn:SEATS[k].vn,ai:SEATS[k].ai,human:s.t!=='a',net:s.t==='n',peer:s.t==='h'?NET.myPeer:s.peer}));
+  $('#modal').dataset.lock='';closeModal();NET.phase='game';newGame({seats,rounds:L.rounds,net:true});enterGame();}
+function hostBackToLobby(){clearBoard();$('#hud').hidden=true;$('#title').hidden=false;NET.phase='lobby';hostAssign();hostLobbyUI();bcastLobby();}
+function hostHi(peer,nick){nick=cleanNick(nick);NET.cands.set(peer,nick);
+  if(NET.phase==='lobby'){hostAssign();hostLobbyUI();bcastLobby();return;}
+  if(!G||G.over)return;if(G.players.some(p=>p.peer===peer))return;
+  const p=G.players.find(q=>q.net&&!q.out&&(q.offline||q.bot)&&q.name===nick);
+  if(p){p.peer=peer;p.offline=false;p.bot=false;clearTimeout(NET.offT[p.id]);toast(`${p.name}回來了`);addNews(`${p.name}重新連線`);refresh();}
+  push(true);}
+function botTakeover(p){if(!G||!p.offline||p.bot||p.out)return;p.bot=true;addNews(`${p.name}斷線，由電腦代打`);toast(`${p.name}斷線太久，先由電腦代打`);
+  if(G.ask&&G.ask.pid===p.id&&NET.askDef)NET.askDef();
+  if(G.wait&&G.wait.pid===p.id&&waitBtn)resolveWait();
+  if(raiseCtx&&raiseCtx.pid===p.id){const r=raiseCtx;raiseCtx=null;G.raise=null;r.res(aiRaise(p,r.amt));}
+  refresh();}
+async function hostIntent(peer,d){if(!G||G.over)return;const p=G.players.find(q=>q.net&&!q.bot&&!q.out&&q.peer===peer);if(!p)return;
+  const a=String(d.a||''),i=Math.round(+d.i||0);
+  if(a==='ans'){if(G.ask&&G.ask.pid===p.id&&G.ask.id===d.id&&NET.askRes)NET.askRes(Math.round(+d.c),d.v==null?null:Math.round(+d.v));return;}
+  if(a==='pay'||a==='bk'){if(raiseCtx&&raiseCtx.pid===p.id){if(a==='pay'&&p.cash<raiseCtx.amt)return;const r=raiseCtx;raiseCtx=null;G.raise=null;r.res(a==='pay');}return;}
+  const myTurn=!!(G.wait&&G.wait.pid===p.id&&waitBtn&&!busy&&!G.ask),raising=!!(raiseCtx&&raiseCtx.pid===p.id);
+  if(a==='roll'||a==='end'){if(myTurn&&G.wait.kind===a&&d.w===G.wait.id)resolveWait();return;}
+  if(!(myTurn||raising)||!(i>=0&&i<NT))return;
+  else if(a==='ln'){if(canLoan(p,i))doLoan(p,i);}
+  else if(a==='rp'){if(!raising&&G.tiles[i].o===p.id&&G.tiles[i].d)doRepay(p,i);}
+  else if(a==='sb'){if(canSellB(p,i))doSellB(p,i);}
+  else if(a==='m'){if(canMort(p,i))doMort(p,i);}
+  else if(a==='r'){if(!raising&&G.tiles[i].o===p.id&&G.tiles[i].m&&p.cash>=redeemCost(i))doRedeem(p,i);}
+  else if(a==='s'){if(canSellLand(p,i)&&sellVal(i)>0)doSellLand(p,i);}
+  else if(!raising&&a==='o'){const v=Math.round(+d.v||0),st=G.tiles[i];if(v>0&&v<=p.cash&&st.o>=0&&st.o!==p.id&&!G.players[st.o].out&&!groupBuilt(i))await busyRun(()=>tradeOffer(p,G.players[st.o],i,v));}
+  else if(!raising&&a==='tk'){if(canTakeover(p,i)&&p.cash>=tkPrice(p,i)*1.1)await busyRun(()=>takeover(p,i));}
+  else if(!raising&&a==='au'){if(canAuctionOwn(p,i))await busyRun(()=>auction(i,r10(priceOf(i)*0.6),p,'公開拍賣'));}
+  push(true);}
+
+/* 加入者 */
+async function netJoin(code,nick){
+  code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(code.length!==5){toast('代碼是五個英數字',true);return;}
+  const api=await roomApi();if(!api)return;
+  let room;try{room=await api.join('dcdh-'+code);}catch(e){toast('加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
+  if(G)clearBoard();
+  Object.assign(NET,{role:'guest',room,code,phase:'lobby',seat:-1,nick,lastSeq:0,lastE:'',lastAt:0,hostPeer:'',lobbyView:null,spectate:false});
+  netListen();room.presence({nick}).catch(()=>{});
+  const hi=()=>{if(NET.role!=='guest'||NET.spectate)return;if(NET.seat<0)NET.room.emit('lt',{k:'hi',nick:NET.nick}).catch(e=>{if(e&&e.code==='not_permitted'){NET.spectate=true;guestLobbyUI();}});};
+  hi();NET.hb=setInterval(()=>{hi();if(G)renderStat();if(NET.phase==='lobby'&&!NET.lobbyView)guestLobbyUI();},3000);
+  renderNetChip();guestLobbyUI();
+}
+function guestLobbyUI(){if(NET.role!=='guest'||NET.phase!=='lobby')return;const lv=NET.lobbyView;
+  const rows=lv?lv.seats.map((s,k)=>s.t==='o'?'':`<div class="seat"><canvas width="96" height="96" data-face="${s.t==='a'?SEATS[k].look:HUMAN_LOOK[k]}"></canvas><div><b>${s.t==='n'&&!s.p?'<span class="note">空位，等人加入</span>':esc(cleanNick(s.n))}${s.p&&s.p===NET.myPeer?'（你）':''}</b><div class="note">${s.t==='h'?'房主':s.t==='a'?'電腦':'線上玩家'}</div></div><span></span></div>`).join(''):'';
+  const msg=NET.spectate?'你的權限只能觀戰：可以看大家怎麼玩，但不能入座操作。':!lv?'正在找房間……如果一直沒有回應，請確認代碼，或請房主確認他還開著房間頁面。':NET.seat>=0?'已經入座，等房主按「開始」。':'等房主幫你安排座位……（座位滿了的話，會變成觀戰）';
+  openModal(`<div class="bh"><h3>房間 ${esc(NET.code.toUpperCase())}</h3></div><div class="bb">${rows}<p class="note">${msg}</p></div><div class="bf"><button class="btn" type="button" id="nLeave">離開房間</button></div>`);
+  $('#modal').dataset.lock='1';$('#box').querySelectorAll('[data-face]').forEach(c=>drawFace(c,c.dataset.face));
+  $('#nLeave').onclick=()=>{$('#modal').dataset.lock='';closeModal();toTitle();};}
+function guestLobby(d){if(!Array.isArray(d.seats))return;
+  if(NET.phase==='game'){if(G&&!G.over)return;clearBoard();$('#hud').hidden=true;$('#title').hidden=false;NET.phase='lobby';NET.lastSeq=0;}
+  NET.lobbyView={seats:d.seats.slice(0,4).map(s=>({t:['h','n','a','o'].includes(s&&s.t)?s.t:'o',n:String(s&&s.n||''),p:String(s&&s.p||'')}))};
+  NET.seat=NET.lobbyView.seats.findIndex(s=>s.p&&s.p===NET.myPeer);guestLobbyUI();}
+const vis=[];
+function guestEnter(){NET.phase='game';$('#modal').dataset.lock='';closeModal();$('#title').hidden=true;$('#hud').hidden=false;camS.auto=0;camS.pitch=0.92;camS.dist=30;overview=false;
+  restoreVisuals();G.players.forEach(p=>{vis[p.id]={pos:p.pos,jail:p.jail,busy:false};});renderNetChip();guestUI();}
+function findPath(a,b){for(const d of [1,-1]){let fr=[[a]];for(let s=0;s<14;s++){const nx=[];for(const path of fr){const q=path[path.length-1];const opts=[stepPos(q,d)];const jb=junctionAt(q,d);if(jb)opts.push(d>0?jb.tiles[0]:jb.tiles[jb.tiles.length-1]);
+      for(const o of opts){const np=path.concat([o]);if(o===b)return np;nx.push(np);}}fr=nx.slice(0,64);}}return null;}
+async function walkVis(id){const v=vis[id],t=tokens[id];if(!v||!t||v.busy)return;v.busy=true;
+  try{for(let guard=0;guard<20;guard++){const p=G&&G.players[id];if(!p||(v.pos===p.pos&&!!v.jail===!!p.jail))break;
+      const path=!p.jail&&!v.jail?findPath(v.pos,p.pos):null;
+      if(!path){const from=t.position.clone();v.pos=p.pos;v.jail=p.jail;const to=p.jail?jailPos(p):tokenPos(p);await tween(0.7,k=>{t.position.lerpVectors(from,to,k);t.position.y=to.y+Math.sin(k*Math.PI)*4;});t.rotation.y=faceRy(p.pos,p.dir||1);}
+      else for(const q of path.slice(1)){const from=t.position.clone();v.pos=q;const to=tokenPos(p,q);const ry=Math.atan2(to.x-from.x,to.z-from.z);snd('step');await tween(0.17,k=>{t.position.lerpVectors(from,to,k);t.position.y=to.y+Math.sin(k*Math.PI)*0.7;t.rotation.y=ry;});}
+      focusOn(t.position);}}
+  finally{v.busy=false;}}
+function applySnap(S){
+  if(typeof S.s!=='number')return;
+  if(S.e===NET.lastE&&S.s<=NET.lastSeq)return;
+  const fresh=S.e!==NET.lastE;NET.lastE=S.e;NET.lastSeq=S.s;NET.lastAt=Date.now();
+  const nG=unpack(S);if(!nG)return;const old=G;
+  if(fresh||!old||NET.phase!=='game'||old.players.length!==nG.players.length){if(old)clearBoard();G=nG;NET.seat=G.players.findIndex(p=>p.net&&p.peer&&p.peer===NET.myPeer);guestEnter();if(G.over)endGame();return;}
+  G=nG;NET.seat=G.players.findIndex(p=>p.net&&p.peer&&p.peer===NET.myPeer);
+  const newEv=(G.evDone||[]).filter(k=>!(old.evDone||[]).includes(k)&&TL[k]&&!TL[k].era);if(newEv.length&&!(G.era>old.era)){const k=newEv[newEv.length-1];if(!mgOpen&&!(G.ask&&G.ask.pid===NET.seat)&&$('#modal').hidden){openModal(newsHTML(k));$('#eraOk').onclick=closeModal;}else toast('時事快報：'+TL[k].h,true);}
+  const eraUp=G.era>old.era;if(eraUp){applyEraVisuals(true);T.forEach((t,i)=>drawTile(i));const e=G.era;showcase(e).then(()=>{if(!G)return;if(!mgOpen&&!(G.ask&&G.ask.pid===NET.seat)&&$('#modal').hidden){openModal(eraHTML(e));$('#eraOk').onclick=closeModal;}else toast('號外：'+ERA[e].h,true);});}
+  const idxCh=old.idx!==G.idx||JSON.stringify(old.gm)!==JSON.stringify(G.gm)||JSON.stringify(old.fx)!==JSON.stringify(G.fx)||JSON.stringify(old.mrt)!==JSON.stringify(G.mrt);
+  G.tiles.forEach((s,i)=>{const o=old.tiles[i];if(o.o!==s.o||o.l!==s.l||o.m!==s.m){drawTile(i);setBuilding(i,s.o!==o.o||s.l>o.l);if(s.l>o.l)snd('build');}else if(idxCh&&BUYABLE(T[i]))drawTile(i);});
+  if(old.pot!==G.pot||old.fore.length!==G.fore.length)drawSpecials();
+  G.players.forEach(p=>{const o=old.players[p.id];const d=p.cash-o.cash;if(d){fly(p,d);snd(d>0?'coin':'pay');}if(p.out&&!o.out){tokens[p.id].visible=false;labels[p.id].style.display='none';}walkVis(p.id);});
+  if(JSON.stringify(old.news)!==JSON.stringify(G.news))renderMarquee();
+  renderPlayers();renderTicker();renderStat();renderAuc();renderJobs();guestUI();
+  if(G.over&&!old.over){setBtns({});hideTalk();endGame();}}
+function guestUI(){if(NET.role!=='guest'||!G||G.over)return;const me=NET.seat,now=Date.now();
+  const myWait=G.wait&&G.wait.pid===me&&!G.ask&&!G.raise&&!G.auc;
+  if(myWait&&(NET.sentW!==G.wait.id||now-NET.sentAt>3000))setBtns({roll:G.wait.kind==='roll',end:G.wait.kind==='end',manage:true});else setBtns({});
+  if(G.ask&&G.ask.pid===me){if(NET.askShown!==G.ask.id||(NET.askSent===G.ask.id&&now-NET.sentAt>3000))showAsk(G.ask);}
+  else if(NET.askShown){NET.askShown=0;hideTalk();}
+  if(G.raise&&G.raise.pid===me){if(!mgOpen&&now-NET.raiseSent>3000){mgTab='mine';renderManage();}}
+  if(mgOpen){if(!canManage())closeModal();else{const key=JSON.stringify([G.tiles,G.players.map(q=>q.cash),G.raise,G.tk,G.idx]);if(key!==mgKey){mgKey=key;const sc=$('.bb')?$('.bb').scrollTop:0;renderManage();if($('.bb'))$('.bb').scrollTop=sc;}}}}
+function showAsk(a){NET.askShown=a.id;NET.askSent=0;clearTimeout(NET.talkT);const who=a.w>=0?G.players[a.w]:null;
+  talkShow(who,safeHTML(a.x),a.c.map(c=>({t:safeHTML(c.t),pri:!!c.p,dis:!!c.d})),{sel:a.s,sk:a.sk}).then(k=>{
+    sendIntent({a:'ans',id:a.id,c:k,v:a.s?lastSel:null});NET.askSent=a.id;NET.sentAt=Date.now();
+    $('#dlgCh').querySelectorAll('button,select').forEach(b=>b.disabled=true);});}
+function guestBtn(kind){if(!G||!G.wait||G.wait.pid!==NET.seat||G.wait.kind!==kind)return;sendIntent({a:kind,w:G.wait.id});NET.sentW=G.wait.id;NET.sentAt=Date.now();setBtns({});}
+function guestTalk(d){if(!G||NET.phase!=='game')return;if(G.ask&&G.ask.pid===NET.seat)return;
+  const ms=clamp(+d.ms||1500,500,4000),who=d.w>=0&&d.w<G.players.length?G.players[d.w]:null;
+  talkShow(who,safeHTML(d.x),null,{ms});clearTimeout(NET.talkT);NET.talkT=setTimeout(()=>{if(!(G&&G.ask&&G.ask.pid===NET.seat))hideTalk();},ms*1.5+900);}
+function onNetMsg(m){const d=m.data;if(m.sameTab){NET.myPeer=m.peer;return;}if(!d||typeof d!=='object')return;
+  if(NET.role==='host'){if(d.k==='hi')hostHi(m.peer,d.nick);else if(d.k==='i')hostIntent(m.peer,d).catch(e=>console.error(e));return;}
+  if(NET.role!=='guest')return;
+  if(d.k==='lb'||d.k==='s'){if(!NET.hostPeer)NET.hostPeer=m.peer;}
+  if(m.peer!==NET.hostPeer)return;
+  if(d.k==='lb')guestLobby(d);
+  else if(d.k==='s')applySnap(d);
+  else if(d.k==='t')guestTalk(d);
+  else if(d.k==='to'){if(NET.phase==='game')toast(String(d.s||'').slice(0,80),true);}
+  else if(d.k==='d'){if(NET.phase!=='game')return;const a=clamp(d.a|0,1,6),b=clamp(d.b|0,1,6);rollDice([a,b]);clearTimeout(NET.diceT);NET.diceT=setTimeout(()=>dice.forEach(x=>x.position.y=-5),4500);}
+  else if(d.k==='hd'){dice.forEach(x=>x.position.y=-5);}}
+function onNetPeers(ch){const me=ch.peers.find(x=>x.sameTab);if(me)NET.myPeer=me.peer;
+  if(NET.role==='host'){
+    if(NET.phase==='lobby'){if(ch.left.length||ch.joined.length){hostAssign();hostLobbyUI();bcastLobby();}return;}
+    if(!G||G.over)return;
+    for(const l of ch.left){const p=G.players.find(q=>q.net&&q.peer===l.peer&&!q.out);if(p&&!p.offline){p.offline=true;toast(`${p.name}斷線了，等他回來…`);refresh();clearTimeout(NET.offT[p.id]);NET.offT[p.id]=setTimeout(()=>botTakeover(p),25000);}}
+    for(const j of ch.joined){const p=G.players.find(q=>q.net&&q.peer===j.peer&&!q.out);if(p&&(p.offline||p.bot)){p.offline=false;p.bot=false;clearTimeout(NET.offT[p.id]);toast(`${p.name}回來了`);refresh();}}
+    if(ch.joined.length)push(true);}
+  else if(NET.role==='guest'&&NET.hostPeer&&ch.left.some(x=>x.peer===NET.hostPeer)){toast('房主離開了房間',true);}}
+
+/* ---------- 主迴圈 ---------- */
+function resize(){const w=innerWidth,h=innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<h?52:38;cam.updateProjectionMatrix();}
+addEventListener('resize',resize);
+let last=performance.now();
+function frame(now){requestAnimationFrame(frame);const dt=Math.min(0.05,(now-last)/1000);last=now;
+  for(let k=anims.length-1;k>=0;k--){const a=anims[k];a.t+=dt*spd();const v=Math.min(1,a.t/a.d);a.f(v);if(v>=1){anims.splice(k,1);a.res&&a.res();}}
+  if(G){const p=curP();if(p&&!overview&&!anims.length&&tokens[p.id]){const tp=tokens[p.id].position;camS.goal.set(tp.x*0.55,0.8,tp.z*0.55);}}
+  if(trainM)trainM.position.x=Math.sin(now*0.00016)*(HALF+4);
+  updBranch(dt);
+  updateCam(dt);R.render(scene,cam);
+  if(G){const r=cv.getBoundingClientRect();G.players.forEach(p=>{const t=tokens[p.id],l=labels[p.id];if(!t||!l||p.out)return;const v=t.position.clone();v.y+=1.9;v.project(cam);l.style.transform=`translate(${(v.x+1)/2*r.width-l.offsetWidth/2}px,${(1-v.y)/2*r.height-12}px)`;l.style.outline=p.id===G.cur?'2px solid #ffb000':'none';});
+    mqX-=dt*60;const mq=$('#mqIn');if(mq.offsetWidth&&mqX<-mq.offsetWidth)mqX=r.width;mq.style.transform=`translateX(${mqX}px)`;}
+}
+
+/* ---------- 啟動 ---------- */
+buildWorld();buildBoard();drawLED();resize();
+camS.auto=0.08;camS.dist=46;camS.pitch=0.7;
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{SIGN_LIST.forEach(paintSign);ATLAS_TEX.needsUpdate=true;T.forEach((t,i)=>drawTile(i));drawLED();});
+$('#bCont').hidden=!LS.get(SAVE_KEY);
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
