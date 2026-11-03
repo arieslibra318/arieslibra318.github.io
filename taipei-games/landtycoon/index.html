@@ -20,6 +20,11 @@
   color-scheme:light;
 }
 [hidden]{display:none!important}
+input,select,textarea{-webkit-user-select:text;user-select:text;touch-action:manipulation}
+.nstat{margin:8px 0 0;font-size:14px;line-height:1.5;min-height:1.5em}
+.nstat.err{color:var(--accent);font-weight:700}
+.share{display:flex;gap:6px;margin:8px 0 0}
+.share input{flex:1;min-width:0;font:inherit;font-size:13px;border:2px solid var(--ink);border-radius:8px;padding:4px 8px;background:#fffdf5}
 html,body{height:100%;margin:0;background:#cdb88f;color:var(--ink);font-family:var(--f-ui);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #app{position:fixed;inset:0;overflow:hidden}
 #c{position:absolute;inset:0;width:100%;height:100%;display:block;outline:none;cursor:grab}
@@ -1822,6 +1827,8 @@ async function netMenu(){
     <p class="note">最多 4 人，可以混電腦玩家。${api.kind==='hub'?'朋友打開同一個網址、輸入代碼就能加入，不用註冊。連線會先走公開的中繼伺服器，不行再改用點對點。':'朋友需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以觀戰。'}房主的頁面負責跑遊戲，遊戲中請不要關掉。</p>`;
   const nk=()=>{const v=cleanNick($('#nNick').value.trim());LS.set('dcdh.nick',v);return v;};
   $('#nHost').onclick=()=>netHost(nk());
+  $('#netBody').querySelector('.row2:nth-of-type(3)').insertAdjacentHTML('afterend','<p class="nstat" id="nStat" aria-live="polite"></p>');
+  if(NET.inviteCode){$('#nCode').value=NET.inviteCode.toUpperCase();netStat('已帶入邀請連結的代碼，確認名字後按「加入房間」。');}
   $('#nJoin').onclick=()=>netJoin($('#nCode').value,nk());
   $('#nCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('#nJoin').click();});
 }
@@ -1867,12 +1874,13 @@ function hostLobbyUI(){if(NET.role!=='host'||NET.phase!=='lobby')return;const L=
     const who=k===0?`${esc(NET.nick)}（你，房主）`:s.t==='n'?(s.peer?`${esc(s.name)} <span class="pill ok">已加入</span>`:'<span class="note">等待朋友輸入代碼…</span>'):s.t==='a'?`${esc(SEATS[k].name)} <span class="note">電腦・${AI_DESC[SEATS[k].ai]}</span>`:'<span class="note">不參加</span>';
     return`<div class="seat"><canvas width="96" height="96" data-face="${look}"></canvas><div><b>${who}</b><div class="note">${SEATS[k].vn}</div></div>${k===0?'<span></span>':`<div class="seg" data-k="${k}"><button type="button" data-v="n" class="${s.t==='n'?'on':''}">線上</button><button type="button" data-v="a" class="${s.t==='a'?'on':''}">電腦</button><button type="button" data-v="o" class="${s.t==='o'?'on':''}">不參加</button></div>`}</div>`;};
   const spect=[...NET.cands.keys()].filter(p=>!L.seats.some(s=>s.peer===p)).length;
-  openModal(`<div class="bh"><h3>房間代碼</h3></div><div class="bb"><div style="text-align:center;margin:2px 0 10px"><span class="code">${NET.code.toUpperCase()}</span><p class="note" style="margin:6px 0 0">請朋友打開同一個頁面 →「代碼連線 PK」→ 輸入這組代碼</p></div>
+  openModal(`<div class="bh"><h3>房間代碼</h3></div><div class="bb"><div style="text-align:center;margin:2px 0 10px"><span class="code">${NET.code.toUpperCase()}</span><p class="note" style="margin:6px 0 0">請朋友打開同一個頁面 →「代碼連線 PK」→ 輸入這組代碼</p>${NET.api&&NET.api.kind==='hub'?`<div class="share"><input id="nLink" readonly value="${esc(location.origin+location.pathname+'?room='+NET.code.toUpperCase())}" aria-label="邀請連結"><button class="btn sm" type="button" id="nCopy">${navigator.share?'分享':'複製'}連結</button></div><p class="note" style="margin:6px 0 0">傳完代碼請馬上回到這個頁面，房主的頁面要開在前景：手機切到 LINE 等其他 App 太久，連線會暫停，朋友就會找不到房間。</p>`:''}</div>
     ${L.seats.map(row).join('')}${spect?`<p class="note">另有 ${spect} 人在房間裡觀戰（座位滿了）。</p>`:''}
     <p style="margin:10px 0 6px"><b>遊戲長度</b></p><div class="seg" id="segR" style="display:inline-flex">${[[12,'12 回合'],[20,'20 回合'],[0,'不限']].map(([v,l])=>`<button type="button" data-v="${v}" class="${L.rounds===v?'on':''}">${l}</button>`).join('')}</div>
     <p class="note" style="margin-top:10px">每位線上玩家用自己的裝置操作。你這台是房主，負責跑遊戲，遊戲中請不要關掉頁面。</p></div>
     <div class="bf"><button class="btn" type="button" id="nLeave">解散房間</button><button class="btn pri" type="button" id="nStart">開始</button></div>`);
   $('#modal').dataset.lock='1';
+  if($('#nCopy'))$('#nCopy').onclick=async()=>{const url=$('#nLink').value;try{if(navigator.share){await navigator.share({title:'地產大亨 PK',text:`來玩地產大亨！房間代碼 ${NET.code.toUpperCase()}`,url});return;}await navigator.clipboard.writeText(url);toast('已複製邀請連結',true);}catch(e){$('#nLink').select();}};
   $('#box').querySelectorAll('[data-face]').forEach(c=>drawFace(c,c.dataset.face));
   $('#box').querySelectorAll('.seat .seg').forEach(sg=>sg.onclick=e=>{const b=e.target.closest('button');if(!b)return;const s=L.seats[+sg.dataset.k];s.t=b.dataset.v;if(s.t!=='n'){s.peer='';s.name='';}hostAssign();hostLobbyUI();bcastLobby();});
   $('#segR').onclick=e=>{const b=e.target.closest('button');if(!b)return;L.rounds=+b.dataset.v;hostLobbyUI();bcastLobby();};
@@ -1913,12 +1921,15 @@ async function hostIntent(peer,d){if(!G||G.over)return;const p=G.players.find(q=
   push(true);}
 
 /* 加入者 */
+function netStat(msg,err){const s=$('#nStat');if(s){s.textContent=msg;s.className='nstat'+(err?' err':'');}else toast(msg,true);}
 async function netJoin(code,nick){
-  code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(code.length!==5){toast('代碼是五個英數字',true);return;}
-  const api=await roomApi();if(!api)return;
-  toast('正在連線房間…',true);
-  let room;try{room=await joinRoom(api,'dcdh-'+code,false,k=>{if(k==='peer')toast('中繼伺服器找不到房間，改試點對點連線…',true);});}catch(e){toast(e&&e.code==='not_found'?'找不到這個房間：請確認代碼，或請房主確認房間頁面還開著':'加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
-  if(G)clearBoard();
+  code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(code.length!==5){netStat('代碼是五個英文字母或數字，請再確認一次。',true);return;}
+  const api=await roomApi();if(!api){netStat('連線元件載入失敗，請確認網路後重新整理。',true);return;}
+  const btn=$('#nJoin');if(btn)btn.disabled=true;
+  netStat('正在連線房間…（透過中繼伺服器）');
+  let room;try{room=await joinRoom(api,'dcdh-'+code,false,k=>{if(k==='peer')netStat('中繼伺服器沒找到房間，改試點對點連線…');});}
+  catch(e){if(btn)btn.disabled=false;netStat(e&&e.code==='not_found'?'找不到這個房間。請確認：① 代碼正確；② 你和房主打開的是同一個網址；③ 房主的遊戲頁面正開在前景（手機切到其他 App 太久，連線會暫停）。確認後再按一次「加入房間」。':'加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
+  NET.inviteCode=null;if(G)clearBoard();
   Object.assign(NET,{role:'guest',room,code,phase:'lobby',seat:-1,nick,lastSeq:0,lastE:'',lastAt:0,hostPeer:'',lobbyView:null,spectate:false});
   netListen();room.presence({nick}).catch(()=>{});
   const hi=()=>{if(NET.role!=='guest'||NET.spectate)return;if(NET.seat<0)NET.room.emit('lt',{k:'hi',nick:NET.nick}).catch(e=>{if(e&&e.code==='not_permitted'){NET.spectate=true;guestLobbyUI();}});};
@@ -2017,6 +2028,7 @@ buildWorld();buildBoard();drawLED();resize();
 camS.auto=0.08;camS.dist=46;camS.pitch=0.7;
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{SIGN_LIST.forEach(paintSign);ATLAS_TEX.needsUpdate=true;T.forEach((t,i)=>drawTile(i));drawLED();});
 $('#bCont').hidden=!LS.get(SAVE_KEY);
+{const rc=(new URLSearchParams(location.search).get('room')||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(rc.length===5&&!(window.claude&&window.claude.use)){NET.inviteCode=rc;setTimeout(()=>netMenu(),300);}}
 requestAnimationFrame(frame);
 })();
 </script>
