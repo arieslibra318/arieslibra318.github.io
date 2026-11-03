@@ -1660,7 +1660,7 @@ function help(){openModal(`<div class="bh"><h3>怎麼玩</h3><button class="x" t
   <p><b>市政府委託</b>：隨時有兩個公開任務（集滿某區、蓋商業大樓、擁有捷運站……），誰先達成誰領獎金。</p>
   <p><b>商機卡</b>：合夥開 KTV、地下錢莊、預售屋紅單、參選議員，選了之後幾回合會分紅、轉手或討債。</p>
   <p><b>缺錢時</b>：拆賣房子（半價）、抵押土地，或把地賣回銀行、公開拍賣。湊不出錢就破產，地產進法拍中心。</p>
-  <p><b>代碼連線 PK</b>：一人建立房間，把五碼代碼給朋友輸入，各自用自己的裝置玩。在 claude.ai 上開啟時用 claude.ai 的即時連線（朋友需要被分享這個頁面並有「可以互動」以上的權限）；在其他網址（例如 GitHub Pages）開啟時改用點對點連線（PeerJS），不用註冊，少數 4G 或公司網路可能連不上。</p>
+  <p><b>代碼連線 PK</b>：一人建立房間，把五碼代碼給朋友輸入，各自用自己的裝置玩。在 claude.ai 上開啟時用 claude.ai 的即時連線（朋友需要被分享這個頁面並有「可以互動」以上的權限）；在其他網址（例如 GitHub Pages）開啟時，不用註冊：先透過公開的中繼伺服器（MQTT）連線，不行再改用點對點（PeerJS）。</p>
   <p><b>操作</b>：拖曳轉動視角、滾輪或雙指縮放，點格子看權狀。空白鍵可以擲骰子、結束回合、跳過對話。</p></div>`);$('#mx').onclick=closeModal;}
 function marketModal(){if(!G)return;openModal(`<div class="bh"><h3>房市行情</h3><button class="x" type="button" id="mx" aria-label="關閉">×</button></div><div class="bb">${marketHTML()}</div>`);$('#mx').onclick=closeModal;}
 $('#bNew').onclick=()=>{snd('card');setupScreen();};
@@ -1680,55 +1680,97 @@ const NET={api:undefined,role:null,room:null,code:'',myPeer:'',seat:-1,seq:0,epo
 const CODE_CH='abcdefghjkmnpqrstuvwxyz23456789';
 const cleanNick=s=>String(s==null?'':s).replace(/[<>&"'`\\\s]/g,'').slice(0,6)||'玩家';
 const byteLen=s=>new TextEncoder().encode(s).length;
-/* 不在 claude.ai 上時（例如 GitHub Pages），改用 PeerJS 點對點連線：房主當中心，其他人連到房主 */
+/* 不在 claude.ai 上時（例如 GitHub Pages）：房主當中心，其他人連到房主。
+   兩條路同時開：MQTT 中繼（走公開的訊息伺服器，不受 NAT／4G 影響）和 PeerJS 點對點。
+   加入者先試 MQTT，不行再試 PeerJS。 */
+const MQTT_JS='https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js';
+const MQTT_URL='wss://broker.emqx.io:8084/mqtt';
 const PEER_JS='https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
 const PEER_OPTS={debug:0};
+const rid=()=>Math.random().toString(36).slice(2,10);
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('load'));document.head.appendChild(s);});}
-async function peerApi(){try{if(!window.Peer)await loadScript(PEER_JS);}catch(e){return null;}
-  return window.Peer?{kind:'peer',join:(name,isHost)=>peerJoin('tpe-'+name,!!isHost)}:null;}
-function peerJoin(id,isHost){return new Promise((resolve,reject)=>{
-  const ls={},pc=[],conns=new Map(),seen=new Map();let me='',hostConn=null,done=false,open=false,peer=null,hb=0,hostSeen=0,hostGone=false;
+async function hubApi(){
+  if(!window.mqtt)await loadScript(MQTT_JS).catch(()=>{});
+  if(!window.Peer)await loadScript(PEER_JS).catch(()=>{});
+  return window.mqtt||window.Peer?{kind:'hub',join:(name,isHost,status)=>hubJoin('tpe-'+name,!!isHost,status)}:null;}
+// 共用的房間：追蹤誰在線、心跳、把訊息分給監聽者
+function starRoom(id,isHost){
+  const ls={},pc=[],conns=new Map(),seen=new Map(),links=[];
+  let me=isHost?id:'tpeg'+rid(),open=false,hb=0,hostSeen=0,hostGone=false,guestLink=null;
   const P=x=>({peer:x,sameTab:x===me,isMe:x===me,by:null,kind:'viewer',guest:false,presence:{},updatedAt:0});
-  const list=()=>[me,...(isHost?[...conns.keys()]:(hostConn&&hostConn.open?[hostConn.peer]:[]))].filter(Boolean).map(P);
+  const list=()=>[me,...(isHost?[...conns.keys()]:(open?[id]:[]))].map(P);
   const firePeers=(j,l)=>{const ch={peers:list(),joined:j?[P(j)]:[],left:l?[P(l)]:[],updated:[]};pc.forEach(h=>{try{h(ch);}catch(e){console.error(e);}});};
-  const deliver=(from,m)=>{seen.set(from,Date.now());if(from!==me&&hostConn&&from===hostConn.peer){hostSeen=Date.now();if(hostGone){hostGone=false;open=true;firePeers(from,null);}}
-    if(!m||typeof m!=='object'||typeof m.t!=='string'||m.t==='__p')return;(ls[m.t]||[]).forEach(h=>{try{h({topic:m.t,data:m.d,peer:from,by:null,isMe:from===me,sameTab:from===me,kind:'viewer',guest:false});}catch(e){console.error(e);}});};
-  const fail=code=>{if(done)return;done=true;clearTimeout(tm);clearInterval(hb);try{peer&&peer.destroy();}catch(e){}reject({code,message:code});};
+  const dispatch=(from,m)=>{(ls[m.t]||[]).forEach(h=>{try{h({topic:m.t,data:m.d,peer:from,by:null,isMe:from===me,sameTab:from===me,kind:'viewer',guest:false});}catch(e){console.error(e);}});};
+  const recv=(from,m,link)=>{if(!m||typeof m!=='object')return;const now=Date.now();
+    if(isHost){if(from===me)return;seen.set(from,now);if(!conns.has(from)){if(conns.size>=12)return;conns.set(from,link);firePeers(from,null);if(link&&link.ping)link.ping();}}
+    else{if(from!==id)return;hostSeen=now;if(hostGone){hostGone=false;open=true;firePeers(id,null);}}
+    if(typeof m.t==='string'&&m.t!=='__p')dispatch(from,m);};
+  const drop=from=>{if(conns.delete(from))firePeers(null,from);};
   const room={name:id,
     emit:async(topic,data)=>{const m={t:topic,d:data};
-      if(isHost){for(const c of conns.values())if(c.open)try{c.send(m);}catch(e){}}
-      else if(hostConn&&hostConn.open){try{hostConn.send(m);}catch(e){}}else return;
-      setTimeout(()=>deliver(me,m),0);},
+      if(isHost)links.forEach(l=>{try{l.bcast(m);}catch(e){}});
+      else if(guestLink&&open){try{guestLink.send(m);}catch(e){}}else return;
+      setTimeout(()=>dispatch(me,m),0);},
     on:(t,h)=>{(ls[t]=ls[t]||[]).push(h);return()=>{ls[t]=(ls[t]||[]).filter(x=>x!==h);};},
     onPeers:h=>{pc.push(h);setTimeout(()=>h({peers:list(),joined:list(),left:[],updated:[]}),0);return()=>{const k=pc.indexOf(h);if(k>=0)pc.splice(k,1);};},
     peers:list,presence:async()=>{},connected:()=>open,onConnection:()=>()=>{},
-    leave:async()=>{open=false;clearInterval(hb);removeEventListener('pagehide',bye);try{peer.destroy();}catch(e){}}};
+    leave:async()=>{open=false;clearInterval(hb);removeEventListener('pagehide',bye);links.concat(guestLink?[guestLink]:[]).forEach(l=>{try{l.close();}catch(e){}});}};
+  const bye=()=>{room.leave();};addEventListener('pagehide',bye);
   // 心跳：每 2 秒互相確認，超過 10 秒沒消息就當作斷線
-  const bye=()=>{try{peer&&peer.destroy();}catch(e){}};addEventListener('pagehide',bye);
   hb=setInterval(()=>{const now=Date.now();
-    if(isHost){for(const [k,c] of [...conns]){if(c.open)try{c.send({t:'__p'});}catch(e){}if(now-(seen.get(k)||now)>10000){conns.delete(k);try{c.close();}catch(e){}firePeers(null,k);}}}
-    else if(hostConn&&open){try{hostConn.send({t:'__p'});}catch(e){}if(hostSeen&&now-hostSeen>10000&&!hostGone){hostGone=true;open=false;firePeers(null,hostConn.peer);}}},2000);
-  const tm=setTimeout(()=>fail(isHost?'upstream_error':'not_found'),15000);
-  try{peer=isHost?new window.Peer(id,PEER_OPTS):new window.Peer(PEER_OPTS);}catch(e){fail('upstream_error');return;}
-  peer.on('open',pid=>{me=pid;
-    if(isHost){open=true;done=true;clearTimeout(tm);resolve(room);return;}
-    const c=peer.connect(id,{reliable:true,serialization:'json'});hostConn=c;
-    c.on('open',()=>{open=true;hostSeen=Date.now();if(!done){done=true;clearTimeout(tm);resolve(room);}firePeers(c.peer,null);});
-    c.on('data',m=>deliver(c.peer,m));
-    c.on('close',()=>{open=false;firePeers(null,c.peer);});
-    c.on('error',()=>{});});
-  if(isHost)peer.on('connection',c=>{
-    c.on('open',()=>{if(conns.size>=12){try{c.close();}catch(e){}return;}conns.set(c.peer,c);seen.set(c.peer,Date.now());firePeers(c.peer,null);});
-    c.on('data',m=>deliver(c.peer,m));
-    const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);firePeers(null,c.peer);}};c.on('close',gone);c.on('error',gone);});
-  peer.on('error',e=>{const t=e&&e.type;if(!done)fail(t==='unavailable-id'?'id_taken':t==='peer-unavailable'?'not_found':'upstream_error');});
-  peer.on('disconnected',()=>{try{if(!peer.destroyed)peer.reconnect();}catch(e){}});
-});}
+    if(isHost){links.forEach(l=>{try{l.bcast({t:'__p'});}catch(e){}});for(const k of [...conns.keys()])if(now-(seen.get(k)||now)>10000)drop(k);}
+    else if(guestLink&&open){try{guestLink.send({t:'__p'});}catch(e){}if(hostSeen&&now-hostSeen>10000&&!hostGone){hostGone=true;open=false;firePeers(null,id);}}},2000);
+  return{room,recv,drop,links,me:()=>me,setMe:v=>{me=v;},setGuestLink:l=>{guestLink=l;},setOpen:()=>{open=true;hostSeen=Date.now();}};}
+// MQTT：房主收 /h、廣播 /g；加入者收 /g、送 /h
+const mqttTopic=id=>'tpegame/v1/'+id;
+function mqttConnect(){return window.mqtt.connect(MQTT_URL,{clientId:'tpe_'+rid(),clean:true,connectTimeout:6000,reconnectPeriod:2000});}
+function mqttHost(S,id){return new Promise((res,rej)=>{const T=mqttTopic(id);let c;try{c=mqttConnect();}catch(e){rej('err');return;}let ok=false,checking=false;
+  const end=r=>{try{c.end(true);}catch(e){}rej(r);};const tm=setTimeout(()=>{if(!ok)end('timeout');},9000);c.on('error',()=>{});
+  c.on('connect',()=>{if(ok||checking)return;checking=true;
+    c.subscribe([T+'/g',T+'/h'],{qos:0},err=>{if(err){clearTimeout(tm);end('err');return;}
+      let taken=false;const chk=(tp,buf)=>{if(tp===T+'/g'){try{const m=JSON.parse(buf);if(m&&m.f===id)taken=true;}catch(e){}}};c.on('message',chk);
+      setTimeout(()=>{c.removeListener('message',chk);clearTimeout(tm);if(taken){end('id_taken');return;} // 確認這組代碼沒有別的房主在用
+        c.unsubscribe(T+'/g');ok=true;
+        const link={kind:'mqtt',bcast:m=>c.publish(T+'/g',JSON.stringify({f:id,t:m.t,d:m.d}),{qos:0}),ping:()=>link.bcast({t:'__p'}),close:()=>{try{c.end(true);}catch(e){}}};
+        c.on('message',(tp,buf)=>{if(tp!==T+'/h')return;let m;try{m=JSON.parse(buf);}catch(e){return;}if(!m||typeof m.f!=='string'||m.f.length>40||m.f===id)return;S.recv(m.f,m,link);});
+        res(link);},2200);});});});}
+function mqttGuest(S,id){return new Promise((res,rej)=>{const T=mqttTopic(id),me=S.me();let c;try{c=mqttConnect();}catch(e){rej('err');return;}let ok=false,hi=0;
+  const tm=setTimeout(()=>{if(!ok){clearInterval(hi);try{c.end(true);}catch(e){}rej('not_found');}},9000);c.on('error',()=>{});
+  const link={kind:'mqtt',send:m=>c.publish(T+'/h',JSON.stringify({f:me,t:m.t,d:m.d}),{qos:1}),close:()=>{clearInterval(hi);try{c.end(true);}catch(e){}}};
+  c.on('connect',()=>{c.subscribe(T+'/g',{qos:0},err=>{if(err)return;const hello=()=>{if(!ok)c.publish(T+'/h',JSON.stringify({f:me,t:'__p'}),{qos:0});};hello();clearInterval(hi);hi=setInterval(hello,1500);});});
+  c.on('message',(tp,buf)=>{let m;try{m=JSON.parse(buf);}catch(e){return;}if(!m||m.f!==id)return;if(!ok){ok=true;clearTimeout(tm);clearInterval(hi);res(link);}S.recv(id,m,link);});});}
+// PeerJS 點對點
+function peerHost(S,id){return new Promise((res,rej)=>{let peer;try{peer=new window.Peer(id,PEER_OPTS);}catch(e){rej('err');return;}const pcs=new Map();let opened=false;const tm=setTimeout(()=>{try{peer.destroy();}catch(e){}rej('timeout');},10000);
+  const link={kind:'peer',bcast:m=>{for(const c of pcs.values())if(c.open)try{c.send(m);}catch(e){}},ping:()=>{},close:()=>{try{peer.destroy();}catch(e){}}};
+  peer.on('open',()=>{opened=true;clearTimeout(tm);res(link);});
+  peer.on('connection',c=>{c.on('open',()=>{pcs.set(c.peer,c);S.recv(c.peer,{t:'__p'},link);});c.on('data',m=>S.recv(c.peer,m,link));
+    const gone=()=>{if(pcs.get(c.peer)===c){pcs.delete(c.peer);S.drop(c.peer);}};c.on('close',gone);c.on('error',gone);});
+  peer.on('error',e=>{if(e&&e.type==='unavailable-id'){clearTimeout(tm);try{peer.destroy();}catch(x){}rej('id_taken');}});
+  peer.on('disconnected',()=>{if(opened)setTimeout(()=>{try{if(!peer.destroyed)peer.reconnect();}catch(e){}},3000);});});}
+function peerGuest(S,id){return new Promise((res,rej)=>{let peer;try{peer=new window.Peer(PEER_OPTS);}catch(e){rej('err');return;}let ok=false;
+  const fail=r=>{if(ok)return;ok=true;clearTimeout(tm);try{peer.destroy();}catch(e){}rej(r);};const tm=setTimeout(()=>fail('not_found'),12000);
+  peer.on('open',pid=>{S.setMe(pid);const c=peer.connect(id,{reliable:true,serialization:'json'});
+    c.on('open',()=>{if(ok)return;ok=true;clearTimeout(tm);res({kind:'peer',send:m=>c.send(m),close:()=>{try{peer.destroy();}catch(e){}}});});
+    c.on('data',m=>S.recv(id,m));});
+  peer.on('error',e=>{if(e&&e.type==='peer-unavailable')fail('not_found');});});}
+async function hubJoin(id,isHost,status){const S=starRoom(id,isHost);
+  if(isHost){
+    const mq=window.mqtt?mqttHost(S,id).catch(e=>e):null,pr=window.Peer?peerHost(S,id).catch(e=>e):null;
+    const mqR=mq?await mq:'none';
+    const prR=pr?await Promise.race([pr,sleep(mqR&&mqR.kind?3000:10000).then(()=>'slow')]):'none';
+    const ok=[mqR,prR].filter(r=>r&&r.kind);
+    if(mqR==='id_taken'||prR==='id_taken'||!ok.length){ok.forEach(l=>l.close());if(prR==='slow')pr.then(l=>l&&l.kind&&l.close());S.room.leave();throw{code:mqR==='id_taken'||prR==='id_taken'?'id_taken':'upstream_error'};}
+    ok.forEach(l=>S.links.push(l));if(prR==='slow')pr.then(l=>{if(l&&l.kind)S.links.push(l);});
+    S.setOpen();return S.room;}
+  for(const [kind,fn] of [['mqtt',mqttGuest],['peer',peerGuest]]){
+    if(kind==='mqtt'?!window.mqtt:!window.Peer)continue;if(status)status(kind);
+    try{const l=await fn(S,id);S.setGuestLink(l);S.setOpen();return S.room;}catch(e){}}
+  S.room.leave();throw{code:'not_found'};}
 async function roomApi(){if(NET.api!==undefined)return NET.api;let api=null;
   if(window.claude&&typeof window.claude.use==='function'){try{api=await window.claude.use('room');}catch(e){api=null;}NET.api=api;}
-  else{api=await peerApi();if(api)NET.api=api;}
+  else{api=await hubApi();if(api)NET.api=api;}
   return api;}
-const joinRoom=(api,name,isHost)=>api.kind==='peer'?api.join(name,isHost):api.join(name);
+const joinRoom=(api,name,isHost,status)=>api.kind==='hub'?api.join(name,isHost,status):api.join(name);
 
 function bcast(d){if(NET.role!=='host'||!NET.room)return;NET.room.emit('lt',d).catch(()=>{});}
 function sendIntent(d){if(NET.role!=='guest'||!NET.room)return;NET.room.emit('lt',Object.assign({},d,{k:'i'})).catch(e=>{if(e&&e.code==='not_permitted'){NET.spectate=true;toast('你的權限只能觀戰，不能操作',true);}});}
@@ -1777,7 +1819,7 @@ async function netMenu(){
   $('#netBody').innerHTML=`<div class="row2"><b>你的名字</b><input class="nm" id="nNick" maxlength="6" value="${esc(nick)}" aria-label="你的名字"></div>
     <div class="row2"><button class="btn pri" id="nHost" type="button">建立房間</button><span class="note">拿到五碼代碼，傳給朋友</span></div>
     <div class="row2" style="border-top:2px dashed #d8c9a8;padding-top:12px"><input class="codein" id="nCode" maxlength="5" placeholder="代碼" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="房間代碼"><button class="btn pri" id="nJoin" type="button">加入房間</button></div>
-    <p class="note">最多 4 人，可以混電腦玩家。${api.kind==='peer'?'這是點對點連線（PeerJS）：朋友打開同一個網址、輸入代碼就能加入，不用註冊。少數 4G 或公司網路可能連不上。':'朋友需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以觀戰。'}房主的頁面負責跑遊戲，遊戲中請不要關掉。</p>`;
+    <p class="note">最多 4 人，可以混電腦玩家。${api.kind==='hub'?'朋友打開同一個網址、輸入代碼就能加入，不用註冊。連線會先走公開的中繼伺服器，不行再改用點對點。':'朋友需要被分享這個 Artifact，並且有「可以互動」以上的權限；只有檢視權限的人可以觀戰。'}房主的頁面負責跑遊戲，遊戲中請不要關掉。</p>`;
   const nk=()=>{const v=cleanNick($('#nNick').value.trim());LS.set('dcdh.nick',v);return v;};
   $('#nHost').onclick=()=>netHost(nk());
   $('#nJoin').onclick=()=>netJoin($('#nCode').value,nk());
@@ -1805,6 +1847,7 @@ async function netHost(nick){
   const api=await roomApi();if(!api)return;
   let code='',room=null;
   for(let tries=0;tries<4&&!room;tries++){code='';for(let k=0;k<5;k++)code+=CODE_CH[rnd()*CODE_CH.length|0];
+    toast('正在建立房間…',true);
     try{room=await joinRoom(api,'dcdh-'+code,true);}catch(e){if(e&&e.code==='id_taken')continue;toast('建立房間失敗：'+(e&&e.code||'請稍後再試'),true);return;}}
   if(!room){toast('建立房間失敗，請稍後再試',true);return;}
   if(G)clearBoard();
@@ -1874,7 +1917,7 @@ async function netJoin(code,nick){
   code=String(code||'').toLowerCase().replace(/[^a-z0-9]/g,'');if(code.length!==5){toast('代碼是五個英數字',true);return;}
   const api=await roomApi();if(!api)return;
   toast('正在連線房間…',true);
-  let room;try{room=await joinRoom(api,'dcdh-'+code,false);}catch(e){toast(e&&e.code==='not_found'?'找不到這個房間：請確認代碼，或請房主確認房間頁面還開著':'加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
+  let room;try{room=await joinRoom(api,'dcdh-'+code,false,k=>{if(k==='peer')toast('中繼伺服器找不到房間，改試點對點連線…',true);});}catch(e){toast(e&&e.code==='not_found'?'找不到這個房間：請確認代碼，或請房主確認房間頁面還開著':'加入失敗：'+(e&&e.code||'請稍後再試'),true);return;}
   if(G)clearBoard();
   Object.assign(NET,{role:'guest',room,code,phase:'lobby',seat:-1,nick,lastSeq:0,lastE:'',lastAt:0,hostPeer:'',lobbyView:null,spectate:false});
   netListen();room.presence({nick}).catch(()=>{});
